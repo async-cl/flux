@@ -66,7 +66,6 @@ interface Future<T> {
   function toArray(): Array<T>;
 }
 
-
 enum EPartState<E> {
   Started;
   Stopped;
@@ -146,11 +145,11 @@ class Core {
   static public function
   log(l:ELogLevel,category="",?inf:haxe.PosInfos) {
     switch(l) {
-    case LInf(m):
+    case I(m):
       LogImpl.info(m,category,inf);
-    case LWarn(m):
+    case W(m):
       LogImpl.warn(m,category,inf);
-    case LErr(m):
+    case E(m):
       LogImpl.error(m,category,inf);
     }
   }

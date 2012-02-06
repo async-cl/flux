@@ -4,3 +4,8 @@
 See http://www.cloudshift.cl for full documentation.
 
 Cloudshift is written and maintained by Ritchie Turner (blackdog@cloudshift.cl)
+
+Cloudshift relies on the raw Node.js haXe externs found here,
+
+http://github.com/cloudshift/hx-node
+

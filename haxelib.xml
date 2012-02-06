@@ -1,8 +1,9 @@
-<project name="cloudshift" url="http://github.com/cloudshift" license="MIT">
+<project name="cloudshift" url="http://github.com/cloudshift/cloudshift" license="MIT">
     <user name="cloudshift"/>
     <tag v="node.js"/>
     <tag v="javascript"/>
     <tag v="js"/>
     <description>haXe Stack for Node.js</description>
     <version name="0.1">initial</version>
+    <depends name="nodejs"/>
 </project>

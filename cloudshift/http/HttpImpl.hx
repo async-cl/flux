@@ -71,7 +71,7 @@ class HttpImpl implements HttpServer,implements Part<HostPort,HttpServer,HttpEve
               try {
                 r.handler(r.re,req,resp);
               } catch(ex:Dynamic) {
-                Core.log(LErr("handler exp:"+ex));
+                Core.log(E("handler exp:"+ex));
               }
             
               break;
@@ -87,7 +87,7 @@ class HttpImpl implements HttpServer,implements Part<HostPort,HttpServer,HttpEve
         }
     });
 
-    Core.log(LInf("Starting "+_serverName+" on "+d.host+":"+d.port));
+    Core.log(I("Starting "+_serverName+" on "+d.host+":"+d.port));
 
     /*
     _server.addListener(NodeC.EVENT_HTTPSERVER_REQUEST,function(request,response) {
