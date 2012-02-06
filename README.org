@@ -20,16 +20,22 @@
     asynchronously with stop(). Parts are also Observable.
 
 ** Http Module
-   
-   Simplest example ...
 
+#+BEGIN_SRC as3
    Http.server()
    .root("/dir/to/serve")
    .start({host:"localhost",port:8080});
+#+END_SRC   
 
+   Simplest example ...
+ 
    and/or provide multiple handlers per url, e.g.
 
-   Http.server().handler(~/^\/remotes/,rem.httpHandler)   
+
+#+BEGIN_SRC haxe
+     Http.server().handler(~/^\/remotes/,rem.httpHandler)   
+#+END_SRC
+ 
 
 ** Flow Module
 
