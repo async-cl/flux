@@ -1,11 +1,89 @@
 
 * Cloudshift - A haXe Stack for Node.js
 
-See http://www.cloudshift.cl for full documentation.
+  See http://www.cloudshift.cl for full documentation.
 
-Cloudshift is written and maintained by Ritchie Turner (blackdog@cloudshift.cl)
+  Cloudshift is written and maintained by Ritchie Turner (blackdog@cloudshift.cl)
+  and is currently under heavy development; the apis are subject to change.
+  
+  Cloudshift provides a consistent set of tools on client and server for dealing
+  with common problems;
+  
+  - *haXe remoting* for inter tier and sub-process communication
+  - *Outcome<T>* (Future<Either<String,T>) as the means for dealing with async
+    callback hell and error handling.
+  - *Parts* are a means of doing an asynchronous new(). More specifically they
+    may be started and stopped returning an Outcome.
 
-Cloudshift relies on the raw Node.js haXe externs found here,
+** Http Module
+   
+   Simplest example ...
 
-http://github.com/cloudshift/hx-node
+   Http.server()
+   .root("/dir/to/serve")
+   .start({host:"localhost",port:8080});
 
+   and/or provide multiple handlers per url, e.g.
+
+   Http.server().handler(~/^\/remotes/,rem.httpHandler)   
+
+** Flow Module
+
+   Publish/subscribe with session management, channel security. Currently a Push
+   implementation.
+
+** Data Module
+
+   There is a database component with, so far, one driver, Sqlite3. The api is
+   asynchronous and NoSQL. It stores haXe serialized objects in Sqlite, yet
+   provides a general indexing facility which utilises the underlying sqlite
+   indexes. This does mean that there is no generalized query facility, haXe
+   programs require to be written to extract the data.
+
+   The Sqlite driver is a popular C++ module for Node.js supported by many of the
+   leading names in the Node.js community. It's asynchronous and embedded in
+   the node.js instance, thus data access is very fast.
+
+   So, each Cloudshift instance has it's own database, this can be easily augmented
+   so that each instance running talks to a central Cloudshift instance just
+   running data services. Cloudshift provides a remote api compatible driver for
+   this purpose. *The main point here is to think of the Node.js/Sqlite3
+   combination as a database server in it's own right*
+
+** Worker Module
+
+   Extend Worker and create seamless sub process workers using the haXe remoting
+   protocol.
+
+** Dependencies
+
+   Cloudshift relies on the raw Node.js haXe externs found here,
+
+   http://github.com/cloudshift/hx-node
+   
+   Also Formidable the Node.js POST handler
+   
+   npm install formidable
+   
+   and for the Data module
+   
+   npm install sqlite3
+
+* Installation
+
+  install node.js for your platform
+  
+  npm install formidable
+  npm install sqlite3   // may not be available on windows
+  haxelib install cloudshift
+  
+* Usage
+
+  Check http://github.com/cloudshift/cloudshift-usage
+
+
+
+
+
+
+  
