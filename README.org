@@ -63,7 +63,9 @@
    File I/O, Process services wrapped in Outcomes as appropriate for this kind
    of usage:
 
-    Sys.writeFile("woot","hi there")
+
+#+BEGIN_SRC haxe
+   Sys.writeFile("woot","hi there")
       .onError(function(reason) {
           trace("Err is :"+reason);
         })
@@ -111,7 +113,8 @@
             });
         });
 
-
+#+END_SRC
+    
 
 ** Dependencies
 
