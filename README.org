@@ -1,0 +1,6 @@
+
+* Cloudshift - A haXe Stack for Node.js
+
+See http://www.cloudshift.cl for full documentation.
+
+Cloudshift is written and maintained by Ritchie Turner (blackdog@cloudshift.cl)
