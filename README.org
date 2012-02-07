@@ -38,7 +38,7 @@
 ** Flow Module
 
    Publish/subscribe with session management, channel security. Currently a Push
-   implementation.
+   implementation (web socket conduit will be added).
 
    Flow is comprised of Conduits, Sinks and Pipes. 
 
