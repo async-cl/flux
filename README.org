@@ -140,7 +140,7 @@
   install node.js for your platform
   
   npm install formidable
-  npm install sqlite3   // may not be available on windows
+  npm install sqlite3 (may not be available on windows)
   haxelib install nodejs
   haxelib install cloudshift
   
