@@ -13,7 +13,7 @@
   with common problems;
   
   - *haXe remoting* for inter tier and sub-process communication
-  - *Outcome<T>* (approximately a Future<Either<String,T>) as the means for
+  - *Outcome<T>* (approximately a Future<Either<String,T>>) as the means for
     dealing with async callback hell and error handling.
   - *Parts* are components which have an asynchronous new() in the start()
     method - start() returns an Outcome. Further they may be stopped
@@ -36,7 +36,6 @@
      Http.server().handler(~/^\/remotes/,rem.httpHandler)   
 #+END_SRC
  
-
 ** Flow Module
 
    Publish/subscribe with session management, channel security. Currently a Push
@@ -142,15 +141,43 @@
   
   npm install formidable
   npm install sqlite3   // may not be available on windows
+  haxelib install nodejs
   haxelib install cloudshift
   
+  Note, the cloudshift haxelib does not include the nodejs dependency by
+  default, as the cloudshift lib is used on both client and server and having
+  the -D nodejs defined automatically on the client is an unwanted side
+  effect. So be sure to install nodejs bindings manually.
+
 * Usage
 
   Check http://github.com/cloudshift/cloudshift-usage
 
-  TODO
+  ** Typical Build File
 
 
+#+BEGIN_SRC haxe
+--times
+-js chatServer.js
+-cp .
+-lib nodejs
+-lib cloudshift
+--macro cloudshift.core.JSGenerator.use()
+-main ChatServer
+-cmd echo "chat server built"
+ 
+--next
 
+-cp .
+-lib cloudshift
+-js www/client.js
+--macro cloudshift.core.JSGenerator.use()
+-main ChatClient
+-cmd echo "chat client built"
 
-  
+#+END_SRC
+
+The main thing to note here is the --macro line. The default haXe js generator
+is tweaked so that async calls are handled correctly. Note the server must
+include the nodejs lib.
+

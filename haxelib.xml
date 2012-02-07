@@ -5,5 +5,4 @@
     <tag v="js"/>
     <description>haXe Stack for Node.js</description>
     <version name="0.1">initial</version>
-    <depends name="nodejs"/>
 </project>
