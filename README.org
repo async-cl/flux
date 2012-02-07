@@ -139,10 +139,10 @@
 
   install node.js for your platform
   
-  npm install formidable
-  npm install sqlite3 (may not be available on windows)
-  haxelib install nodejs
-  haxelib install cloudshift
+  - npm install formidable
+  - npm install sqlite3 (may not be available on windows)
+  - haxelib install nodejs
+  - haxelib install cloudshift
   
   Note, the cloudshift haxelib does not include the nodejs dependency by
   default, as the cloudshift lib is used on both client and server and having
