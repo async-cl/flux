@@ -6,11 +6,10 @@
   Cloudshift is written and maintained by Ritchie Turner (blackdog@cloudshift.cl)
   and is currently under heavy development; the apis are subject to change.
   
-
 ** Core Module
 
-  Cloudshift provides a consistent set of tools on client and server for dealing
-  with common problems;
+  Cloudshift provides a consistent set of abstractions on client and server for
+  dealing with common problems;
   
   - *haXe remoting* for inter tier and sub-process communication
   - *Outcome<T>* (approximately a Future<Either<String,T>>) as the means for
@@ -18,7 +17,8 @@
   - *Parts* are components which have an asynchronous new() in the start()
     method - start() returns an Outcome. Further they may be stopped
     asynchronously with stop(). Parts are also Observable.
-
+  - *Mixins*, mostly the Stax prelude extensions.
+   
 ** Http Module
 
 #+BEGIN_SRC as3
@@ -121,26 +121,12 @@
 #+END_SRC
     
 
-** Dependencies
-
-   Cloudshift relies on the raw Node.js haXe externs found here,
-
-   http://github.com/cloudshift/hx-node
-   
-   Also Formidable the Node.js POST handler
-   
-   npm install formidable
-   
-   and for the Data module
-   
-   npm install sqlite3
-
-* Installation
+* Installation and Dependencies
 
   install node.js for your platform
   
   - npm install formidable
-  - npm install sqlite3 (may not be available on windows)
+  - npm install sqlite3
   - haxelib install nodejs
   - haxelib install cloudshift
   
@@ -148,4 +134,8 @@
   default, as the cloudshift lib is used on both client and server having
   the -D nodejs defined automatically on the client is an unwanted side
   effect. So be sure to install nodejs bindings manually.
+
+  Formidable is the node.js POST multipart handler. (https://github.com/felixge/node-formidable)
+  Sqlite3 may not be available on Windows (https://github.com/developmentseed/node-sqlite3)
+  nodejs (https://github.com/cloudshift/hx-node)
 
