@@ -164,7 +164,7 @@
   the -D nodejs defined automatically on the client is an unwanted side
   effect. So be sure to install nodejs bindings manually.
 
-  Formidable is the node.js POST multipart handler. (https://github.com/felixge/node-formidable)
-  Sqlite3 may not be available on Windows (https://github.com/developmentseed/node-sqlite3)
-  nodejs (https://github.com/cloudshift/hx-node)
-
+  - Formidable is the node.js POST multipart handler. (https://github.com/felixge/node-formidable)
+  - Sqlite3 - not be available on Windows (https://github.com/developmentseed/node-sqlite3)
+  - nodejs (https://github.com/cloudshift/hx-node)
+  
