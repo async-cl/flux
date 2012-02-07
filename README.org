@@ -145,7 +145,7 @@
   - haxelib install cloudshift
   
   Note, the cloudshift haxelib does not include the nodejs dependency by
-  default, as the cloudshift lib is used on both client and server and having
+  default, as the cloudshift lib is used on both client and server having
   the -D nodejs defined automatically on the client is an unwanted side
   effect. So be sure to install nodejs bindings manually.
 
