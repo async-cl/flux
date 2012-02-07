@@ -156,7 +156,6 @@
   ** Typical Build File
 
 
-#+BEGIN_SRC haxe
 --times
 -js chatServer.js
 -cp .
@@ -175,7 +174,6 @@
 -main ChatClient
 -cmd echo "chat client built"
 
-#+END_SRC
 
 The main thing to note here is the --macro line. The default haXe js generator
 is tweaked so that async calls are handled correctly. Note the server must
