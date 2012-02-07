@@ -33,14 +33,18 @@ class Worker extends Context {
   
   public static function
   run(kls:Class<Dynamic>) {
-    var nArgs = Node.process.argv.length;
-    if (nArgs == 2)
+
+    var workers = Node.process.argv.filter(function(arg) {
+        return arg.startsWith("csw-");
+      });
+
+    if (workers.length == 0) {
       Type.createInstance(kls,[]);
-    if (nArgs == 3) {
-      var workerSpec = Node.process.argv[2];
+    } else {
+      var workerSpec = workers[0];
       var spl = workerSpec.split("-");
       try {
-        Type.createInstance(Type.resolveClass(spl[0]),[]);
+        Type.createInstance(Type.resolveClass(spl[1]),[]);
       } catch(ex:Dynamic) {
         trace(ex);
       }
@@ -52,7 +56,7 @@ class Worker extends Context {
     var
       workerID = Type.getClassName(kls),
       id = genID(),
-      runThis = Node.process.argv.concat([workerID+"-"+id]);
+      runThis = Node.process.argv.concat(["csw-"+workerID+"-"+id]);
 
     runThis.shift();
     
