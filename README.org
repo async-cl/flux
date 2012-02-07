@@ -11,7 +11,7 @@
   Cloudshift provides a consistent set of abstractions on client and server for
   dealing with common problems;
   
-  - *haXe remoting* for inter tier and sub-process communication
+  - Asynchronous *haXe remoting* for inter tier and sub-process communication
   - *Outcome<T>* (approximately a Future<Either<String,T>>) as the means for
     dealing with async callback hell and error handling.
   - *Parts* are components which have an asynchronous new() in the start()
@@ -21,16 +21,15 @@
    
 ** Http Module
 
+   Simplest example ...
+
 #+BEGIN_SRC as3
    Http.server()
    .root("/dir/to/serve")
    .start({host:"localhost",port:8080});
 #+END_SRC   
-
-   Simplest example ...
  
    and/or provide multiple handlers per url, e.g.
-
 
 #+BEGIN_SRC haxe
      Http.server().handler(~/^\/remotes/,rem.httpHandler)   
