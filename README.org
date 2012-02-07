@@ -149,34 +149,3 @@
   the -D nodejs defined automatically on the client is an unwanted side
   effect. So be sure to install nodejs bindings manually.
 
-* Usage
-
-  Check http://github.com/cloudshift/cloudshift-usage
-
-  ** Typical Build File
-
-#+BEGIN_SRC haxe
-  --times
-  -js chatServer.js
-  -cp .
-  -lib nodejs
-  -lib cloudshift
-  --macro cloudshift.core.JSGenerator.use()
-  -main ChatServer
-  -cmd echo "chat server built"
-  
-  --next
-  
-  -cp .
-  -lib cloudshift
-  -js www/client.js
-  --macro cloudshift.core.JSGenerator.use()
-  -main ChatClient
-  -cmd echo "chat client built"
-#+END_SRC
-  
-
-The main thing to note here is the --macro line. The default haXe js generator
-is tweaked so that async calls are handled correctly. Note the server must
-include the nodejs lib.
-

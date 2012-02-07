@@ -1,0 +1,35 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15">
+<title></title>
+</head>
+<body>
+  <div style="width:100%">
+  <div style="width:500px;float:left">
+
+    <div id="divLogin" style="width:100%;height:20px;background-color:#ccccff;">
+      Login with nick <input type="text" id="nick" width="20" value="ritchie">
+      <input type="button" id="btnLogin" value = "Login">
+    </div>
+
+    
+    <div id="divLogout" style="width:100%;height:20px;background-color:#ccccff;display:none;">
+      <input type="button" id="btnLogout" value = "Logout">
+    </div>
+
+    <div style="width:100%;background-color:#ccffcc;">
+      <div id="chat" style="height:400px;width:300px;overflow:auto;float:left;background-color:#ccffcc"></div>
+      <div id="members"
+           style="height:400px;width:200px;overflow:auto;float:right;;background-color:#ffcccc"></div>
+      <input type="text" id="chatsay" style="width:100%;" />
+      <div id="status" style="width:100%;height:20px;background-color:#ccccff;">status</div>
+    </div>
+  
+  </div>
+  
+  <div style="width:100%;height:400px;overflow:auto;" id="haxe:trace"></div>
+  </div>
+  <script type="text/javascript" src="/client.js"></script>
+</body>
+</html>

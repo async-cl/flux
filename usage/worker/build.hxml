@@ -1,0 +1,12 @@
+
+--times
+-js test.js
+-cp src
+-cp ../../base
+-cp ../
+--macro cloudshift.base.JSGenerator.use()
+-lib nodejs
+-main Test
+
+
+
