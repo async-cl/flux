@@ -40,6 +40,37 @@
    Publish/subscribe with session management, channel security. Currently a Push
    implementation.
 
+   Flow is comprised of Conduits, Sinks and Pipes. 
+
+   - Pipes are your typical channel and are created from Sinks (you drain and
+     fill sinks via pipes)
+   - Sinks also know about Sessions and Conduits
+   - Conduits are message streams from remote sources.
+
+   Having 3 large concepts means Flow could be difficult to setup, however there
+   is a Flow.quickFlow() method that creates a typical setup for you, e.g.,
+
+#+BEGIN_SRC haxe
+    Http.server()
+      .root("www")
+      .start({host:"localhost",port:8082})
+      .deliver(function(http) {         
+          Flow.quickFlow()
+            .start(http)
+            .deliver(function(qf) {
+               var sink = qf.sink;
+               var conduit = qf.conduit;
+               var session = qf.session;
+
+               var mypipe<MyType> = sink.pipe("/my/pipe");
+               mypipe.fill({hello:"world"});
+            });
+        });
+#+END_SRC
+
+  The quickFlow() method may be used on the client to provide the same basic interface.
+  See the chat example for more.
+   
 ** Data Module
 
    There is a database component with, so far, one driver, Sqlite3. The api is
@@ -119,7 +150,6 @@
 
 #+END_SRC
     
-
 * Installation and Dependencies
 
   install node.js for your platform
