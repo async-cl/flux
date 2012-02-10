@@ -4,5 +4,5 @@
     <tag v="javascript"/>
     <tag v="js"/>
     <description>haXe Stack for Node.js</description>
-    <version name="0.2">add some examples</version>
+    <version name="0.2.1">worker params no longer positional</version>
 </project>

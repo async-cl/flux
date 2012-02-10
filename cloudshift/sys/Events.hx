@@ -5,7 +5,6 @@ import cloudshift.Sys;
 import js.Node;
 using cloudshift.Mixin;
 
-
 class Events extends cloudshift.core.ObservableImpl<SysEvents> {
   
   public function new() {
