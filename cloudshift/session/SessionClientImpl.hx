@@ -21,7 +21,7 @@ class SessionClientImpl implements Part<HostPort,SessionClient,ESession>,impleme
   public function
   start_(hp:HostPort) {
     var prm = Core.outcome();
-    var cnx = haxe.remoting.HttpAsyncConnection.urlConnect("http://"+hp.host+":"+hp.port+Session.REMOTE);
+    var cnx = haxe.remoting.HttpAsyncConnection.urlConnect("http://"+js.Lib.window.location.host+Session.REMOTE);
     cnx.setErrorHandler( function(err) trace("Error : "+Std.string(err)) );
     _proxy = new SessionProxy(cnx.Auth);
     prm.resolve(Right(cast(this,SessionClient)));
