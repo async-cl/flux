@@ -8,13 +8,13 @@ using cloudshift.Mixin;
 class MessageQImpl implements MessageQ {
 
   static var timer:Int = -1;
-  static var waitingQs:Array<SessionQueue> = [];
-  static var flusher:SessionQueue->Bool;
+  static var waitingQs:Array<MessageQ> = [];
+  static var flusher:MessageQ->Bool;
   
   var _mq:Array<Dynamic>;
   var _sessID:String;
   var _inQ:Bool;
-  
+
   public function new(sID:String){
     _mq = [];
     _inQ = false;
@@ -25,31 +25,45 @@ class MessageQImpl implements MessageQ {
   static function initFlush() {
     if (timer == -1) {
       timer = js.Node.setInterval(function() {
-        while (waitingQs.length > 0) flusher(waitingQs.shift());
+            try {
+                while (waitingQs.length > 0) {
+                    var mq:MessageQ = waitingQs.shift();
+                    if (!flusher(mq) ) {
+                      waitingQs.push(mq);
+                      break;
+                    }
+                }
+            } catch(exc:Dynamic) {
+                Core.info("Got exc:"+exc);
+            }
         },200,null);
     }
   }
 
   public function
+  deQueue() {
+    var q = _mq ;
+    _mq = [];
+    _inQ = false;
+    return q;
+  }
+  
+  public function
   append(pkt:Dynamic) {
     _mq.push(pkt);
-   
+
     if (!_inQ) {
       _inQ = true;
-      waitingQs.push({sID:_sessID,queue:function() {
-            var p = _mq;
-            _inQ = false;
-            _mq = [];
-            return p;
-          }
-        });
+      waitingQs.push(this);
     }
   }
 
   public function
-  setFlusher(flush:SessionQueue->Bool) {
+  setFlusher(flush:MessageQ->Bool) {
     flusher = flush;
   }
+  
+  public inline function sessID() { return _sessID; }
 
   public function
   startFlushing(sessID:String) {

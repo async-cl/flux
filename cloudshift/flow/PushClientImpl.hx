@@ -23,7 +23,7 @@ class PushClientImpl implements Conduit {
 
   public function start_(cs:ConduitClientStart) {
     var prm = Core.outcome();
-    _url = "http://"+cs.host+":"+cs.port;
+    _url = "http://"+js.Lib.window.location.host;
     _sessID = cs.sessID;
     _parted = false;
     remoteInit(function(ignore) {

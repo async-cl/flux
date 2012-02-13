@@ -32,7 +32,7 @@ class PushSessionImpl implements ConduitSession {
   }
 
   public function
-  flusher(flush:SessionQueue->Bool) {
+  flusher(flush:MessageQ->Bool) {
     mq.setFlusher(flush);
     mq.startFlushing(sessID);
   }

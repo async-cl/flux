@@ -34,7 +34,7 @@ class PushListenerImpl implements Conduit {
     part_ = Core.part(this);
     _callbacks = new Hash();
     _sessMgr = sessionMgr;
-    
+
     Node.setInterval(function() {
         var now = Date.now().getTime();
         _sessions.values().foreach(function(s) {
@@ -53,7 +53,7 @@ class PushListenerImpl implements Conduit {
             case None:
             }
           });
-      },SESSION_EXPIRE,null);    
+      },SESSION_EXPIRE,null);
   }
 
   public function start_(d:Dynamic) {
@@ -71,7 +71,7 @@ class PushListenerImpl implements Conduit {
   
   function removeSession(session) {
     if (session != null) {
-      trace("removing session");
+      Core.info("removing session");
       _callbacks.remove(session.sessID);
       _sessions.remove(session.sessID); // values() copies into array so this removal should be fine
       session.shutDown();
@@ -111,12 +111,13 @@ class PushListenerImpl implements Conduit {
               if (s != null) {
                 s.lastConnection = Date.now().getTime();
                 gatherCallbacks(req,res,sessID);
-
                 if (req.connection.listeners('close').length == 1){
                   req.connection.once('close',function() {
                       var cbs = _callbacks.get(sessID);
                       while (cbs != null && cbs.length > 0) {
+                        Core.info("I'm closing the bastard");
                         var cb = cbs.shift();
+                        cb.fn([]);
                         cb.fn = null;
                       }
                       removeSession(_sessions.get(sessID));
@@ -192,15 +193,13 @@ class PushListenerImpl implements Conduit {
   }
   
   public function
-  flush(out:SessionQueue):Bool {
-    var callbacks = _callbacks.get(out.sID);
-    if (callbacks != null) {
-      while (callbacks.length > 0) {
-        var cb = callbacks.shift();
-        if (cb.fn != null) { // fn can be invalidated if a close is received
-          cb.fn(out.queue());
-          return true;
-        }
+  flush(out:MessageQ):Bool {
+    var callbacks = _callbacks.get(out.sessID());
+    if (callbacks != null && callbacks.length > 0) {
+      var cb = callbacks.shift();
+      if (cb.fn != null) { // fn can be invalidated if a close is received
+        cb.fn(out.deQueue());
+        return true;
       }
     }
     return false;
