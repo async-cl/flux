@@ -9,6 +9,7 @@ class MessageQImpl implements MessageQ {
 
   static var timer:Int = -1;
   static var waitingQs:Array<MessageQ> = [];
+  static var deferredQs:Array<MessageQ> = [];
   static var flusher:MessageQ->Bool;
   
   var _mq:Array<Dynamic>;
@@ -25,18 +26,20 @@ class MessageQImpl implements MessageQ {
   static function initFlush() {
     if (timer == -1) {
       timer = js.Node.setInterval(function() {
-            try {
-                while (waitingQs.length > 0) {
-                    var mq:MessageQ = waitingQs.shift();
-                    if (!flusher(mq) ) {
-                      waitingQs.push(mq);
-                      break;
-                    }
+            while (waitingQs.length > 0) {
+                var mq:MessageQ = waitingQs.shift();
+                if (!flusher(mq) ) {
+                  deferredQs.push(mq);
                 }
-            } catch(exc:Dynamic) {
-                Core.info("Got exc:"+exc);
             }
         },200,null);
+
+
+      var deferredTimer = js.Node.setInterval(function() {
+            if (deferredQs.length > 1)
+              waitingQs.push(deferredQs.shift());
+        },200,null);
+
     }
   }
 
@@ -65,18 +68,4 @@ class MessageQImpl implements MessageQ {
   
   public inline function sessID() { return _sessID; }
 
-  public function
-  startFlushing(sessID:String) {
-    /*
-    if (flusher != null) {
-      timer = js.Node.setInterval(function() {
-        },250,null);
-    }
-    */
-  }
-
-  public function
-  stopFlushing() {
-    //js.Node.clearInterval(timer);
-  }  
 }

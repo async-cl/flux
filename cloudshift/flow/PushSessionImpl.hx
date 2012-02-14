@@ -34,12 +34,10 @@ class PushSessionImpl implements ConduitSession {
   public function
   flusher(flush:MessageQ->Bool) {
     mq.setFlusher(flush);
-    mq.startFlushing(sessID);
   }
 
   public function
   shutDown() {
-    mq.stopFlushing();
     mq = null;
     trace("removed all subs for "+sessID);
     subs.values().foreach(function(f) f());
