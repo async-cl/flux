@@ -101,6 +101,10 @@ class SinkImpl implements Sink {
     pipe._defaultFill(pkt,"",null);
   }
 
+  public function direct<T>(sessID:String):Pipe<T> {
+    return pipe("/__cs/"+sessID);
+  }
+  
   public function
   authorize<T>(pipe:Pipe<T>):Future<Either<String,Pipe<T>>> {
     var prm = Core.future();

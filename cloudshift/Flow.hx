@@ -44,7 +44,7 @@ interface Conduit implements Part<Dynamic,Conduit,ConduitEvent> {
   function pump(sessID:String,pkt:Dynamic,chanID:String,meta:Dynamic):Void;
   #if nodejs
   function subscriptions(sessID:String):Hash<Void->Void>;
-    function session():SessionMgr;
+  function session():SessionMgr;
   #end
 }
 
@@ -59,6 +59,7 @@ interface Sink implements Part<Conduit,Sink,SinkEvent>  {
   function pipeFromId(chanID:String):Option<Pipe<Dynamic>>;
   function authorize<T>(pipe:Pipe<T>):Future<Either<String,Pipe<T>>>;
   function removePipe<T>(p:Pipe<T>):Void;
+  function direct<T>(sessID:String):Pipe<T>;
 }
 
 interface Pipe<T> { //implements Part<Dynamic,Pipe<T>,Pkt<T>> {
@@ -78,7 +79,6 @@ interface Pipe<T> { //implements Part<Dynamic,Pipe<T>,Pkt<T>> {
   function divert<P>(chan:Pipe<P>,?map:T->P):Void->Void;
   function peek(cb:EOperation->Void):Void;
 }
-
 
 typedef QuickFlow = {
     var conduit:Conduit;

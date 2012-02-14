@@ -41,8 +41,7 @@ class PushListenerImpl implements Conduit {
             var sessID = s.sessID;
             switch(_callbacks.getOption(sessID)) {
             case Some(cbs):
-              var goodCbs = cbs.filter(function(cb) return cb.fn != null);
-            
+              var goodCbs = cbs.filter(function(cb) return cb.fn != null);            
               if (goodCbs.length > 0) {
                 if (now - s.lastConnection > SESSION_EXPIRE) {
                   removeSession(s);
@@ -68,7 +67,6 @@ class PushListenerImpl implements Conduit {
     return prm;
   }
 
-  
   function removeSession(session) {
     if (session != null) {
       Core.info("removing session");
@@ -115,7 +113,6 @@ class PushListenerImpl implements Conduit {
                   req.connection.once('close',function() {
                       var cbs = _callbacks.get(sessID);
                       while (cbs != null && cbs.length > 0) {
-                        Core.info("I'm closing the bastard");
                         var cb = cbs.shift();
                         cb.fn([]);
                         cb.fn = null;
@@ -152,6 +149,11 @@ class PushListenerImpl implements Conduit {
   public function
   pump(sessID:String,payload:Dynamic,chanID:String,meta:Dynamic) {
     _sessions.get(sessID).append(Flow.createPkt(payload,sessID,chanID,meta));
+  }
+
+  public function
+  direct(sessID:String,payload:Dynamic) {
+    _sessions.get(sessID).append(Flow.createPkt(payload,sessID,"/__cs/direct"));
   }
 
   public function
