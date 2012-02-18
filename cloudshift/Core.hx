@@ -174,5 +174,15 @@ class Core {
     LogImpl.debug(msg,category,inf);
   }
 
+  public static function
+  parse(str:String):Dynamic {
+    return untyped __js__("JSON.parse(str)");
+  }
+
+  public static function
+  stringify(obj:Dynamic):String {
+    return untyped __js__("JSON.stringify(obj)");
+  }
+  
 }
 

@@ -14,12 +14,20 @@ class Sqlite3Bucket<T> implements Bucket<T> {
   var _db:Database;
   var _table:String;
   var _indexers:Hash<Indexer<T>>;
+  var _serialize:Dynamic->String;
+  var _deserialize:String->Dynamic;
   
-  public function new(store:Sqlite3Store,table:String) {
+  public function new(store:Sqlite3Store,table:String,?serialize:Serializer) {
     _store = store;
     _db = store.db();
     _table = table;
     _indexers = new Hash() ;
+
+    if (serialize == null) 
+      serialize = Data.jsonSerializer();
+    
+    _serialize = serialize.serialize;
+    _deserialize= serialize.deSerialize;
   }
 
   public function
@@ -83,7 +91,7 @@ class Sqlite3Bucket<T> implements Bucket<T> {
               return;
             }
 
-            var o:T = haxe.Unserializer.run(new String(row.__obj));
+            var o:T = _deserialize(new String(row.__obj));
 
             reindexObj(o,row.rowid,function(b) {
                 trace("indexed:"+row.rowid);
@@ -110,7 +118,7 @@ class Sqlite3Bucket<T> implements Bucket<T> {
             }
             
             var
-              o:T = haxe.Unserializer.run(new String(row.__obj)),
+              o:T = _deserialize(new String(row.__obj)),
               indexVal = indexer(o),
               update = "update "+_table+" set "+name+" = '"+ indexVal+"' where rowid="+row.rowid;
             
@@ -138,7 +146,7 @@ class Sqlite3Bucket<T> implements Bucket<T> {
     var
       p = Core.outcome(),
       indexVals = indexUpdate(o),
-      obj = haxe.Serializer.run(o),
+      obj = _serialize(o),
       sql = "update "+_table+" set __obj = '" + obj + "'"+indexVals+" where rowID="+rowId;
 
     _db.run(sql,function(err) {
@@ -166,8 +174,7 @@ class Sqlite3Bucket<T> implements Bucket<T> {
       p = Core.outcome(),
       indexVals = indexInsert(o);
 
-    trace("insert sql = insert into "+_table+indexVals);
-    _db.run('insert into '+_table+indexVals,haxe.Serializer.run(o),function(err) {
+    _db.run('insert into '+_table+indexVals,_serialize(o),function(err) {
         if (err != null) {
           p.resolve(Left(err));
           return;
@@ -219,7 +226,7 @@ class Sqlite3Bucket<T> implements Bucket<T> {
           return;
         }
 
-        var o:T = haxe.Unserializer.run(new String(row.__obj));
+        var o:T = _deserialize(new String(row.__obj));
         Reflect.setField(o,"__oid",id);
         p.resolve(Right(o));
       });
@@ -272,7 +279,7 @@ class Sqlite3Bucket<T> implements Bucket<T> {
           return;
         }
 
-        var o = haxe.Unserializer.run(new String(row.__obj));
+        var o = _deserialize(new String(row.__obj));
         Reflect.setField(o,"__oid",row.rowid);
         results.push(o);
       },function() {
@@ -330,7 +337,7 @@ class Sqlite3Bucket<T> implements Bucket<T> {
           return;
         }
         
-        results.push(haxe.Unserializer.run(row.__obj));
+        results.push(_deserialize(row.__obj));
       },function() {
           p.resolve((results.length > 0) ? Right(Some(results)) : Right(None));
       });

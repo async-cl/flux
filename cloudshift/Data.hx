@@ -9,8 +9,13 @@ import cloudshift.Remote;
 import cloudshift.data.RemoteBucketProxy;
 #end
 
+typedef Serializer = {
+  var serialize:Dynamic->String;
+  var deSerialize:String->Dynamic;
+}
+
 interface Store {
-  function bucket<T>(bucketName:String):Outcome<String,Bucket<T>>;
+  function bucket<T>(bucketName:String,?serialize:Serializer):Outcome<String,Bucket<T>>;
   function hash<T>(bucketName:String):Outcome<String,BHash<T>>;
   function name():String;
   function lookupBucket<T>(bucketName:String):Option<Bucket<T>>;
@@ -78,9 +83,18 @@ class Data {
     http.handler(new EReg(url+bucket.name(),""),rem.httpHandler);
   }
   #end
+
+  public static function jsonSerializer():Serializer {
+    return { serialize:Core.stringify,deSerialize:Core.parse};
+  }
+
+  public static function haxeSerializer():Serializer {
+    return {serialize:haxe.Serializer.run,deSerialize:haxe.Unserializer.run};
+  }
   
   public static function oid(pkt:Dynamic):Null<Int> {
     return Reflect.field(pkt,"__oid");
   }
 
+  
 }

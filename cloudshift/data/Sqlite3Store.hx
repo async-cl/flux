@@ -29,7 +29,7 @@ class Sqlite3Store implements Store {
       });
   }
 
-  public function bucket<T>(bucketName:String):Outcome<String,Bucket<T>> {
+  public function bucket<T>(bucketName:String,?serialize:Serializer):Outcome<String,Bucket<T>> {
     var p = Core.outcome();
     _db.run("create table if not exists "+bucketName+" (__obj text);",function(err) {
         if (err != null) {
@@ -37,7 +37,7 @@ class Sqlite3Store implements Store {
           return;
         }
         
-        var b:Bucket<T> = new cloudshift.data.Sqlite3Bucket(this,bucketName);
+        var b:Bucket<T> = new cloudshift.data.Sqlite3Bucket(this,bucketName,serialize);
         _buckets.set(bucketName,b);
         p.resolve(Right(b));
       });
