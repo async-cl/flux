@@ -16,7 +16,7 @@ typedef Serializer = {
 
 interface Store {
   function bucket<T>(bucketName:String,?serialize:Serializer):Outcome<String,Bucket<T>>;
-  function hash<T>(bucketName:String):Outcome<String,BHash<T>>;
+  function hash<T>(bucketName:String,?serialize:Serializer):Outcome<String,BHash<T>>;
   function name():String;
   function lookupBucket<T>(bucketName:String):Option<Bucket<T>>;
 }

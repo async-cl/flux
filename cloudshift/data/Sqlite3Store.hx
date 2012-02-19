@@ -20,7 +20,7 @@ class Sqlite3Store implements Store {
     _name = name;
     _db = new Database(name);
     _buckets = new Hash();
-    
+
     _db.run("create table if not exists __links(ch_bkt text, ch_oid int,p_bkt text,p_oid int);",function(err) {
         if (err != null) 
           throw "can't create __links for store:"+name;
@@ -44,7 +44,7 @@ class Sqlite3Store implements Store {
     return p;
   }
 
-  public function hash<T>(bucketName:String):Outcome<String,BHash<T>> {
+  public function hash<T>(bucketName:String,?serializer:Serializer):Outcome<String,BHash<T>> {
     var p = Core.outcome();
     _db.run("create table if not exists " + bucketName + " (__hash text primary key unique,obj text);",function(err) {
         if (err != null) {
@@ -52,7 +52,7 @@ class Sqlite3Store implements Store {
           return;
         }
         
-        var bh:BHash<T> = new cloudshift.data.Sqlite3BHash(this,bucketName);
+        var bh:BHash<T> = new cloudshift.data.Sqlite3BHash(this,bucketName,serializer);
         p.resolve(Right(bh));
       });
     return p;

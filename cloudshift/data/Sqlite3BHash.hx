@@ -8,16 +8,25 @@ import cloudshift.externs.Sqlite3;
 class Sqlite3BHash<T> implements BHash<T>  {
   var _db:Database;
   var _table:String;
-  
-  public function new(store:Sqlite3Store,name:String) {
+  var _serialize:Dynamic->String;
+  var _deserialize:String->Dynamic;
+
+  public function new(store:Sqlite3Store,name:String,?serialize:Serializer) {
     _db = store.db();
     _table = name;
+
+    if (serialize == null) 
+      serialize = Data.jsonSerializer();
+    
+    _serialize = serialize.serialize;
+    _deserialize= serialize.deSerialize;
+
   }
   
   public function set(key:String,val:T):Outcome<String,T> {
     var
       p = Core.outcome(),
-      obj = haxe.Serializer.run(val),
+      obj = _serialize(val),
       ins = 'insert or replace into ';
     
     _db.run(ins + _table + "(__hash,obj) values(?,?)",[key,obj],function(err) {
@@ -30,7 +39,7 @@ class Sqlite3BHash<T> implements BHash<T>  {
   public function get(key):Outcome<String,T> {
     var p = Core.outcome();
     _db.get("select obj from "+_table+" where __hash='"+key+"'",function(err,obj) {
-        p.resolve((err != null) ? Left(err) : Right(haxe.Unserializer.run(new String(obj.obj))));
+        p.resolve((err != null) ? Left(err) : Right(_deserialize(new String(obj.obj))));
       });    
     return p;
   }
@@ -73,7 +82,7 @@ class Sqlite3BHash<T> implements BHash<T>  {
           p.resolve(Left(new String(err)));
           return;
         }
-        vals.push(haxe.Unserializer.run(row.obj));
+        vals.push(_deserialize(row.obj));
       },function() {
         p.resolve(Right(vals));
       });
