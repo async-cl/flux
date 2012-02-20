@@ -6,6 +6,7 @@ import cloudshift.Core;
 import cloudshift.Http;
 import cloudshift.Remote;
 import cloudshift.data.RemoteBucketProxy;
+import cloudshift.data.RemoteHashProxy;
 
 typedef Serializer = {
   var serialize:Dynamic->String;
@@ -71,8 +72,13 @@ class Data {
     return p;
   }
 
-  public static function serve<T>(http:HttpServer,bucket:Bucket<T>,url:String) {
+  public static function serveBucket<T>(http:HttpServer,bucket:Bucket<T>,url:String) {
     var rem = Remote.provider("Store",new RemoteBucketProxy(bucket));
+    http.handler(new EReg(url,""),rem.httpHandler);
+  }
+
+  public static function serveHash<T>(http:HttpServer,hash:BHash<T>,url:String) {
+    var rem = Remote.provider("Hash",new RemoteHashProxy(hash));
     http.handler(new EReg(url,""),rem.httpHandler);
   }
 

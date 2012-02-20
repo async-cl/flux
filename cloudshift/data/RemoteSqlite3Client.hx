@@ -10,27 +10,27 @@ import cloudshift.Data;
 using cloudshift.Mixin;
 
 private class BucketProxy extends haxe.remoting.AsyncProxy<cloudshift.data.RemoteBucketProxy> { }
+private class HashProxy extends haxe.remoting.AsyncProxy<cloudshift.data.RemoteHashProxy> { }
 
 class RemoteSqlite3Client implements Store {
   var _url:String;
   var _ready:Outcome<String,Store>;
-  var _proxy:BucketProxy;
   
   public function new(ready:Outcome<String,Store>,url:String) {
-    _url = url;
+    _url = (url.endsWith("/")) ? url : url + "/" ;
     _ready = ready;
     ready.resolve(Right(cast this));
   }
 
   public function bucket<T>(bucketName:String,?serialize:Serializer):Outcome<String,Bucket<T>> {
     var p = Core.outcome();
-    new RemoteBucket(p,bucketName,_url);
+    new RemoteBucket(p,bucketName,_url+bucketName);
     return p;
   }
 
-  public function hash<T>(bucketName:String,?serialize:Serializer):Outcome<String,BHash<T>> {
+  public function hash<T>(hashName:String,?serialize:Serializer):Outcome<String,BHash<T>> {
     var prm = Core.outcome();   
-    new RemoteHash(prm,bucketName,_proxy);
+    new RemoteHash(prm,hashName,_url+hashName);
     return prm;
   }
   
@@ -167,35 +167,56 @@ private class RemoteHash<T> implements BHash<T> {
 
   var _ready:Outcome<String,BHash<T>>;
   var _name:String;
-  var _proxy:BucketProxy;
+  var _proxy:HashProxy;
   
-  public function new(ready:Outcome<String,BHash<T>>,name:String,proxy:BucketProxy) {
+  public function new(ready:Outcome<String,BHash<T>>,name:String,url:String) {
     _ready = ready;
     _name = name;
-    _proxy = proxy;
+    
+     var cnx = haxe.remoting.HttpAsyncConnection.urlConnect(url);
+     cnx.setErrorHandler( function(err) Core.error(Std.string(err)) );
+     _proxy = new HashProxy(cnx.Hash);
+    var forTyper:BHash<T> = this;
+    ready.resolve(Right(forTyper));
   }
+  
   public function get(key:String):Outcome<String,T> {
     var prm = Core.outcome();
+    _proxy.get(key,function(either) {
+        prm.resolve(either);
+      });
     return prm;
   }
   
   public function set(key:String,val:T):Outcome<String,T> {
     var prm = Core.outcome();
+    _proxy.set(key,val,function(either) {
+        prm.resolve(either);
+      });
     return prm;
   }
   
   public function remove(key:String):Outcome<String,String> {
     var prm = Core.outcome();
+    _proxy.remove(key,function(either) {
+        prm.resolve(either);
+      });
     return prm;
   }
   
   public function keys(?like:String):Outcome<String,Array<String>> {
     var prm = Core.outcome();
+    _proxy.keys(like,function(either) {
+        prm.resolve(either);
+      });
     return prm;
   }
   
   public function values(?like:String):Outcome<String,Array<T>> {
     var prm = Core.outcome();
+    _proxy.keys(like,function(either) {
+        prm.resolve(cast either);
+      });
     return prm;
   }
 
