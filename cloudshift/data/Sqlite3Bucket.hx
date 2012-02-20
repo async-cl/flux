@@ -42,7 +42,9 @@ class Sqlite3Bucket<T> implements Bucket<T> {
     addField(_table,name,typeHint,unique).deliver(function(fieldAdded) {
         switch(fieldAdded) {
         case Left(msg):
-          trace(msg);
+          if (msg.indexOf("duplicate column") == -1) {
+            throw msg;
+          }
           prm.resolve(Right(true));
         case Right(_):
           addPhysicalIndex(_table,name,unique).deliver(function(added) {
@@ -62,7 +64,7 @@ class Sqlite3Bucket<T> implements Bucket<T> {
   addField(table:String,name:String,typeHint:String,unique:Bool):Future<Either<String,Bool>> {
     var prm = Core.future();
     _db.exec("alter table "+table+" add "+name+" "+typeHint,function(err) {
-        prm.resolve((err != null) ? Left(err) : Right(true));
+        prm.resolve((err != null) ? Left(new String(err)) : Right(true));
       });
     return prm;
   }
@@ -87,7 +89,7 @@ class Sqlite3Bucket<T> implements Bucket<T> {
         
         _db.each(sql,[],function(err,row) {
             if (err != null) {
-              prm.resolve(Left(err));
+              prm.resolve(Left(new String(err)));
               return;
             }
 
@@ -113,7 +115,7 @@ class Sqlite3Bucket<T> implements Bucket<T> {
         _db.each(sql,[],function(err,row) {
             if (err != null) {
               trace("error creatig index:"+err);
-              p.resolve(Left(err));
+              p.resolve(Left(new String(err)));
               return;
             }
             
@@ -126,7 +128,7 @@ class Sqlite3Bucket<T> implements Bucket<T> {
               _db.exec(update,function(err) {
                   if (err != null) {
                     trace("update err:"+err);
-                    p.resolve(Left(err));
+                    p.resolve(Left(new String(err)));
                   }
                 });
             }                    
@@ -151,7 +153,7 @@ class Sqlite3Bucket<T> implements Bucket<T> {
 
     _db.run(sql,function(err) {
         if (err != null) {
-          p.resolve(Left(err));
+          p.resolve(Left(new String(err)));
           return;
         }
         p.resolve(Right(o));
@@ -222,7 +224,7 @@ class Sqlite3Bucket<T> implements Bucket<T> {
     _db.get('select __obj from '+_table+' where rowid='+id,function(err,row) {
 
         if (err != null) {
-          p.resolve(Left(err));
+          p.resolve(Left(new String(err)));
           return;
         }
 

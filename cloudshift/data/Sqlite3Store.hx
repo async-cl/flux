@@ -16,16 +16,16 @@ class Sqlite3Store implements Store {
   var _indexString:String;
   var _buckets:Hash<Bucket<Dynamic>>;
   
-  public function new(prm:Future<Store>,name:String) {
+  public function new(prm:Outcome<String,Store>,name:String) {
     _name = name;
     _db = new Database(name);
     _buckets = new Hash();
 
     _db.run("create table if not exists __links(ch_bkt text, ch_oid int,p_bkt text,p_oid int);",function(err) {
         if (err != null) 
-          throw "can't create __links for store:"+name;
+          prm.resolve(Left("can't create __links for store:"+name));
 
-        prm.resolve(this);
+        prm.resolve(Right(cast this));
       });
   }
 

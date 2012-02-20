@@ -3,11 +3,9 @@ package cloudshift;
 
 import cloudshift.Core;
 
-#if DATAONLINE
 import cloudshift.Http;
 import cloudshift.Remote;
 import cloudshift.data.RemoteBucketProxy;
-#end
 
 typedef Serializer = {
   var serialize:Dynamic->String;
@@ -62,27 +60,21 @@ enum StoreKind {
 
 
 class Data {
-  public static function store<T>(kind:StoreKind):Future<Store> {
-    var p = Core.future();
+  public static function store<T>(kind:StoreKind):Outcome<String,Store> {
+    var p = Core.outcome();
     switch(kind) {
     case SQLITE(name):
-      #if nodejs
       new cloudshift.data.Sqlite3Store(p,name);
-      #end
     case REMOTESQLITE(url):
-      #if DATAONLINE
       new cloudshift.data.RemoteSqlite3Client(p,url);
-      #end
     }
     return p;
   }
 
-  #if DATAONLINE
-  public static function bucketOnline<T>(http:HttpServer,bucket:Bucket<T>,url:String) {
+  public static function serve<T>(http:HttpServer,bucket:Bucket<T>,url:String) {
     var rem = Remote.provider("Store",new RemoteBucketProxy(bucket));
-    http.handler(new EReg(url+bucket.name(),""),rem.httpHandler);
+    http.handler(new EReg(url,""),rem.httpHandler);
   }
-  #end
 
   public static function jsonSerializer():Serializer {
     return { serialize:Core.stringify,deSerialize:Core.parse};
