@@ -47,7 +47,7 @@ class HttpImpl implements HttpServer,implements Part<HostPort,HttpServer,HttpEve
 
     _index = "index.html";
     _root = null;
-    _serverName = "Cloudshift 0.1";
+    _serverName = "Cloudshift 0.2.3";
     
     _getHandler = defaultGetHandler;
     _cache = new Hash();

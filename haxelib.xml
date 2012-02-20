@@ -4,5 +4,5 @@
     <tag v="javascript"/>
     <tag v="js"/>
     <description>A haXe Stack for Node.js</description>
-    <version name="0.2.2">fix skipped push in Flow</version>
+    <version name="0.2.3">fix remote buckets/hashes</version>
 </project>
