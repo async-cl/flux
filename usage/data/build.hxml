@@ -1,0 +1,23 @@
+
+-cp ../../../hx-node
+-cp ../../
+-cp .
+-js remoteSource.js
+-D nodejs
+-main RemoteSource
+--macro cloudshift.core.JSGenerator.use()
+-cmd echo compiled server
+--times
+
+--next
+
+-cp ../../../hx-node
+-cp ../../
+-cp .
+-D nodejs
+-main RemoteClient
+--macro cloudshift.core.JSGenerator.use()
+-js remoteClient.js
+-cmd echo compiled client
+
+
