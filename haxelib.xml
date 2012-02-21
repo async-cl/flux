@@ -1,4 +1,4 @@
-<project name="cloudshift" url="http://github.com/cloudshift/cloudshift" license="BSD">
+<project name="cloudshift" url="http://www.cloudshift.cl" license="BSD">
     <user name="cloudshift"/>
     <tag v="node.js"/>
     <tag v="javascript"/>
