@@ -15,7 +15,7 @@ class RemoteImpl extends Context, implements RemoteProvider {
       resp.end("bad request");
     }
 
-    HttpImpl.parseFields(req,function(flds) {
+    HttpImpl.parseFields(req,function(flds,optFiles) {
         var data = flds.get("__x");
         if (data != null) {
           processRequest(data,this,function(d) {

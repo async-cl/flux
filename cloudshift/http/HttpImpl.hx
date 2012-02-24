@@ -1,6 +1,6 @@
 /*
 
-  hxcomplete: -D nodejs
+  hxc: -D nodejs
  */
 
 package cloudshift.http;
@@ -141,28 +141,37 @@ class HttpImpl implements HttpServer,implements Part<HostPort,HttpServer,HttpEve
     _getHandler = serve;
     return this;
   }
-  
+
   function
   defaultGetHandler(path:String,req:NodeHttpServerReq,resp:NodeHttpServerResp,statusCode:Int) {
     do404(req,resp);
   }
 
   public function
-  fields(req:NodeHttpServerReq,cb:Hash<String>->Void) {
-    parseFields(req,cb);
+  fields(req:NodeHttpServerReq,cb:TFields,uploadDir="/tmp") {
+    parseFields(req,cb,uploadDir);
   }
 
   public static function
-  parseFields(req:NodeHttpServerReq,cb:Hash<String>->Void) {
+  parseFields(req:NodeHttpServerReq,cb:TFields,?uploadDir:String) {
       var
         form:Dynamic = untyped __js__('new cloudshift.http.HttpImpl._formidable.IncomingForm()'),
-        fields = new Hash<String>();
+        fields = new Hash<String>(),
+        files:Array<{field:String,file:TUploadFile}> = null;
+
+      if (uploadDir != null) form.uploadDir = uploadDir;
       
       form.on('field',function(field,value) {
           fields.set(Std.string(field),Std.string(value));
         })
+        .on('file',function(field,file) {
+            if (files == null) files = [];
+            files.push({field:field,file:file});
+          })
         .on('end', function() {
-            cb(fields);
+            var
+              fls = (files.length > 0) ? Some(files) : None;
+            cb(fields,fls);
           });
       form.parse(req);
   }

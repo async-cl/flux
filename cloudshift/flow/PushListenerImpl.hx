@@ -78,7 +78,7 @@ class PushListenerImpl implements Conduit {
 
   public function
   postHandler(re:EReg,req:NodeHttpServerReq,res:NodeHttpServerResp) {
-    HttpImpl.parseFields(req,function(flds) {
+    HttpImpl.parseFields(req,function(flds,files) {
         var
           serialized = flds.get("z"),
           pkt:Pkt<Dynamic> = haxe.Unserializer.run(serialized),

@@ -1,6 +1,7 @@
 
 package cloudshift.http;
 
+import cloudshift.Http;
 import cloudshift.Core;
 using cloudshift.Mixin;
 
@@ -203,7 +204,7 @@ class Neko {
      Get the multipart parameters as an hashtable. The data
      cannot exceed the maximum size specified.
   **/
-  public static function getMultipart(req:NodeHttpServerReq,cb:Hash<String>->Void ) {
+  public static function getMultipart(req:NodeHttpServerReq,cb:TFields ) {
     cloudshift.http.HttpImpl.parseFields(req,cb);
   }
 

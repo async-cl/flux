@@ -1,9 +1,7 @@
 
--cp ../../core
--cp ../../../node
+-cp ../../
+-cp ../../../hx-node
 -cp ../
 -D nodejs
--D futurejs
--lib monax
 -js test.js
 -main TestFs
