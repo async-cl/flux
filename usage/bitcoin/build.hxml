@@ -1,0 +1,13 @@
+
+-cp ../../../hx-node
+-cp ../../
+-cp .
+-js btc.js
+-D nodejs
+-main Btc
+--macro cloudshift.core.JSGenerator.use()
+-cmd echo compiled server
+--times
+
+
+
