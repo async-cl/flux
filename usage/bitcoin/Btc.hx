@@ -65,6 +65,8 @@ class Btc {
     bitcoin.receivedByAccount("from tradehill").deliver(function(res) {
         trace("recieved from tradehill="+res.result);
       });
+
+
     
     /*
     bitcoin.accounts().deliver(function(accs) {

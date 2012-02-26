@@ -131,6 +131,10 @@ class Bitcoin {
     return cast jsonrpc("getaccount",[bitcoinaddress]);
   }
 
+  /**
+     returns the same address until coins are received on that address; once
+     coins have been received, it will generate and return a new address.
+  */
   public  function
   accountAddress(account:BtcAccount):BtcResponse<BtcAddress> {
     return cast jsonrpc("getaccountaddress",[account]);
