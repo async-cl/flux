@@ -19,6 +19,7 @@ typedef RpcResult = {
 
 typedef BtcAccount = String;
 typedef BtcAddress = String;
+typedef BtcTxnID = String;
 typedef BtcAccounts = Array<{account:BtcAccount,balance:Float}>;    
 typedef BtcResponse<T> = Outcome<String,{id:String,result:T}>;
 
@@ -106,11 +107,11 @@ class Bitcoin {
           oc.resolve(Left(err));
         })
       .deliver(function(jsonResult) {
-          var res:RpcResult = Core.parse(jsonResult);
-          if (res.error == null)
-            oc.resolve(Right({id:res.id,result:res.result}));
-          else
-            oc.resolve(Left(res.error.message));
+            var res:RpcResult = Core.parse(jsonResult);
+            if (res.error == null)
+              oc.resolve(Right({id:res.id,result:res.result}));
+            else
+              oc.resolve(Left(res.error.message));
         });
     return oc;
   }
@@ -249,6 +250,97 @@ class Bitcoin {
   listReceivedByAddress(minConf=1,includeEmpty=false):BtcResponse<Array<BtcReceivedAddress>> {
     return cast jsonrpc("listreceivedbyaddress",[minConf,includeEmpty]);
   }
-  
+
+
+  /* CHECK */
+  public function
+  transactionsSinceBlock(?blockId:String,targetConfirmations=1):BtcResponse<Array<BtcTxn>> {
+    var p = (blockId != null) ? [blockId,targetConfirmations] : [];
+    return cast jsonrpc("listsinceblock",[blockId,targetConfirmations]);
+  }
+
+  public function
+  move(from:BtcAccount,to:BtcAccount,amount:Float,minConf=1,?comment:String):BtcResponse<Dynamic> {
+    return cast jsonrpc("move",[from,to,amount,minConf,comment]);
+  }
+
+  public function
+  sendFrom(fromAccount:BtcAccount,to:BtcAddress,amount:Float,minConf=1,?comment:String,?commentTo:String):BtcResponse<BtcTxnID> {
+    return cast jsonrpc("sendfrom",[fromAccount,to,amount,minConf,comment,commentTo]);
+  }
+
+  public function
+  sendMany(fromAccount:BtcAccount,many:Dynamic,minConf=1,?comment:String):BtcResponse<BtcTxnID> {
+    return cast jsonrpc("sendmany",[fromAccount,many,minConf,comment]);
+  }
+
+  public function
+  sendToAddress(address:BtcAddress,amount:Float,minConf=1,?comment:String,?commentTo:String):BtcResponse<BtcTxnID> {
+    return cast jsonrpc("sendtoaddress",[address,amount,minConf,comment,commentTo]);
+  }
+
+  /**
+     Sets the account associated with the given address. Assigning address that
+     is already assigned to the same account will create a new address
+     associated with that account.
+   */
+  public function
+  setAccount(bitcoinAddress:BtcAddress,account:BtcAccount) {
+    return jsonrpc("setaccount",[bitcoinAddress,account]);
+  }
+
+  public function
+  setGenerate(generate:Bool,genProcLimit=-1) {
+    return jsonrpc("setgenerate",[generate,genProcLimit]);
+  }
+
+  public function
+  signMessage(address:BtcAddress,message:String) {
+    return jsonrpc("signmessage",[address,message]);
+  }
+
+  public function
+  setTxFee(amount:Float) {
+    return jsonrpc("settxfee",[amount]);
+  }
+
+  public function
+  stop() {
+    return jsonrpc("stop",[]);
+  }
+
+  public function
+  validateAddress(address:BtcAddress) {
+    return jsonrpc("validateaddress",[address]);
+  }
+
+  public function
+  verifyMessage(address:BtcAddress,signature:Dynamic,message:Dynamic) {
+    return jsonrpc("verifymessage",[address,signature,message]);
+  }
+
+
+  /**
+     Removes the wallet encryption key from memory, locking the wallet. After
+     calling this method, you will need to call walletpassphrase again before being
+     able to call any methods which require the wallet to be unlocked.  public
+     function
+  */
+  walletLock() {
+    return jsonrpc("walletlock",[]);
+  }
+
+  /**
+     Stores the wallet decryption key in memory for <timeout> seconds.
+   */
+  public function
+  walletPassPhrase(passphrase:String,timeout:Int) {
+    return jsonrpc("walletpassphrase",[passphrase,timeout]);
+  }
+
+  public function
+  walletChangePassPhrase(oldpp:String,newpp:String) {
+    return jsonrpc("walletchangepassphrase",[oldpp,newpp]);
+  }
   
 }
