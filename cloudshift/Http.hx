@@ -13,7 +13,7 @@ typedef TUploadFile = {
 }
 
 typedef THandler = EReg->NodeHttpServerReq->NodeHttpServerResp->Void;
-typedef TFiles = Option<Array<{field:String,file:TUploadFile}>>;
+typedef TFiles = Array<{field:String,file:TUploadFile}>;
 typedef TFields = Hash<String>->TFiles->Void;
 
 
