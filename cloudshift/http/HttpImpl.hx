@@ -170,7 +170,8 @@ class HttpImpl implements HttpServer,implements Part<HostPort,HttpServer,HttpEve
           })
         .on('end', function() {
             var
-              fls = (files.length > 0) ? Some(files) : None;
+              fls = (files != null && files.length > 0) ? Some(files) : None;
+
             cb(fields,fls);
           });
       form.parse(req);
