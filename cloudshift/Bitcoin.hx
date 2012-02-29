@@ -134,6 +134,8 @@ class Bitcoin {
   /**
      returns the same address until coins are received on that address; once
      coins have been received, it will generate and return a new address.
+
+     
   */
   public  function
   accountAddress(account:BtcAccount):BtcResponse<BtcAddress> {
@@ -214,7 +216,8 @@ class Bitcoin {
      specified (recommended), it is added to the address book so payments received
      with the address will be credited to [account].  public
   */
-  function newAddress(?account:BtcAccount):BtcResponse<BtcAddress> {
+  public function
+  newAddress(?account:BtcAccount):BtcResponse<BtcAddress> {
     var p = (account !=null) ? [account] : [];
     return cast jsonrpc("getnewaddress",p);
   }
@@ -330,7 +333,7 @@ class Bitcoin {
      able to call any methods which require the wallet to be unlocked.  public
      function
   */
-  walletLock() {
+  public function walletLock() {
     return jsonrpc("walletlock",[]);
   }
 
