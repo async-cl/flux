@@ -9,69 +9,85 @@ class Btc {
   public static function
   main() {
 
-    var bitcoin = new Bitcoin("localhost",8332,"ritchie","elena");
-    bitcoin.balance().deliver(function(pkt) {
-        var b:Float = pkt.result; 
+    var btc = new Bitcoin("localhost",8332,"ritchie","elena");
+    btc.balance().deliver(function(b) {
         trace("balance = "+b);
       });
 
     
-    bitcoin.transaction("a2fca474dc815873806f800f8dd5b5fd0b5ee4396bc1537c7e1ae96377a2f7a9")
+    btc.transaction("a2fca474dc815873806f800f8dd5b5fd0b5ee4396bc1537c7e1ae96377a2f7a9")
       .deliver(function(trans) {
           trace(trans);
           });
 
-    bitcoin.account("16EjYirZNFR8QLokR4CSCfNa3ARxnTNhSj").deliver(function(res) {
-        trace("account="+res.result);
-        bitcoin.accountAddress(res.result).deliver(function(res) {
-          trace("address= "+res.result);
+    btc.account("151ubHvkw8f9eLHWddMSv4ex8zk8hEYhtu").deliver(function(account) {
+        trace("account="+account);
+        btc.listReceivedByAccount(account).deliver(function(res) {
+            trace("------------------------");
+            for (t in res) {
+              trace(t.account + ": "+t.amount);
+            }
+            trace("------------------------");
+          });
+
+        /*
+        btc.accountAddress(account).deliver(function(address) {
+          trace("address= "+address);
+          
         });
+        */
       });
 
-    bitcoin.addressesByAccount("From tradehill").deliver(function(res) {
+    btc.addressesByAccount("From tradehill").deliver(function(res) {
         trace(res);
       });
 
-    bitcoin.blockCount().deliver(function(res) {
-        trace("blockcount = "+res.result);
+    btc.blockCount().deliver(function(res) {
+        trace("blockcount = "+res);
       });
 
-    bitcoin.connectionCount().deliver(function(res) {
-        trace("connection count = "+res.result);
+    btc.connectionCount().deliver(function(res) {
+        trace("connection count = "+res);
       });
 
-    bitcoin.difficulty().deliver(function(res) {
-        trace("difficulty = "+res.result);
+    btc.difficulty().deliver(function(res) {
+        trace("difficulty = "+res);
       });
 
-    bitcoin.generate().deliver(function(res) {
-        trace("generating = "+res.result);
+    btc.generate().deliver(function(res) {
+        trace("generating = "+res);
       });
 
-    bitcoin.hashesPerSec().deliver(function(res) {
-        trace("hashes persec = "+res.result);
+    btc.hashesPerSec().deliver(function(res) {
+        trace("hashes persec = "+res);
       });
 
-    bitcoin.info().deliver(function(res) {
-        trace("info="+Core.stringify(res.result));
+    btc.info().deliver(function(res) {
+        trace("info="+Core.stringify(res));
       });
 
     /*
-    bitcoin.memoryPool().deliver(function(res) {
+    btc.memoryPool().deliver(function(res) {
         trace("mempool="+Core.stringify(res));
       });
     */
     
-    bitcoin.receivedByAccount("from tradehill").deliver(function(res) {
-        trace("recieved from tradehill="+res.result);
+    btc.receivedByAccount("elena@ritchie.com").deliver(function(res) {
+        trace("recieved by elena="+res);
       });
 
 
+    btc.transactionsSinceBlock("169110").deliver(function(listsince) {
+        for (t in listsince.transactions) {
+          trace(Std.format("--> ${t.amount} ${t.account}"));
+        }
+      });
+
     
     /*
-    bitcoin.accounts().deliver(function(accs) {
+    btc.accounts().deliver(function(accs) {
         accs.foreach(function(acc) {
-            bitcoin.transactions(acc.account).deliver(function(trans) {
+            btc.transactions(acc.account).deliver(function(trans) {
                 trace(trans);
               });
           });

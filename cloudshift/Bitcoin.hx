@@ -21,7 +21,7 @@ typedef BtcAccount = String;
 typedef BtcAddress = String;
 typedef BtcTxnID = String;
 typedef BtcAccounts = Array<{account:BtcAccount,balance:Float}>;    
-typedef BtcResponse<T> = Outcome<String,{id:String,result:T}>;
+typedef BtcOutcome<T> = Outcome<String,T>;
 
 typedef BtcDetails = {
     var account:String;
@@ -32,12 +32,18 @@ typedef BtcDetails = {
 
 typedef BtcTxn = {
     var amount:Float;
+    var account:String;
     var confirmations:Int;
     var txid:String;
     var time:String;
     var details:Array<BtcDetails>;
 }
-    
+
+typedef BtcListSinceTxn = {
+    var transactions:Array<BtcTxn>;
+    var lastBlock:String;
+};
+
 typedef BtcInfo = {
     var version:String;
     var balance:Float;
@@ -76,10 +82,11 @@ typedef BtcReceivedAddress = { > BtcReceivedAccount,
 
 class Bitcoin {
 
-  static var id=0;
+  static var defaultId = 0;
   var _user:String;
   var _pass:String;
   var _url:String;
+  var _lastID:String;
   
   public function new(host:String,port=8332,user:String,pass:String) {
     _url = Std.format("http://$host:$port/");
@@ -89,17 +96,16 @@ class Bitcoin {
   }
   
   function
-  jsonrpc(method:String,params:Array<Dynamic>):BtcResponse<Dynamic> {
+  jsonrpc(method:String,params:Array<Dynamic>,?id:String):BtcOutcome<Dynamic> {
     var
+      mid = (id == null) ? Std.string(defaultId++) : id,
       oc = Core.outcome(),
-      req = Core.stringify({method:method,params:params,id:Std.string(id++)}),
-      headers = {};
+      req = Core.stringify({method:method,params:params,id:mid}),
+      headers = {},
+      buff = new NodeBuffer(_user + ":" + _pass).toString('base64'),
+      auth = 'Basic ' + buff;
 
     Reflect.setField(headers,"Content-Length",req.length);
-
-    var buff = new NodeBuffer(_user + ":" + _pass).toString('base64');
-    var auth = 'Basic ' + buff;
-      
     Reflect.setField(headers,'Authorization',auth);
 
     Http.post(_url,req,false,headers)
@@ -108,85 +114,86 @@ class Bitcoin {
         })
       .deliver(function(jsonResult) {
             var res:RpcResult = Core.parse(jsonResult);
-            if (res.error == null)
-              oc.resolve(Right({id:res.id,result:res.result}));
-            else
-              oc.resolve(Left(res.error.message));
+            _lastID = res.id;
+            oc.resolve((res.error == null) ? Right(res.result) : Left(res.error.message));
         });
     return oc;
   }
+
+  /* the last jsonrpc packet id returned */
+  public function getLastID() {
+    return _lastID;
+  }
   
   public function
-  backupWallet(destination:String):BtcResponse<Dynamic> {
-    return jsonrpc("backupwallet",[destination]);
+  backupWallet(destination:String,?id:String):BtcOutcome<Dynamic> {
+    return jsonrpc("backupwallet",[destination],id);
   }
 
   public function
-  encryptWallet(passphrase:String):BtcResponse<Dynamic> {
-    return jsonrpc("encryptwallet",[passphrase]);
+  encryptWallet(passphrase:String,?id:String):BtcOutcome<Dynamic> {
+    return jsonrpc("encryptwallet",[passphrase],id);
   }
 
   public function
-  account(bitcoinaddress:String):BtcResponse<BtcAccount> {
-    return cast jsonrpc("getaccount",[bitcoinaddress]);
+  account(bitcoinaddress:String,?id:String):BtcOutcome<BtcAccount> {
+    return cast jsonrpc("getaccount",[bitcoinaddress],id);
   }
 
   /**
      returns the same address until coins are received on that address; once
      coins have been received, it will generate and return a new address.
-
-     
   */
   public  function
-  accountAddress(account:BtcAccount):BtcResponse<BtcAddress> {
-    return cast jsonrpc("getaccountaddress",[account]);
+  accountAddress(account:BtcAccount,?id:String):BtcOutcome<BtcAddress> {
+    return cast jsonrpc("getaccountaddress",[account],id);
   }
 
   public  function
-  addressesByAccount(account:String):BtcResponse<Array<BtcAddress>> {
-    return cast jsonrpc("getaddressesbyaccount",[account]);
+  addressesByAccount(account:String,?id:String):BtcOutcome<Array<BtcAddress>> {
+    return cast jsonrpc("getaddressesbyaccount",[account],id);
   }
 
   public function
-  balance(?account:String,minconf=1):BtcResponse<Float> {
+  balance(?account:String,minconf=1,?id:String):BtcOutcome<Float> {
     var acc = (account != null) ? [account,minconf] : [];
-    return cast jsonrpc("getbalance",acc);
+    return cast jsonrpc("getbalance",acc,id);
   }
 
   public function
-  transaction(txid:String):BtcResponse<BtcTxn> {
-    return cast jsonrpc("gettransaction",[txid]);
+  transaction(txid:String,?id:String):BtcOutcome<BtcTxn> {
+    return cast jsonrpc("gettransaction",[txid],id);
   }
 
   public function
-  blockCount():BtcResponse<Int> {
-    return cast jsonrpc("getblockcount",[]);
+  blockCount(?id:String):BtcOutcome<Int> {
+    return cast jsonrpc("getblockcount",[],id);
   }
 
   public  function
-  connectionCount():BtcResponse<Int> {
-    return cast jsonrpc("getconnectioncount",[]);
+  connectionCount(?id:String):BtcOutcome<Int> {
+    return cast jsonrpc("getconnectioncount",[],id);
   }
 
   public  function
-  difficulty():BtcResponse<Int> {
-    return cast jsonrpc("getdifficulty",[]);
+  difficulty(?id:String):BtcOutcome<Int> {
+    return cast jsonrpc("getdifficulty",[],id);
   }
 
   public function
-  generate():BtcResponse<Bool> {
-    return cast jsonrpc("getgenerate",[]);
+  generate(?id:String):BtcOutcome<Bool> {
+    return cast jsonrpc("getgenerate",[],id);
   }
 
   public function
-  hashesPerSec():BtcResponse<Int> {
-    return cast jsonrpc("gethashespersec",[]);
+  hashesPerSec(?id:String):BtcOutcome<Int> {
+    return cast jsonrpc("gethashespersec",[],id);
   }
   
   public function
-  accounts(minconf=10):Outcome<String,BtcAccounts> {
+  accounts(minconf=10,?id:String):Outcome<String,BtcAccounts> {
     var oc = Core.outcome();
-    jsonrpc("listaccounts",[minconf]).deliver(function(res) {
+    jsonrpc("listaccounts",[minconf],id).deliver(function(res) {
         var a:BtcAccounts = [];
         for (f in Reflect.fields(res.result))
           a.push({account:f,balance:Reflect.field(res.result,f)});
@@ -196,19 +203,19 @@ class Bitcoin {
   }
   
   public function
-  transactions(account:BtcAccount,count=10,from=0):BtcResponse<Dynamic> {
-    return cast jsonrpc("listtransactions",[account,count,from]);
+  transactions(account:BtcAccount,count=10,from=0,?id:String):BtcOutcome<Dynamic> {
+    return cast jsonrpc("listtransactions",[account,count,from],id);
   }
 
   public function
-  info():BtcResponse<BtcInfo> {
-    return cast jsonrpc("getinfo",[]);
+  info(?id:String):BtcOutcome<BtcInfo> {
+    return cast jsonrpc("getinfo",[],id);
   }
 
   public function
-  memoryPool(?data:Dynamic):BtcResponse<BtcMemPool> {
+  memoryPool(?data:Dynamic,?id:String):BtcOutcome<BtcMemPool> {
     var p = (data != null) ? [data] : [];
-    return cast jsonrpc("getmemorypool",p);
+    return cast jsonrpc("getmemorypool",p,id);
   }
 
   /**
@@ -217,9 +224,9 @@ class Bitcoin {
      with the address will be credited to [account].  public
   */
   public function
-  newAddress(?account:BtcAccount):BtcResponse<BtcAddress> {
+  newAddress(?account:BtcAccount,?id:String):BtcOutcome<BtcAddress> {
     var p = (account !=null) ? [account] : [];
-    return cast jsonrpc("getnewaddress",p);
+    return cast jsonrpc("getnewaddress",p,id);
   }
 
   /**
@@ -228,11 +235,10 @@ class Bitcoin {
      include all transactions to all accounts. (version 0.3.24-beta)
   */
   public function
-  receivedByAccount(?account:BtcAccount,minConf=1):BtcResponse<Float> {
+  receivedByAccount(?account:BtcAccount,minConf=1,?id:String):BtcOutcome<Float> {
     var p = (account != null) ? [account,minConf] : [];
-    return cast jsonrpc("getreceivedbyaccount",p);
+    return cast jsonrpc("getreceivedbyaccount",p,id);
   }
-
 
   /**
      Returns the total amount received by <bitcoinaddress> in transactions with at
@@ -243,47 +249,45 @@ class Bitcoin {
      addresses will always show 0.
   */
   public function
-  receivedByAddress(?address:BtcAddress,minConf=1):BtcResponse<Float> {
+  receivedByAddress(?address:BtcAddress,minConf=1,?id:String):BtcOutcome<Float> {
     var p = (address != null) ? [address,minConf] : [];
-    return cast jsonrpc("getreceivedbyaddress",p);
+    return cast jsonrpc("getreceivedbyaddress",p,id);
   }
 
   public function
-  listReceivedByAccount(minConf=1,includeEmpty=false):BtcResponse<Array<BtcReceivedAccount>> {
-    return cast jsonrpc("listreceivedbyaccount",[minConf,includeEmpty]);
+  listReceivedByAccount(minConf=1,includeEmpty=false,?id:String):BtcOutcome<Array<BtcReceivedAccount>> {
+    return cast jsonrpc("listreceivedbyaccount",[minConf,includeEmpty],id);
   }
 
   public function
-  listReceivedByAddress(minConf=1,includeEmpty=false):BtcResponse<Array<BtcReceivedAddress>> {
-    return cast jsonrpc("listreceivedbyaddress",[minConf,includeEmpty]);
+  listReceivedByAddress(minConf=1,includeEmpty=false,?id:String):BtcOutcome<Array<BtcReceivedAddress>> {
+    return cast jsonrpc("listreceivedbyaddress",[minConf,includeEmpty],id);
   }
 
-
-  /* CHECK */
   public function
-  transactionsSinceBlock(?blockId:String,targetConfirmations=1):BtcResponse<Array<BtcTxn>> {
+  transactionsSinceBlock(?blockId:String,targetConfirmations=1,?id:String):BtcOutcome<BtcListSinceTxn> {
     var p = (blockId != null) ? [blockId,targetConfirmations] : [];
-    return cast jsonrpc("listsinceblock",[blockId,targetConfirmations]);
+    return cast jsonrpc("listsinceblock",p,id);
   }
 
   public function
-  move(from:BtcAccount,to:BtcAccount,amount:Float,minConf=1,?comment:String):BtcResponse<Dynamic> {
-    return cast jsonrpc("move",[from,to,amount,minConf,comment]);
+  move(from:BtcAccount,to:BtcAccount,amount:Float,minConf=1,?comment:String,?id:String):BtcOutcome<Dynamic> {
+    return cast jsonrpc("move",[from,to,amount,minConf,comment],id);
   }
 
   public function
-  sendFrom(fromAccount:BtcAccount,to:BtcAddress,amount:Float,minConf=1,?comment:String,?commentTo:String):BtcResponse<BtcTxnID> {
-    return cast jsonrpc("sendfrom",[fromAccount,to,amount,minConf,comment,commentTo]);
+  sendFrom(fromAccount:BtcAccount,to:BtcAddress,amount:Float,minConf=1,?comment:String,?commentTo:String,?id:String):BtcOutcome<BtcTxnID> {
+    return cast jsonrpc("sendfrom",[fromAccount,to,amount,minConf,comment,commentTo],id);
   }
 
   public function
-  sendMany(fromAccount:BtcAccount,many:Dynamic,minConf=1,?comment:String):BtcResponse<BtcTxnID> {
-    return cast jsonrpc("sendmany",[fromAccount,many,minConf,comment]);
+  sendMany(fromAccount:BtcAccount,many:Dynamic,minConf=1,?comment:String,?id:String):BtcOutcome<BtcTxnID> {
+    return cast jsonrpc("sendmany",[fromAccount,many,minConf,comment],id);
   }
 
   public function
-  sendToAddress(address:BtcAddress,amount:Float,minConf=1,?comment:String,?commentTo:String):BtcResponse<BtcTxnID> {
-    return cast jsonrpc("sendtoaddress",[address,amount,minConf,comment,commentTo]);
+  sendToAddress(address:BtcAddress,amount:Float,minConf=1,?comment:String,?commentTo:String,?id:String):BtcOutcome<BtcTxnID> {
+    return cast jsonrpc("sendtoaddress",[address,amount,minConf,comment,commentTo],id);
   }
 
   /**
@@ -292,40 +296,39 @@ class Bitcoin {
      associated with that account.
    */
   public function
-  setAccount(bitcoinAddress:BtcAddress,account:BtcAccount) {
-    return jsonrpc("setaccount",[bitcoinAddress,account]);
+  setAccount(bitcoinAddress:BtcAddress,account:BtcAccount,?id:String) {
+    return jsonrpc("setaccount",[bitcoinAddress,account],id);
   }
 
   public function
-  setGenerate(generate:Bool,genProcLimit=-1) {
-    return jsonrpc("setgenerate",[generate,genProcLimit]);
+  setGenerate(generate:Bool,genProcLimit=-1,?id:String) {
+    return jsonrpc("setgenerate",[generate,genProcLimit],id);
   }
 
   public function
-  signMessage(address:BtcAddress,message:String) {
-    return jsonrpc("signmessage",[address,message]);
+  signMessage(address:BtcAddress,message:String,?id:String) {
+    return jsonrpc("signmessage",[address,message],id);
   }
 
   public function
-  setTxFee(amount:Float) {
-    return jsonrpc("settxfee",[amount]);
+  setTxFee(amount:Float,?id:String) {
+    return jsonrpc("settxfee",[amount],id);
   }
 
   public function
-  stop() {
-    return jsonrpc("stop",[]);
+  stop(?id:String) {
+    return jsonrpc("stop",[],id);
   }
 
   public function
-  validateAddress(address:BtcAddress) {
-    return jsonrpc("validateaddress",[address]);
+  validateAddress(address:BtcAddress,?id:String) {
+    return jsonrpc("validateaddress",[address],id);
   }
 
   public function
-  verifyMessage(address:BtcAddress,signature:Dynamic,message:Dynamic) {
-    return jsonrpc("verifymessage",[address,signature,message]);
+  verifyMessage(address:BtcAddress,signature:Dynamic,message:Dynamic,?id:String) {
+    return jsonrpc("verifymessage",[address,signature,message],id);
   }
-
 
   /**
      Removes the wallet encryption key from memory, locking the wallet. After
@@ -333,21 +336,21 @@ class Bitcoin {
      able to call any methods which require the wallet to be unlocked.  public
      function
   */
-  public function walletLock() {
-    return jsonrpc("walletlock",[]);
+  public function walletLock(?id:String) {
+    return jsonrpc("walletlock",[],id);
   }
 
   /**
      Stores the wallet decryption key in memory for <timeout> seconds.
    */
   public function
-  walletPassPhrase(passphrase:String,timeout:Int) {
-    return jsonrpc("walletpassphrase",[passphrase,timeout]);
+  walletPassPhrase(passphrase:String,timeout:Int,?id:String) {
+    return jsonrpc("walletpassphrase",[passphrase,timeout],id);
   }
 
   public function
-  walletChangePassPhrase(oldpp:String,newpp:String) {
-    return jsonrpc("walletchangepassphrase",[oldpp,newpp]);
+  walletChangePassPhrase(oldpp:String,newpp:String,?id:String) {
+    return jsonrpc("walletchangepassphrase",[oldpp,newpp],id);
   }
   
 }
