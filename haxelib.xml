@@ -4,5 +4,5 @@
     <tag v="javascript"/>
     <tag v="js"/>
     <description>A haXe Stack for Node.js</description>
-    <version name="0.2.4">add upload, bitcoin module</version>
+    <version name="0.2.4-1">bugfix in form handling introduced last ver</version>
 </project>

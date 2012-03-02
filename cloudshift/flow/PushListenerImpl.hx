@@ -44,6 +44,7 @@ class PushListenerImpl implements Conduit {
               var goodCbs = cbs.filter(function(cb) return cb.fn != null);            
               if (goodCbs.length > 0) {
                 if (now - s.lastConnection > SESSION_EXPIRE) {
+                  trace("expiring session");
                   removeSession(s);
                   notify(ConduitSessionExpire(sessID));
                 }
@@ -73,6 +74,9 @@ class PushListenerImpl implements Conduit {
       _callbacks.remove(session.sessID);
       _sessions.remove(session.sessID); // values() copies into array so this removal should be fine
       session.shutDown();
+      _sessMgr.logout(session.sessID,function(el) {
+          trace("removed from session manager");
+        });
     }
   }
 

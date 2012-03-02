@@ -537,7 +537,7 @@ class Sys {
     Node.fs.unwatchFile(fileName);
   }
   
-  public static function watch(fileName:String,?options:NodeWatchOpt,listener:String->String):Outcome<String,NodeFSWatcher>{
+  public static function watch(fileName:String,?options:NodeWatchOpt,listener:String->String->Void):Outcome<String,NodeFSWatcher>{
     var prm = Core.outcome();
     try {
       var w = Node.fs.watch(fileName,options,listener);

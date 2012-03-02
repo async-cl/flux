@@ -22,6 +22,7 @@ enum ESessionOp {
 interface SessionMgr implements Part<Dynamic,SessionMgr,ESessionOp> {
   function exists(sessID:String,cb:Bool->Void):Void;
   function stash(sessID:String,key:String,?val:Dynamic):Option<Dynamic>;
+  function logout(sessID:String,cb:ESession->Void):Void;
   #if nodejs
   function http():HttpServer;
   #end
