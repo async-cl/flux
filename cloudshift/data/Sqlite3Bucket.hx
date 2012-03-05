@@ -209,13 +209,7 @@ class Sqlite3Bucket<T> implements Bucket<T> {
 
   public function delete(o:T):Outcome<String,T> {
     var prm = Core.outcome();
-    deleteByOid(Data.oid(o))
-      .bad(function(reason) {
-          prm.resolve(Left(reason));
-        })
-      .good(function(deleted) {
-          prm.resolve(Right(o));
-        });
+    deleteByOid(Data.oid(o)).deliver(prm.resolve);
     return prm;
   }
   
