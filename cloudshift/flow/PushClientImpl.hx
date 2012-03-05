@@ -10,7 +10,7 @@ using cloudshift.Mixin;
 using cloudshift.Flow;
 
 class PushClientImpl implements Conduit {
-  public var part_:Part_<ConduitClientStart,Conduit,ConduitEvent>;
+  public var part_:Part_<ConduitClientStart,String,Conduit,ConduitEvent>;
   var _host:String;
   var _port:Int;
   var _url:String;
@@ -21,16 +21,22 @@ class PushClientImpl implements Conduit {
     part_ = Core.part(this);
   }
 
-  public function start_(cs:ConduitClientStart) {
-    var prm = Core.outcome();
+  public function start_(cs:ConduitClientStart,?oc:Outcome<String,Conduit>) {
+    if (oc == null) {
+      trace("creating new oc");
+      oc = Core.outcome();
+    } else
+      Core.info("using existing outcome");
+    
     _url = "http://"+js.Lib.window.location.host;
     _sessID = cs.sessID;
     _parted = false;
     remoteInit(function(ignore) {
-        prm.resolve(Right(cast(this,Conduit)));
+        trace("got remote init, resolving "+_sessID);
+        oc.resolve(Right(cast(this,Conduit)));
         poll();
       });
-    return prm;
+    return oc;
   }
 
   public function stop_(?d:Dynamic) {

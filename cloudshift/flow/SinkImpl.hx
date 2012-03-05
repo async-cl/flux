@@ -10,7 +10,7 @@ using cloudshift.Mixin;
 using cloudshift.Flow;
 
 class SinkImpl implements Sink {
-  public var part_:Part_<Conduit,Sink,SinkEvent>;
+  public var part_:Part_<Conduit,String,Sink,SinkEvent>;
   
   var _pipes:Hash<Pipe<Dynamic>>;
   var _conduit:Array<Conduit>;
@@ -20,13 +20,14 @@ class SinkImpl implements Sink {
     part_ = Core.part(this);
   }
 
-  public function start_(c:Conduit) {
-    var prm = Core.outcome();
+  public function start_(c:Conduit,?oc:Outcome<String,Sink>) {
+    if (oc == null)
+      oc = Core.outcome();
     _conduit = [];
     _pipes = new Hash();
     addConduit(c);
-    prm.resolve(Right(cast(this,Sink)));
-    return prm;
+    oc.resolve(Right(cast(this,Sink)));
+    return oc;
   }
 
   public function stop_(?d):Outcome<String,Dynamic> {

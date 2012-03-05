@@ -25,7 +25,7 @@ class PushListenerImpl implements Conduit {
   
   public static inline var ERROR = 500;
   public static inline var OK = 200;
-  public var part_:Part_<Dynamic,Conduit,ConduitEvent>;
+  public var part_:Part_<Dynamic,String,Conduit,ConduitEvent>;
   
   var _callbacks:Hash<Array<Callback<Dynamic>>>;
   var _sessMgr:SessionMgr;
@@ -56,10 +56,12 @@ class PushListenerImpl implements Conduit {
       },SESSION_EXPIRE,null);
   }
 
-  public function start_(d:Dynamic) {
-    var prm = Core.outcome();
-    prm.resolve(Right(cast(this,Conduit)));
-    return prm;
+  public function start_(d:Dynamic,?oc:Outcome<String,Conduit>) {
+     if (oc == null)
+      oc = Core.outcome();
+     
+     oc.resolve(Right(cast this));
+    return oc;
   }
 
   public function stop_(?d:Dynamic):Outcome<String,Dynamic> {

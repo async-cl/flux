@@ -34,15 +34,15 @@ enum ConduitEvent {
   ConduitNoConnection(sessID:String);
 }
 
-#if nodejs
-interface Conduit implements Part<Dynamic,Conduit,ConduitEvent> {
-#else
-  interface Conduit implements Part<ConduitClientStart,Conduit,ConduitEvent> {
+#if CS_SERVER
+interface Conduit implements Part<Dynamic,String,Conduit,ConduitEvent> {
+#elseif CS_BROWSER
+  interface Conduit implements Part<ConduitClientStart,String,Conduit,ConduitEvent> {
 #end
   function authorize(pipeID:String):Future<Either<String,String>>;
     function leave(pipeID:String):Future<Either<String,String>>;
   function pump(sessID:String,pkt:Dynamic,chanID:String,meta:Dynamic):Void;
-  #if nodejs
+  #if CS_SERVER
   function subscriptions(sessID:String):Hash<Void->Void>;
   function session():SessionMgr;
   #end
@@ -53,7 +53,7 @@ enum SinkEvent {
   ConnectionClose(sessID:String);
 }
 
-interface Sink implements Part<Conduit,Sink,SinkEvent>  {
+  interface Sink implements Part<Conduit,String,Sink,SinkEvent>  {
   function pipe<T>(chanID:String):Pipe<T>;
   function addConduit(conduit:Conduit):Void ;  
   function pipeFromId(chanID:String):Option<Pipe<Dynamic>>;
@@ -62,7 +62,7 @@ interface Sink implements Part<Conduit,Sink,SinkEvent>  {
   function direct<T>(sessID:String):Pipe<T>;
 }
 
-interface Pipe<T> { //implements Part<Dynamic,Pipe<T>,Pkt<T>> {
+interface Pipe<T> { 
     // internal use only
   var _fill:Dynamic->String->Dynamic->Void; 
   function _defaultFill<T>(o:Dynamic,chanID:String,meta:Dynamic):Void;
@@ -80,17 +80,19 @@ interface Pipe<T> { //implements Part<Dynamic,Pipe<T>,Pkt<T>> {
   function peek(cb:EOperation->Void):Void;
 }
 
+  /*
 typedef QuickFlow = {
     var conduit:Conduit;
     var session:SessionMgr;
     var sink:Sink;
 }
+  */
   
 class Flow {
 
   public static var PUSH = Core.CSROOT+"p";
   
-  #if nodejs
+  #if CS_SERVER
  
   public static function
   sink(sessionMgr:SessionMgr):Sink {
@@ -104,17 +106,20 @@ class Flow {
     return pl;
   }
 
-  
+
+  /*
   public static function
   quickFlow() {
     return new cloudshift.flow.QuickFlowImpl();
   }
+  */
  
   
-  #else
+  #elseif CS_BROWSER
 
   public static function
   pushConduit():Conduit {
+    trace("inst PushClientImpl");
     return new cloudshift.flow.PushClientImpl();
   }
 

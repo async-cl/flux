@@ -3,63 +3,63 @@ package cloudshift.session;
 
 import cloudshift.Core;
 import cloudshift.Session;
-#if nodejs
 import cloudshift.Http;
 import cloudshift.Remote;
-#end
 
 using cloudshift.Mixin;
 
-class SessionMgrImpl implements Part<Dynamic,SessionMgr,ESessionOp>, implements SessionMgr {
+import cloudshift.session.SessionMgrProxy;
+
+class SessionMgrImpl extends SessionMgrProxy,
+implements Part<HttpServer,String,SessionMgr,ESessionOp>, implements SessionMgr {
 
   static var sessions = new Hash<Hash<Dynamic>>();
-
-  #if nodejs
-  public var part_:Part_<Dynamic,SessionMgr,ESessionOp>;
-  
+  public var part_:Part_<HttpServer,String,SessionMgr,ESessionOp>;
   var _http:HttpServer;
 
-  public function new(http:HttpServer) {
+  public function new() {
     part_ = Core.part(this);
+  }
+  
+  public function start_(http:HttpServer,?oc:Outcome<String,SessionMgr>) {
+    if (oc == null) 
+      oc = Core.outcome();
+
     _http = http;
     var remote = Remote.provider("Auth",this);
     
     _http.handler(new EReg(Session.REMOTE,""),remote.httpHandler);
+    
+    oc.resolve(Right(cast(this,SessionMgr)));
+    return oc;
+  }
+
+  
+  public function
+  stop_(?d:Dynamic):Outcome<String,Dynamic> {
+    return null;
   }
 
   public function http() {
     return _http;
   }
 
-  #end
-
-  public function start_(d:Dynamic) {
-    trace("in session start");
-    var prm = Core.outcome();
-    prm.resolve(Right(cast(this,SessionMgr)));
-    return prm;
-  }
-
-  public function
-  stop_(?d:Dynamic):Outcome<String,Dynamic> {
-    return null;
-  }
-  
-  public function
+  override public function
   login(pkt:Dynamic,cb:ESession->Void):Void {
+    trace("trying login:"+ pkt.stringify());
     notify(Login(pkt,function(status:ESession) {
           respond(status,cb);
         }));
   }
 
-  public function
+  override public function
   signup(pkt:Dynamic,cb:ESession->Void):Void {
     notify(Signup(pkt,function(status:ESession) {
           respond(status,cb);
         }));
   }
 
-  public function
+  override public function
   logout(sessID:String,cb:ESession->Void):Void {
     notify(Logout(sessID,function(status:ESession) {
           switch(status) {

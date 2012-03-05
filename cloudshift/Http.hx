@@ -28,7 +28,7 @@ enum HttpEvents {
   Close;
 }
 
-interface HttpServer implements Part<HostPort,HttpServer,HttpEvents> {
+interface HttpServer implements Part<HostPort,String,HttpServer,HttpEvents> {
   function fields(req:js.Node.NodeHttpServerReq,cb:TFields,?uploadDir:String):Void;
   function serve(path:String,req:NodeHttpServerReq,resp:NodeHttpServerResp,?statusCode:Int):Void;
   function serveNoCache(path:String,req:NodeHttpServerReq,resp:NodeHttpServerResp,?statusCode:Int):Void;

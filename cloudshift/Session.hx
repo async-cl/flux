@@ -2,7 +2,8 @@
 package cloudshift;
 
 import cloudshift.Core;
-#if nodejs
+
+#if CS_SERVER
 import cloudshift.Http;
 #end
 
@@ -19,16 +20,18 @@ enum ESessionOp {
   Signup(pkt:Dynamic,cb:ESession->Void) ;
 }
 
-interface SessionMgr implements Part<Dynamic,SessionMgr,ESessionOp> {
+#if CS_SERVER
+
+interface SessionMgr implements Part<HttpServer,String,SessionMgr,ESessionOp> {
   function exists(sessID:String,cb:Bool->Void):Void;
   function stash(sessID:String,key:String,?val:Dynamic):Option<Dynamic>;
   function logout(sessID:String,cb:ESession->Void):Void;
-  #if nodejs
   function http():HttpServer;
-  #end
 }
 
-interface SessionClient implements Part<HostPort,SessionClient,ESession> {
+#elseif CS_BROWSER
+
+interface SessionClient implements Part<Dynamic,String,SessionClient,ESession> {
   function login(pkt:Dynamic):Future<ESession>;
   function logout():Future<ESession>;
   function signup(pkt:Dynamic):Future<ESession>;
@@ -36,17 +39,19 @@ interface SessionClient implements Part<HostPort,SessionClient,ESession> {
   function stash(key:String,?val:Dynamic):Option<Dynamic>;
 }
 
+#end
+
 class Session {
 
   
   public static var REMOTE = Core.CSROOT+"__r";
   
-  #if nodejs
+  #if CS_SERVER
   public static function
-  manager(http:HttpServer):SessionMgr {
-    return new cloudshift.session.SessionMgrImpl(http);
+  manager():SessionMgr {
+    return new cloudshift.session.SessionMgrImpl();
   }
-  #else
+  #elseif CS_BROWSER
   public static function
   client() {
     return new cloudshift.session.SessionClientImpl();

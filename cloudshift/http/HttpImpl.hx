@@ -17,8 +17,8 @@ private typedef Cache = {
     var buf:NodeBuffer;
 }
 
-class HttpImpl implements HttpServer,implements Part<HostPort,HttpServer,HttpEvents> {
-  public var part_:Part_<HostPort,HttpServer,HttpEvents>;
+class HttpImpl implements HttpServer,implements Part<HostPort,String,HttpServer,HttpEvents> {
+  public var part_:Part_<HostPort,String,HttpServer,HttpEvents>;
   
   var _server:NodeHttpServer;
   var _cache:Hash<Cache>;
@@ -57,8 +57,10 @@ class HttpImpl implements HttpServer,implements Part<HostPort,HttpServer,HttpEve
   }
 
   public function
-  start_(d:HostPort) {
-    var p = Core.outcome();
+  start_(d:HostPort,?oc:Outcome<String,HttpServer>) {
+    if (oc == null)
+      oc = Core.outcome();
+    
     _server = Node.http.createServer(function(req,resp) {
         var
         url = req.url,
@@ -96,10 +98,10 @@ class HttpImpl implements HttpServer,implements Part<HostPort,HttpServer,HttpEve
     */
     
     _server.listen(d.port,d.host,function() {
-        p.resolve(Right(cast(this,HttpServer)));
+        oc.resolve(Right(cast(this,HttpServer)));
       });
     
-    return p;
+    return oc;
   }
 
   public function stop_(?d) {

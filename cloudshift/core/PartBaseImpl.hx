@@ -3,7 +3,7 @@ package cloudshift.core;
 import  cloudshift.Core;
 using cloudshift.Mixin;
 
-class PartBaseImpl<S,R,E> implements Part_<S,R,E> {
+class PartBaseImpl<S,B,G,E> implements Part_<S,B,G,E> {
   public var partID(default,null):String;
   public var _events:Observable<EPartState<E>>;
   
@@ -43,23 +43,22 @@ class PartBaseImpl<S,R,E> implements Part_<S,R,E> {
     _events.observe(cb);
   }
                                 
-  public function start(d:S):Outcome<String,R> {
-    var p:Outcome<String,R> = null;
+  public function start(d:S,?oc:Outcome<B,G>):Outcome<B,G> {
+    var p:Outcome<B,G> = null;
 
-    p = parent.start_(d);
+    p = parent.start_(d,oc);
 
     checkErr("start",p);
     
-    p.onError(function(msg) {
-        _events.notify(Error(msg));
-      });
-    
-    p.deliver(function(outcome) {
+    p.outcome(function(outcome) {
 #if debug
         Core.info("Part started:"+Type.getClassName(Type.getClass(parent)));
 #end
         _events.notify(Started);
+      },function(msg) {
+        return _events.notify(Error(Std.string(msg)));
       });
+    
     return p;
   }
   
@@ -69,18 +68,16 @@ class PartBaseImpl<S,R,E> implements Part_<S,R,E> {
     
     checkErr("stop",p);
     
-    p.onError(function(msg) {
-        _events.notify(Error(msg));
-      });
-    
-    p.deliver(function(outcome) {
+    p.outcome(function(outcome) {
         _events.notify(Stopped);
+      },function(msg) {
+        _events.notify(Error(msg));
       });
     
     return p;
   }
   
-  function checkErr(type,outcome:Outcome<String,Dynamic>) {
+  function checkErr(type,outcome:Outcome<Dynamic,Dynamic>) {
     if (outcome == null)
       throw Type.getClassName(Type.getClass(parent)) +" should not return null for "+type +" function";
     return outcome;

@@ -5,27 +5,28 @@ import cloudshift.Core;
 import cloudshift.Session;
 using cloudshift.Mixin;
 
-private class SessionProxy extends haxe.remoting.AsyncProxy<cloudshift.session.SessionMgrImpl> { }
+private class SessionProxy extends haxe.remoting.AsyncProxy<cloudshift.session.SessionMgrProxy> { }
 
-class SessionClientImpl implements Part<HostPort,SessionClient,ESession>,implements SessionClient {
+class SessionClientImpl implements Part<Dynamic,String,SessionClient,ESession>,implements SessionClient {
   var _sessID:String;
   var _proxy:SessionProxy;
   var _stash:Hash<Dynamic>;
   
-  public var part_:Part_<HostPort,SessionClient,ESession>;
+  public var part_:Part_<Dynamic,String,SessionClient,ESession>;
 
   public function new() {
     part_ = Core.part(this);
   }
 
   public function
-  start_(hp:HostPort) {
-    var prm = Core.outcome();
+  start_(d:Dynamic,?oc:Outcome<String,SessionClient>) {
+    if (oc == null)
+      oc = Core.outcome();
     var cnx = haxe.remoting.HttpAsyncConnection.urlConnect("http://"+js.Lib.window.location.host+Session.REMOTE);
     cnx.setErrorHandler( function(err) trace("Error : "+Std.string(err)) );
     _proxy = new SessionProxy(cnx.Auth);
-    prm.resolve(Right(cast(this,SessionClient)));
-    return prm;
+    oc.resolve(Right(cast this));
+    return oc;
   }
 
   public function
