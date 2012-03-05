@@ -192,7 +192,7 @@ class Bitcoin {
   public function
   accounts(minconf=10,?id:String):Outcome<String,BtcAccounts> {
     var oc = Core.outcome();
-    jsonrpc("listaccounts",[minconf],id).good(function(res) {
+    jsonrpc("listaccounts",[minconf],id).outcome(function(res) {
         var a:BtcAccounts = [];
         for (f in Reflect.fields(res.result))
           a.push({account:f,balance:Reflect.field(res.result,f)});

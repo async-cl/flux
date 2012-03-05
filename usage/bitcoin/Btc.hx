@@ -20,9 +20,9 @@ class Btc {
           trace(trans);
           });
 
-    btc.account("151ubHvkw8f9eLHWddMSv4ex8zk8hEYhtu").good(function(account) {
+    btc.account("151ubHvkw8f9eLHWddMSv4ex8zk8hEYhtu").outcome(function(account) {
         trace("account="+account);
-        btc.listReceivedByAccount(account).good(function(res) {
+        btc.listReceivedByAccount(account).outcome(function(res) {
             trace("------------------------");
             for (t in res) {
               trace(t.account + ": "+t.amount);
@@ -31,53 +31,53 @@ class Btc {
           });
 
         /*
-        btc.accountAddress(account).good(function(address) {
+        btc.accountAddress(account).outcome(function(address) {
           trace("address= "+address);
           
         });
         */
       });
 
-    btc.addressesByAccount("From tradehill").good(function(res) {
+    btc.addressesByAccount("From tradehill").outcome(function(res) {
         trace(res);
       });
 
-    btc.blockCount().good(function(res) {
+    btc.blockCount().outcome(function(res) {
         trace("blockcount = "+res);
       });
 
-    btc.connectionCount().good(function(res) {
+    btc.connectionCount().outcome(function(res) {
         trace("connection count = "+res);
       });
 
-    btc.difficulty().good(function(res) {
+    btc.difficulty().outcome(function(res) {
         trace("difficulty = "+res);
       });
 
-    btc.generate().good(function(res) {
+    btc.generate().outcome(function(res) {
         trace("generating = "+res);
       });
 
-    btc.hashesPerSec().good(function(res) {
+    btc.hashesPerSec().outcome(function(res) {
         trace("hashes persec = "+res);
       });
 
-    btc.info().good(function(res) {
+    btc.info().outcome(function(res) {
         trace("info="+Core.stringify(res));
       });
 
     /*
-    btc.memoryPool().good(function(res) {
+    btc.memoryPool().outcome(function(res) {
         trace("mempool="+Core.stringify(res));
       });
     */
     
-    btc.receivedByAccount("elena@ritchie.com").good(function(res) {
+    btc.receivedByAccount("elena@ritchie.com").outcome(function(res) {
         trace("recieved by elena="+res);
       });
 
 
-    btc.transactionsSinceBlock("169110").good(function(listsince) {
+    btc.transactionsSinceBlock("169110").outcome(function(listsince) {
         for (t in listsince.transactions) {
           trace(Std.format("--> ${t.amount} ${t.account}"));
         }
@@ -85,9 +85,9 @@ class Btc {
 
     
     /*
-    btc.accounts().good(function(accs) {
+    btc.accounts().outcome(function(accs) {
         accs.foreach(function(acc) {
-            btc.transactions(acc.account).good(function(trans) {
+            btc.transactions(acc.account).outcome(function(trans) {
                 trace(trans);
               });
           });
