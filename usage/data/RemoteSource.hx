@@ -9,7 +9,7 @@ class RemoteSource {
 
   public static function main(){ 
     Http.server().root("www").start({host:"localhost",port:8082}).outcome(function(http) {
-        Data.store(SQLITE("test.db")).good(function(store) {
+        Data.store(SQLITE("test.db")).outcome(function(store) {
                 store.bucket("woot").outcome(function(woot) {
                     woot.indexer("name",function(o:Dynamic) {
                         return o.name;

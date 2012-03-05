@@ -8,7 +8,7 @@ using cloudshift.Mixin;
 class RemoteClient {
 
   public static function main(){
-     Data.store(REMOTESQLITE("http://localhost:8082/data")).good(function(store) {
+     Data.store(REMOTESQLITE("http://localhost:8082/data")).outcome(function(store) {
         store.bucket("woot").outcome(function(woot) {
            
             woot.where('name="lore"').outcome(function(recs) {
@@ -21,7 +21,7 @@ class RemoteClient {
               });
           });
 
-        store.hash("peeps").good(function(peeps) {
+        store.hash("peeps").outcome(function(peeps) {
             peeps.set("me",{email:"lorena@ritchie.com",name:"lore",passwd:"and why not"})
               .outcome(function(p) {
                   peeps.get("me").outcome(function(me) {
