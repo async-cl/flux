@@ -478,7 +478,18 @@ class OptionX {
   public static function getOrElseC<T>(o: Option<T>, c: T): T {
     return OptionX.getOrElse(o, c.toThunk());
   }
+
+  public static function orEither<T, S>(o1: Option<T>, thunk: Thunk<S>): Either<S, T> {
+    return switch (o1) {
+      case None: EitherX.toLeft(thunk());
+      case Some(v): EitherX.toRight(v);
+    }
+  }
   
+  public static function orEitherC<T, S>(o1: Option<T>, c: S): Either<S, T> {
+    return OptionX.orEither(o1, c.toThunk());
+  }
+
   public static function isEmpty<T>(o: Option<T>): Bool {
     return switch(o) {
       case None:    true;
@@ -516,6 +527,7 @@ class EitherX {
     return switch (e) {
       case Left(_):  true;
       case Right(_): false;
+
     }
   }
   
@@ -604,29 +616,79 @@ class EitherX {
 
 class PartX {
 
-  public static function start<S,R,E>(part:Part<S,R,E>,data:S):Outcome<String,R> {
-    return part.part_.start(data);
+  public static function start<S,B,G,E>(part:Part<S,B,G,E>,data:S,?oc:Outcome<B,G>):Outcome<B,G> {
+    return part.part_.start(data,oc);
   }
 
-  public static function stop<S,R,E>(part:Part<S,R,E>,?data:Dynamic):Outcome<String,Dynamic> {
+  public static function stop<S,B,G,E>(part:Part<S,B,G,E>,?data:Dynamic):Outcome<String,Dynamic> {
     return part.part_.stop(data);
   }
   
-  public static function observe<S,R,E>(part:Part<S,R,E>,cb:E->Void) {
+  public static function observe<S,B,G,E>(part:Part<S,B,G,E>,cb:E->Void) {
     part.part_.observe(cb);
   }
 
-  public static function notify<S,R,E>(part:Part<S,R,E>,e:E) {
+  public static function notify<S,B,G,E>(part:Part<S,B,G,E>,e:E) {
     part.part_.notify(e);
   }
 
-  public static function partID<S,R,E>(part:Part<S,R,E>):String {
+  public static function partID<S,B,G,E>(part:Part<S,B,G,E>):String {
     return part.part_.partID;
   }
   
-  public static function observeState<S,R,E>(part:Part<S,R,E>,cb:EPartState<E>->Void):Void {
+  public static function observeState<S,B,G,E>(part:Part<S,B,G,E>,cb:EPartState<E>->Void):Void {
     part.part_._events.observe(cb);
   }
 
 }
 
+class OutcomeX {
+
+  public static function
+  outcome<A,B>(oc:Outcome<A,B>,cb:B->Void,?err:A->Void) {
+    oc.deliver(function(either:Either<A,B>) {
+        if (either.isRight())
+          cb(either.right().get());
+        else {
+          if (err != null)
+            err(either.left().get());
+          else
+            Core.error(Std.string(either.left().get()));
+        }
+    });
+  }
+
+  public static function
+  oflatMap<A,B,P,Q>(oc:Outcome<A,B>,cb:B->Outcome<P,Q>,?err:P->Void):Outcome<P,Q> {
+    var roc:Outcome<P,Q> = Core.outcome();
+    oc.deliver(function(either:Either<A,B>) {
+        if (either.isRight()) {
+          cb(either.right().get())
+            .outcome(function(val) {
+                roc.resolve(Right(val));
+              },err);
+        } else {
+          Core.error(Std.string(either.left().get()));
+          #if nodejs
+          Sys.exit(1);
+          #end
+        }
+      });
+    return roc;
+  }
+
+  public static function
+  omap<A,B,P,Q>(oc:Outcome<A,B>,cb:B->Q,?err:A->Void):Outcome<P,Q> {
+    var roc:Outcome<P,Q> = Core.outcome();
+    oc.deliver(function(either:Either<A,B>) {
+        if (either.isRight()) {
+          roc.resolve(Right(cb(either.right().get())));
+        } else {
+          if (err != null)
+            err(either.left().get());
+        }
+      });
+    return roc;
+  }
+  
+}

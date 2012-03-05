@@ -8,16 +8,16 @@ using cloudshift.Mixin;
 class RemoteSource {
 
   public static function main(){ 
-    Http.server().root("www").start({host:"localhost",port:8082}).deliver(function(http) {
-        Data.store(SQLITE("test.db")).deliver(function(store) {
-                store.bucket("woot").deliver(function(woot) {
+    Http.server().root("www").start({host:"localhost",port:8082}).outcome(function(http) {
+        Data.store(SQLITE("test.db")).good(function(store) {
+                store.bucket("woot").outcome(function(woot) {
                     woot.indexer("name",function(o:Dynamic) {
                         return o.name;
-                      }).deliver(function(el) {
+                      }).outcome(function(el) {
                           Data.serveBucket(http,woot,"/data/woot");
                         });
                   });
-                store.hash("peeps").deliver(function(peeps) {
+                store.hash("peeps").outcome(function(peeps) {
                     Data.serveHash(http,peeps,"/data/peeps");
                   });
             });

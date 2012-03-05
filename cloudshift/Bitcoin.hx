@@ -109,13 +109,12 @@ class Bitcoin {
     Reflect.setField(headers,'Authorization',auth);
 
     Http.post(_url,req,false,headers)
-      .onError(function(err) {
-          oc.resolve(Left(err));
-        })
-      .deliver(function(jsonResult) {
+      .outcome(function(jsonResult) {
             var res:RpcResult = Core.parse(jsonResult);
             _lastID = res.id;
             oc.resolve((res.error == null) ? Right(res.result) : Left(res.error.message));
+        },function(err) {
+          oc.resolve(Left(err));
         });
     return oc;
   }
@@ -193,7 +192,7 @@ class Bitcoin {
   public function
   accounts(minconf=10,?id:String):Outcome<String,BtcAccounts> {
     var oc = Core.outcome();
-    jsonrpc("listaccounts",[minconf],id).deliver(function(res) {
+    jsonrpc("listaccounts",[minconf],id).good(function(res) {
         var a:BtcAccounts = [];
         for (f in Reflect.fields(res.result))
           a.push({account:f,balance:Reflect.field(res.result,f)});

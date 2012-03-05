@@ -17,15 +17,7 @@ enum Either<A, B> {
   Right(v: B);
 }
 
-interface Outcome<A,B>  {
-  function onError(cb:A->Void):Outcome<A,B>;
-  function resolve(d:Either<A,B>):Void;
-  function flatMap<T>(cb:B->Outcome<A,T>):Outcome<A,T>;
-  function map<T>(cb:B->T):Outcome<A,T>;
-  function deliver(cb:B->Void):Outcome<A,B>;
-  function future():Future<Either<A,B>>;
-  function cancel():Void;  
-}
+typedef Outcome<A,B> = Future<Either<A,B>>;
 
 enum EOperation {
   Add(info:Option<Dynamic>);
@@ -74,10 +66,11 @@ enum EPartState<E> {
   Except(e:Dynamic);
 }
 
-interface Part_<S,R,E> {
+// (S) start param object, (B) bad return type, (G) good return type, (E) event enum
+interface Part_<S,B,G,E> {
   var _events:Observable<EPartState<E>>;
   var partID(default,null):String;
-  function start(d:S):Outcome<String,R>;
+  function start(d:S,?oc:Outcome<B,G>):Outcome<B,G>;
   function stop(d:Dynamic):Outcome<String,Dynamic>;
   function observe(cb:E->Void,?info:Dynamic):Void->Void;
   function notify(e:E):Void;
@@ -86,26 +79,26 @@ interface Part_<S,R,E> {
   function peer():Dynamic;
 }
 
-interface Part<S,R,E> {
-  var part_:Part_<S,R,E>;
-  function start_(p:S):Outcome<String,R>;
+interface Part<S,B,G,E> {
+  var part_:Part_<S,B,G,E>;
+  function start_(p:S,?oc:Outcome<B,G>):Outcome<B,G>;
   function stop_(?d:Dynamic):Outcome<String,Dynamic>;
 }
 
-typedef AnyPart = Part<Dynamic,Dynamic,Dynamic>;
+typedef AnyPart = Part<Dynamic,Dynamic,Dynamic,Dynamic>;
 
 class Core {
 
   public static var CSROOT = "/__cs/";
   
-  public static function
+  public static inline function
   future<T>():Future<T> {
     return new cloudshift.core.FutureImpl();
   }
 
-  public static function
+  public static inline function
   outcome<A,B>(?cancel:A->Void):Outcome<A,B> {
-    return new cloudshift.core.OutcomeImpl(cancel);
+    return cast Core.future();
   }
 
   public static function
@@ -113,22 +106,17 @@ class Core {
     return cloudshift.core.FutureImpl.waitFor(toJoin);
   }
 
-  public static function
-  waitOutcomes(toJoin:Array<Outcome<Dynamic,Dynamic>>):Outcome<String,Array<Dynamic>> {
-    return cloudshift.core.OutcomeImpl.waitFor(toJoin);
-  }
-  
   public static function cancelledFuture() {
     return cloudshift.core.FutureImpl.dead();
   }
   
-  public static function
+  public static inline function
   event<T>():Observable<T> {
     return new cloudshift.core.ObservableImpl();
   }
 
   public static function
-  part<S,R,E>(parent:Dynamic):Part_<S,R,E> {
+  part<S,B,G,E>(parent:Dynamic):Part_<S,B,G,E> {
     return new cloudshift.core.PartBaseImpl(parent);
   }
   

@@ -14,19 +14,16 @@ class TestFs {
   main() {
 
     Sys.writeFile("woot","hi there")
-      .onError(function(reason) {
-          trace("Err is :"+reason);
-        })
-      .flatMap(function(file) {
+      .oflatMap(function(file) {
             return file.stat();
         })
-      .map(function(stat) {
+      .omap(function(stat) {
           return stat.path;
         })
-      .flatMap(function(path) {
+      .oflatMap(function(path) {
           return path.rename("niceone");
         })
-      .deliver(function(newFileName) {
+      .outcome(function(newFileName) {
           trace("cool "+newFileName);
               
           var p = Sys.events();
@@ -46,7 +43,7 @@ class TestFs {
           
           Sys.stdout().write("nice one laddie");
           
-          Sys.spawn("ls").deliver(function(child) {
+          Sys.spawn("ls").outcome(function(child) {
               child.stdout.observe(function(e) {
                   switch(e) {
                   case Data(s):
@@ -56,7 +53,7 @@ class TestFs {
                 });
             });
 
-          Sys.execFile("ls").deliver(function(output) {
+          Sys.execFile("ls").outcome(function(output) {
                 trace(output);              
             });
         });

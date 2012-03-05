@@ -4,15 +4,16 @@
 
 import cloudshift.Core;
 import cloudshift.Http;
-import cloudshift.Session;
 import cloudshift.Flow;
+import cloudshift.Session;
 using cloudshift.Mixin;
+import cloudshift.Channel;
 
 import ChatTypes;
 
 class ChatServer {
 
-  static var conduit:Conduit;
+  static var nicks = new Hash<String>();
   
   public static function main() {
     new ChatServer();
@@ -22,47 +23,58 @@ class ChatServer {
     Http.server()
       .root("www")
       .start({host:"localhost",port:8082})
-      .deliver(function(http) {         
-          Flow.quickFlow()
-            .start(http)
-            .deliver(rooms);
-        });
+      .outcome(function(http) {
+          Channel.server()
+            .addHttpServer(http)
+            .addChannelAuth(channelAuth)
+            .addSessionAuth(sessAuth)
+            .start({}).outcome(startRooms);
+        });    
   }
-  
-  public static function
-  rooms(chat:QuickFlow) {
-    var
-      sess = chat.session,
-      nicks = new Hash<Bool>(),
-      room:Pipe<MsgTypes> = chat.sink.pipe("/chat/room");
 
-    sessionObserve(sess,room,nicks);
-    
-    chat.sink.observe(function(dd:SinkEvent) {
-        switch(dd) {
-        case Authorize(sessID,pipe,cb):
-          if (pipe.pid() != "/secret") {
-            cb(Right("")); // setup up new connection so it can get next msg too
-            room.fill(System(Arrives(sess.stash(sessID,"nick").get(),nicks.keyArray())));
-          } else {
-            cb(Left("no way"));
-          }
-        case ConnectionClose(sessID):
-          switch(sess.stash(sessID,"nick")) {
-          case Some(n):
-            room.fill(System(Leaves(n)));
-            nicks.remove(n);
-          case None:
-          }
+  function channelAuth(sessID:String,chan:Chan<Dynamic>,cb:Either<String,String>->Void) {
+    if (chan.pid() != "/secret") {
+      cb(Right("")); // setup up new connection so it can get next msg too
+      //room.fill(System(Arrives(sess.stash(sessID,"nick").get(),nicks.keyArray())));
+    } else {
+      cb(Left("no way"));
+    }
+  }
+
+  function sessAuth(event:ESessionOp) {
+    switch(event) {
+    case Login(pkt,reply):
+
+      var lp:LoginPkt = pkt;
+      if (nicks.exists(lp.nick)) {
+        trace("user exists");
+        reply(UserExists);
+      } else {
+        var sessID = genID();
+        nicks.set(lp.nick,sessID);
+        trace("userOK");
+        reply(UserOk(sessID));  
+      }
+
+    case Signup(pkt,reply):
+      reply(UserOk(genID()));
+
+    case Logout(sessID,reply):
+      trace("got Logout for "+sessID);
+      for(n in nicks.keys()) {
+        if (nicks.get(n) == sessID) {
+          nicks.remove(n);
+          //room.fill(System(Leaves(n)));
         }
-      });
-    
-    room.drain(function(p) {
-      });
+      }
 
-    room.drainPkt(function(pkt) {
-      });
-    
+      reply(UserRemoved);
+    }
+  }
+
+  public function
+  startRooms(cs:ChannelServer) {
+    var room:Chan<MsgTypes> = cs.channel("/chat/room");
     room.filter(function(o) {
         switch(o) {
         case Chat(nick,msg):
@@ -72,10 +84,6 @@ class ChatServer {
         return o;
       });
     
-    room.filterPkt(function(pkt) {
-        return pkt;
-      });
-
     room.peek(function(pe) {
         switch(pe) {
         case Add(i):
@@ -83,38 +91,9 @@ class ChatServer {
         case Del(i):
           room.fill(Chat("bot","someone left"));
         }
-      });    
-  } 
-
- public static function
- sessionObserve(sess:SessionMgr,room:Pipe<MsgTypes>,nicks:Hash<Bool>) {
-    sess.observe(function(ss:ESessionOp) {
-        switch(ss) {
-        case Login(pkt,cb):
-          var lp:LoginPkt = pkt;
-          if (nicks.exists(lp.nick)) {
-            cb(UserExists);
-          } else {
-            nicks.set(lp.nick,true);
-            var sessID = genID();
-            sess.stash(sessID,"nick",lp.nick);
-            cb(UserOk(sessID));  
-          }
-        case Signup(pkt,cb):
-          cb(UserOk(genID()));
-        case Logout(sessID,cb):
-          var n = sess.stash(sessID,"nick").get();
-          room.fill(System(Leaves(n)));
-          nicks.remove(n);
-          
-          //conduit.close(sessID);
-          
-          cb(UserRemoved);
-        }
-      });    
+      });
   }
 
-  
   public static inline function
   genID():String {
     return Std.string(Math.floor(Math.random() * 1e10));

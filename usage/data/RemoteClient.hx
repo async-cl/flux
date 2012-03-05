@@ -8,23 +8,23 @@ using cloudshift.Mixin;
 class RemoteClient {
 
   public static function main(){
-     Data.store(REMOTESQLITE("http://localhost:8082/data")).deliver(function(store) {
-        store.bucket("woot").deliver(function(woot) {
+     Data.store(REMOTESQLITE("http://localhost:8082/data")).good(function(store) {
+        store.bucket("woot").outcome(function(woot) {
            
-            woot.where('name="lore"').deliver(function(recs) {
+            woot.where('name="lore"').outcome(function(recs) {
                 trace(recs.stringify());
               });
             
             woot.insert({email:"lorena@ritchie.com",name:"lore",passwd:"and why not"})
-              .deliver(function(u) {
+              .outcome(function(u) {
                   trace("lore's id = "+Data.oid(u));
               });
           });
 
-        store.hash("peeps").deliver(function(peeps) {
+        store.hash("peeps").good(function(peeps) {
             peeps.set("me",{email:"lorena@ritchie.com",name:"lore",passwd:"and why not"})
-              .deliver(function(p) {
-                  peeps.get("me").deliver(function(me) {
+              .outcome(function(p) {
+                  peeps.get("me").outcome(function(me) {
                       if (me.name == "lore")
                         trace("yep got it");
                     });
