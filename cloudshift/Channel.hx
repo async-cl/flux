@@ -16,6 +16,10 @@ import cloudshift.Flow;
 
 typedef Chan<T> = Pipe<T>;
 
+interface ChannelProvider {
+  function channel<T>(chanID:String):Outcome<String,Chan<T>>;
+  function direct<T>(sessID:String):Outcome<String,Chan<T>>;
+}
 
 #if CS_SERVER
 
@@ -24,13 +28,18 @@ enum ChannelEvent {
   ESession(event:ESessionOp);
 }
 
-interface ChannelServer implements Part<Dynamic,String,ChannelServer,ChannelEvent> {
+interface ChannelServer
+           implements ChannelProvider,
+           implements Part<Dynamic,String,ChannelServer,ChannelEvent> {
+  
   function addHttpServer(http:HttpServer):ChannelServer;
   function addHostPort(host:String,port:Int):ChannelServer;
   function addSessionMgr(sessionMgr:SessionMgr):ChannelServer;
   function addChannelAuth(cb:String->Chan<Dynamic>->(Either<String,String>->Void)->Void):ChannelServer;
   function addSessionAuth(cb:ESessionOp->Void):ChannelServer;
-  function channel<T>(chanID:String):Chan<T>;
+  function session():SessionMgr;
+  function channel<T>(chanID:String):Outcome<String,Chan<T>>;
+  function direct<T>(sessID:String):Outcome<String,Chan<T>>;
 }
 
 #end
@@ -46,11 +55,13 @@ enum ChannelClientError {
   CantStartSessionClient;
 }
 
-interface ChannelClient implements Part<Dynamic,ChannelClientError,ChannelClient,ESession> {
-  function channel<T>(id:String):Outcome<String,Chan<T>>;
-  function logout():Void;
+interface ChannelClient
+      implements ChannelProvider,
+      implements Part<String,ChannelClientError,ChannelClient,ESession> {
+
   function unsub(chan:Chan<Dynamic>):Void;
-  
+  function channel<T>(id:String):Outcome<String,Chan<T>>;
+  function direct<T>(sessID:String):Outcome<String,Chan<T>>;
 }
 
 #end

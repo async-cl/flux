@@ -171,8 +171,8 @@ class PushListenerImpl implements Conduit {
   }
 
   public function
-  authorize(pipeID:String):Future<Either<String,String>> {
-    var oc = Core.future();
+  authorize(pipeID:String):Outcome<String,String> {
+    var oc = Core.outcome();
     oc.resolve(Right(""));
     return oc;
   }

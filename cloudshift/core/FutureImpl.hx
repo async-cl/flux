@@ -235,6 +235,7 @@ class FutureImpl<T> implements Future<T> {
     return new FutureImpl<T>();
   }
 
+  /*
   public static function waitFor(toJoin:Array<Future<Dynamic>>):Future<Array<Dynamic>> {
     var
       joinLen = toJoin.length,
@@ -261,5 +262,29 @@ class FutureImpl<T> implements Future<T> {
     
     return myprm;
   }
+  */
 
+  public static
+  function waitFor(toJoin:Array<Future<Dynamic>>):Future<Array<Dynamic>> {
+    var
+      count = toJoin.length,
+      fut = Core.future();
+    
+    toJoin.foreach(function(xprm:Future<Dynamic>) {
+        if(!Std.is(xprm,Future)) {
+          throw "not a future:"+xprm;
+        }
+
+        xprm.deliver(function(r:Dynamic) {
+            count--;
+            if (count == 0) {
+              fut.resolve(toJoin.map(function(el) {
+                    return el.value().get();
+                  }));
+            }
+          });
+      });
+    return fut;
+  } 
+  
 }

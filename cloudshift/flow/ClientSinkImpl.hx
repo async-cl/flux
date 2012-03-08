@@ -11,9 +11,9 @@ class ClientSinkImpl extends SinkImpl {
 
   var _sessID:String;
   
-  public function new(sess:SessionClient) {
+  public function new(sess:String) {
     super();
-    _sessID = sess.sessID();
+    _sessID = sess;
     _myfill = myfill;
   }
 

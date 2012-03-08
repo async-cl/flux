@@ -27,14 +27,14 @@ class QuickFlowImpl implements Part<HttpServer,QuickFlow,Dynamic>  {
   start_(http:HttpServer) {
     trace("starting quickflow imple");
  #if nodejs
-    var sess = Session.manager(http);
+    var sess = Session.manager();
     #else
     var sess = Session.client();
     #end
 
     var oc = Core.outcome();
     sess.start(http)    
-      .onError(function(reason) {
+      .bad(function(reason) {
           oc.resolve(Left(reason));
         })
       .flatMap(function(sess) {
@@ -45,7 +45,7 @@ class QuickFlowImpl implements Part<HttpServer,QuickFlow,Dynamic>  {
           conduit = push;
           return Flow.sink(push.session()).start(push);
         })
-      .deliver(function(s) {
+      .good(function(s) {
           sink = s;
           var forTyper:QuickFlow = this;
           oc.resolve(Right(forTyper));

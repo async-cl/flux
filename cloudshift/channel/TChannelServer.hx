@@ -59,21 +59,26 @@ class TChannelServer implements ChannelServer,implements Part<Dynamic,String,Cha
           _session = sess;
           var myoc:Outcome<String,Conduit> = Core.outcome();
           trace("got session");
+          /*
           if (_sessionAuth == null) {
             myoc.cancel();
+            oc.resolve(Left("need session auth"));
           } else {
             _session.observe(_sessionAuth);
-            Flow.pushConduit(sess).start({},myoc);
+          
+           
           }
+          */
+         Flow.pushConduit(sess).start({},myoc);
           return myoc;
-        },function(err) { trace("aha1 "+err); })
+        })
       .oflatMap(function(push) {
           var myoc:Outcome<String,Sink> = Core.outcome();
           _conduit = push;
           trace("got conduit");
           Flow.sink(push.session()).start(push,myoc);
           return myoc;
-        },function(err) { trace("aha2 "+err); })
+        })
       .outcome(function(sink) {
           _sink = sink;
           if (_channelAuth != null) {
@@ -117,10 +122,19 @@ class TChannelServer implements ChannelServer,implements Part<Dynamic,String,Cha
   }
 
   public function
-  channel<T>(chanID:String):Chan<T> {
-    return _sink.pipe(chanID);
+  channel<T>(chanID:String):Outcome<String,Chan<T>> {
+    var oc = Core.outcome();
+    // on server getting a pipe is sync
+    oc.resolve(Right(_sink.pipe(chanID)));
+    return oc;
   }
 
+  public function direct<T>(sessID:String):Outcome<String,Chan<T>> {
+    var oc = Core.outcome();
+    oc.resolve(Right(_sink.direct(sessID)));
+    return oc;
+  }
+  
   public function
   addChannelAuth(cb:String->Chan<Dynamic>->(Either<String,String>->Void)->Void):ChannelServer {
     _channelAuth = cb;
@@ -132,6 +146,9 @@ class TChannelServer implements ChannelServer,implements Part<Dynamic,String,Cha
     _sessionAuth = cb;
     return this;
   }
-  
+
+  public function session() {
+    return _session;
+  }
   
 }

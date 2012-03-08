@@ -22,11 +22,8 @@ class PushClientImpl implements Conduit {
   }
 
   public function start_(cs:ConduitClientStart,?oc:Outcome<String,Conduit>) {
-    if (oc == null) {
-      trace("creating new oc");
+    if (oc == null)
       oc = Core.outcome();
-    } else
-      Core.info("using existing outcome");
     
     _url = "http://"+js.Lib.window.location.host;
     _sessID = cs.sessID;
@@ -44,7 +41,6 @@ class PushClientImpl implements Conduit {
     remoteClose(function(o) {
         oc.resolve(o);
       });
-
     return oc;
   }
   

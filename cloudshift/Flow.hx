@@ -57,7 +57,7 @@ enum SinkEvent {
   function pipe<T>(chanID:String):Pipe<T>;
   function addConduit(conduit:Conduit):Void ;  
   function pipeFromId(chanID:String):Option<Pipe<Dynamic>>;
-  function authorize<T>(pipe:Pipe<T>):Future<Either<String,Pipe<T>>>;
+  function authorize<T>(pipe:Pipe<T>):Outcome<String,Pipe<T>>;
   function removePipe<T>(p:Pipe<T>):Void;
   function direct<T>(sessID:String):Pipe<T>;
 }
@@ -124,8 +124,8 @@ class Flow {
   }
 
   public static function
-  sink(sess:SessionClient):Sink {
-    return new cloudshift.flow.ClientSinkImpl(sess);
+  sink(sessID:String):Sink {
+    return new cloudshift.flow.ClientSinkImpl(sessID);
   }
    
   #end

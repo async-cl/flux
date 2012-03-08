@@ -17,8 +17,6 @@ enum Either<A, B> {
   Right(v: B);
 }
 
-typedef Outcome<A,B> = Future<Either<A,B>>;
-
 enum EOperation {
   Add(info:Option<Dynamic>);
   Del(info:Option<Dynamic>);
@@ -57,6 +55,8 @@ interface Future<T> {
   function toOption(): Option<T>;
   function toArray(): Array<T>;
 }
+
+typedef Outcome<A,B> = Future<Either<A,B>>;
 
 enum EPartState<E> {
   Started;
@@ -102,6 +102,11 @@ class Core {
   }
 
   public static function
+  part<S,B,G,E>(parent:Dynamic):Part_<S,B,G,E> {
+    return new cloudshift.core.PartBaseImpl(parent);
+  }
+
+  public static function
   waitFor(toJoin:Array<Future<Dynamic>>):Future<Array<Dynamic>> {
     return cloudshift.core.FutureImpl.waitFor(toJoin);
   }
@@ -113,11 +118,6 @@ class Core {
   public static inline function
   event<T>():Observable<T> {
     return new cloudshift.core.ObservableImpl();
-  }
-
-  public static function
-  part<S,B,G,E>(parent:Dynamic):Part_<S,B,G,E> {
-    return new cloudshift.core.PartBaseImpl(parent);
   }
   
   public static function
@@ -171,6 +171,27 @@ class Core {
   stringify(obj:Dynamic):String {
     return untyped __js__("JSON.stringify(obj)");
   }
+
+  public static
+  function waitOut(toJoin:Array<Outcome<Dynamic,Dynamic>>):Outcome<String,Array<Either<Dynamic,Dynamic>>> {
+    var
+      count = toJoin.length,
+      oc = Core.outcome();
+    
+    toJoin.foreach(function(xprm:Outcome<Dynamic,Dynamic>) {
+        xprm.deliver(function(r:Either<Dynamic,Dynamic>) {
+            count--;
+            if (count == 0) {
+              oc.resolve(Right(toJoin.map(function(el) {
+                      var z:Dynamic = untyped el._result;
+                      return z;
+                    })));
+            }
+          });
+      });
+    return oc;
+  } 
+  
   
 }
 

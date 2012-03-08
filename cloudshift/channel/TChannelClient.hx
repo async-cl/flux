@@ -13,10 +13,9 @@ import cloudshift.Flow;
 using cloudshift.Mixin;
 
 class TChannelClient implements ChannelClient,
-                     implements Part<Dynamic,ChannelClientError,ChannelClient,ESession> {
+                     implements Part<String,ChannelClientError,ChannelClient,ESession> {
   
-  public var part_:Part_<Dynamic,ChannelClientError,ChannelClient,ESession>;
-  var _session:SessionClient;
+  public var part_:Part_<String,ChannelClientError,ChannelClient,ESession>;
   var _conduit:Conduit;
   var _sink:Sink;
   var _host:String;
@@ -28,40 +27,20 @@ class TChannelClient implements ChannelClient,
   }
 
   public function
-  start_(d:Dynamic,?oc:Outcome<ChannelClientError,ChannelClient>) {
+  start_(sessID:String,?oc:Outcome<ChannelClientError,ChannelClient>) {
     if (oc == null)
       oc = Core.outcome();
 
-    trace("starting client");
-    Session.client()
-      .start({host:"localhost",port:3844})
-      .oflatMap(function(sess) {
-          trace("got sess");
-          _session = sess;
-          var pcOutcome = Core.outcome();
-          _session.login(d).deliver(function(esess) {
-              switch(esess) {
-              case UserOk(sessID):
-                trace("user ok="+sessID);
-                Flow.pushConduit().start({host:"localhost",port:8082,sessID:sessID},pcOutcome);
-              default:
-                pcOutcome.cancel();
-                oc.resolve(Left(UserLoggedIn));
-              }
-            });
-          return pcOutcome;
-        },function(reason) {
-          oc.resolve(Left(CantStartSessionClient));
-        })
+    Flow.pushConduit().start({host:"localhost",port:8082,sessID:sessID})
       .oflatMap(function(conduit) {
           _conduit = conduit;
           trace("got conduit");
-          return Flow.sink(_session).start(_conduit);
+          return Flow.sink(sessID).start(_conduit);
         })
       .outcome(function(sink) {
           _sink = sink;
           trace("got sink");
-    
+          
           oc.resolve(Right(cast this));
         });
     
@@ -78,12 +57,16 @@ class TChannelClient implements ChannelClient,
   public function
   channel<T>(id:String):Outcome<String,Chan<T>> {
     var oc = Core.outcome();
-    _sink.authorize(_sink.pipe(id)).deliver(cast oc.resolve);
+    _sink.authorize(_sink.pipe(id)).outcome(function(val) {
+        oc.resolve(Right(val));
+      });
     return oc;
   }
 
-  public function logout() {
-    _session.logout();
+  public function direct<T>(sessID:String):Outcome<String,Chan<T>> {
+    var oc = Core.outcome();
+    _sink.authorize(_sink.pipe(sessID)).deliver(cast oc.resolve);
+    return oc;
   }
 
   public function unsub(chan:Chan<Dynamic>) {

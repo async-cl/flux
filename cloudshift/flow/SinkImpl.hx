@@ -107,18 +107,21 @@ class SinkImpl implements Sink {
   }
   
   public function
-  authorize<T>(pipe:Pipe<T>):Future<Either<String,Pipe<T>>> {
-    var prm = Core.future();
+  authorize<T>(pipe:Pipe<T>):Outcome<String,Pipe<T>> {
+    var oc = Core.outcome();
+    trace("auth :"+pipe.pid());
     _conduit[0].authorize(pipe.pid())
       .deliver(function(conduitAuthorized) {
           switch(conduitAuthorized) {
           case Right(_):
-            prm.resolve(Right(pipe));
+            trace("got a pipe back");
+            oc.resolve(Right(pipe));
           case Left(msg):
-            prm.resolve(Left(msg));
+            trace("got a message back");
+            oc.resolve(Left(msg));
           }
         });
-    return prm;
+    return oc;
   }
 
 }
