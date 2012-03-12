@@ -1,14 +1,15 @@
 
-package cloudshift.flow;
+package cloudshift.channel;
 
 import cloudshift.Core;
 using cloudshift.Mixin;
-import cloudshift.Flow;
-import cloudshift.flow.InternalApi;
+import cloudshift.Channel;
+import cloudshift.channel.Flow;
+import cloudshift.channel.InternalApi;
 
-using cloudshift.Flow;
+using cloudshift.channel.Flow;
 
-class PipeImpl<T> implements Pipe<T> {
+class PipeImpl<T> implements Chan<T> {
 
   var event_:cloudshift.core.ObservableImpl<Pkt<T>>;
   
@@ -42,14 +43,14 @@ class PipeImpl<T> implements Pipe<T> {
   }
 
   public function
-  drain(cb:T->Void,?info:Dynamic):Void->Void {
+  sub(cb:T->Void,?info:Dynamic):Void->Void {
     return event_.observe(function(pkt:Pkt<T>) {
         cb(pkt.p);
       },info);
   }
 
   public function
-  drainPkt(cb:Pkt<T>->Void,?info:Dynamic):Void->Void {
+  subPkt(cb:Pkt<T>->Void,?info:Dynamic):Void->Void {
     return event_.observe(cb,info);
   }
 
@@ -59,7 +60,7 @@ class PipeImpl<T> implements Pipe<T> {
   }
   
   public function
-  removeAllDrains() {
+  removeAllSubs() {
     event_.removePeers();
   }
   
@@ -69,7 +70,7 @@ class PipeImpl<T> implements Pipe<T> {
   }
   
   public function
-  fill(msg:T,?meta:Dynamic):Void {
+  pub(msg:T,?meta:Dynamic):Void {
     _fill(msg,_pID,meta);
   }
  
@@ -110,21 +111,21 @@ class PipeImpl<T> implements Pipe<T> {
   }
   
   public function
-  drains():Array<Dynamic> {
+  subs():Array<Dynamic> {
     return event_.peers();
   }
   
   public function pid() {return _pID;}
   
   public function
-  divert<P>(chan:Pipe<P>,?map:T->P):Void->Void {
+  route<P>(chan:Chan<P>,?map:T->P):Void->Void {
     if (map != null) {
-      return drain(function(o) {
-          chan.fill(map(o));
+      return sub(function(o) {
+          chan.pub(map(o));
         });
     } else {
-      return drain(function(o) {
-          chan.fill(cast o);
+      return sub(function(o) {
+          chan.pub(cast o);
         });
     }
   } 

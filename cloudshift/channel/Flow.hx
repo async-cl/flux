@@ -1,26 +1,16 @@
 
-package cloudshift;
+package cloudshift.channel;
 
 import cloudshift.Core;
 using cloudshift.Mixin;
 import cloudshift.Session;
+import cloudshift.Channel;
 
 #if nodejs
 import cloudshift.Http;
-import cloudshift.flow.InternalApi;
+import cloudshift.channel.InternalApi;
 #end
 
-typedef TMeta = {
-    var ch:String;
-    var op:String;
-    var um:Dynamic; /* user meta data */
-}
-
-typedef Pkt<T> = {
-    var s:String; // session ID
-    var p:T;        // payload
-    var m:TMeta;    // meta
-}
 
 typedef ConduitClientStart = {
     var host:String;
@@ -49,36 +39,19 @@ interface Conduit implements Part<Dynamic,String,Conduit,ConduitEvent> {
 }
 
 enum SinkEvent {
-  Authorize(sessID:String,pipe:Pipe<Dynamic>,cb:Either<String,String>->Void);
+  Authorize(sessID:String,chan:Chan<Dynamic>,cb:Either<String,String>->Void);
   ConnectionClose(sessID:String);
 }
 
   interface Sink implements Part<Conduit,String,Sink,SinkEvent>  {
-  function pipe<T>(chanID:String):Pipe<T>;
+  function chan<T>(chanID:String):Chan<T>;
   function addConduit(conduit:Conduit):Void ;  
-  function pipeFromId(chanID:String):Option<Pipe<Dynamic>>;
-  function authorize<T>(pipe:Pipe<T>):Outcome<String,Pipe<T>>;
-  function removePipe<T>(p:Pipe<T>):Void;
-  function direct<T>(sessID:String):Pipe<T>;
+  function chanFromId(chanID:String):Option<Chan<Dynamic>>;
+  function authorize<T>(chan:Chan<T>):Outcome<String,Chan<T>>;
+  function removeChan<T>(p:Chan<T>):Void;
+  function direct<T>(sessID:String):Chan<T>;
 }
 
-interface Pipe<T> { 
-    // internal use only
-  var _fill:Dynamic->String->Dynamic->Void; 
-  function _defaultFill<T>(o:Dynamic,chanID:String,meta:Dynamic):Void;
-
-  // public
-  function fill(o:T,?meta:Dynamic):Void;
-  function drain(cb:T->Void,?info:Dynamic):Void->Void;
-  function drainPkt(cb:Pkt<T>->Void,?info:Dynamic):Void->Void;
-  function filter(cb:T->Null<T>):Void->Void;
-  function filterPkt(cb:Pkt<T>->Null<Pkt<T>>):Void->Void;
-  function pid():String; 
-  function drains():Array<Dynamic>;
-  function removeAllDrains():Void;
-  function divert<P>(chan:Pipe<P>,?map:T->P):Void->Void;
-  function peek(cb:EOperation->Void):Void;
-}
 
   /*
 typedef QuickFlow = {
@@ -96,12 +69,12 @@ class Flow {
  
   public static function
   sink(sessionMgr:SessionMgr):Sink {
-    return new cloudshift.flow.ServerSinkImpl(sessionMgr);
+    return new cloudshift.channel.ServerSinkImpl(sessionMgr);
   }
 
   public static function
   pushConduit(sessionMgr:SessionMgr):Conduit {
-    var pl = new cloudshift.flow.PushListenerImpl(sessionMgr);
+    var pl = new cloudshift.channel.PushListenerImpl(sessionMgr);
     sessionMgr.http().handler(new EReg(Flow.PUSH,""),pl.postHandler);
     return pl;
   }
@@ -110,7 +83,7 @@ class Flow {
   /*
   public static function
   quickFlow() {
-    return new cloudshift.flow.QuickFlowImpl();
+    return new cloudshift.channel.QuickFlowImpl();
   }
   */
  
@@ -120,18 +93,18 @@ class Flow {
   public static function
   pushConduit():Conduit {
     trace("inst PushClientImpl");
-    return new cloudshift.flow.PushClientImpl();
+    return new cloudshift.channel.PushClientImpl();
   }
 
   public static function
   sink(sessID:String):Sink {
-    return new cloudshift.flow.ClientSinkImpl(sessID);
+    return new cloudshift.channel.ClientSinkImpl(sessID);
   }
    
   #end
 
   public static function
-  pipeID(pkt:Pkt<Dynamic>) {
+  chanID(pkt:Pkt<Dynamic>) {
     return pkt.m.ch;
   }
     

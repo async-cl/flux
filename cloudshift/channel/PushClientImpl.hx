@@ -1,13 +1,15 @@
 
-package cloudshift.flow;
+package cloudshift.channel;
 
 import cloudshift.Core;
-import cloudshift.Flow;
+import cloudshift.Channel;
+
+import cloudshift.channel.Flow;
 import cloudshift.Session;
-import cloudshift.flow.InternalApi;
+import cloudshift.channel.InternalApi;
 import cloudshift.core.ObservableImpl;
 using cloudshift.Mixin;
-using cloudshift.Flow;
+using cloudshift.channel.Flow;
 
 class PushClientImpl implements Conduit {
   public var part_:Part_<ConduitClientStart,String,Conduit,ConduitEvent>;

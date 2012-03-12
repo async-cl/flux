@@ -1,15 +1,18 @@
 
-package cloudshift.flow;
+package cloudshift.channel;
 
 import cloudshift.Core;
 import cloudshift.Session;
-import cloudshift.Flow;
-import cloudshift.flow.InternalApi;
+
+import cloudshift.Channel;
+
+import cloudshift.channel.Flow;
+import cloudshift.channel.InternalApi;
 import cloudshift.Http;
 import cloudshift.http.HttpImpl;
 import cloudshift.core.ObservableImpl;
 
-using cloudshift.Flow;
+using cloudshift.channel.Flow;
 using cloudshift.Mixin;
 
 import js.Node;

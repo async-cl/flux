@@ -1,18 +1,19 @@
 
-package cloudshift.flow;
+package cloudshift.channel;
 
 import cloudshift.Core;
-import cloudshift.Flow;
-import cloudshift.flow.InternalApi;
+import cloudshift.Channel;
+import cloudshift.channel.Flow;
+import cloudshift.channel.InternalApi;
 import cloudshift.core.ObservableImpl;
 using cloudshift.Mixin;
 
-using cloudshift.Flow;
+using cloudshift.channel.Flow;
 
 class SinkImpl implements Sink {
   public var part_:Part_<Conduit,String,Sink,SinkEvent>;
   
-  var _pipes:Hash<Pipe<Dynamic>>;
+  var _chans:Hash<Chan<Dynamic>>;
   var _conduit:Array<Conduit>;
   var _myfill:Dynamic->String->Dynamic->Void;
   
@@ -24,7 +25,7 @@ class SinkImpl implements Sink {
     if (oc == null)
       oc = Core.outcome();
     _conduit = [];
-    _pipes = new Hash();
+    _chans = new Hash();
     addConduit(c);
     oc.resolve(Right(cast(this,Sink)));
     return oc;
@@ -40,12 +41,12 @@ class SinkImpl implements Sink {
         switch(f) {
         case Drain(pkt,sessID,cb):
           var
-            pID = pkt.pipeID(),
-            pip = _pipes.get(pID),
+            pID = pkt.chanID(),
+            pip = _chans.get(pID),
             op = pkt.operation();
     
           if (pip == null)
-            pip = pipe(pID);
+            pip = chan(pID);
     
           switch(op) {
           case "s": // subscribe
@@ -64,11 +65,11 @@ class SinkImpl implements Sink {
   }
 
   public function
-  pipe<T>(pID):Pipe<T> {
-    var ch = _pipes.get(pID) ;
+  chan<T>(pID):Chan<T> {
+    var ch = _chans.get(pID) ;
     if (ch == null) {
       ch = new PipeImpl<T>(pID);
-      _pipes.set(pID,ch);
+      _chans.set(pID,ch);
       if (_myfill != null) {
         ch._fill = _myfill;
       }
@@ -77,20 +78,20 @@ class SinkImpl implements Sink {
   }
 
   public function
-  removePipe<T>(p:Pipe<T>) {
-    _pipes.remove(p.pid());
+  removeChan<T>(p:Chan<T>) {
+    _chans.remove(p.pid());
   }
   
   public function
-  pipeFromId(pID:String):Option<Pipe<Dynamic>> {
-    return _pipes.getOption(pID);
+  chanFromId(pID:String):Option<Chan<Dynamic>> {
+    return _chans.getOption(pID);
   }
 
-  function reqSub(sessID:String,chan:Pipe<Dynamic>,cb:Either<String,String>->Void) {
+  function reqSub(sessID:String,chan:Chan<Dynamic>,cb:Either<String,String>->Void) {
     throw "SinkImp:reqSub, should be overridden";
   }
 
-  function reqUnsub(sessID,chan:Pipe<Dynamic>,cb:Either<String,String>->Void) {
+  function reqUnsub(sessID,chan:Chan<Dynamic>,cb:Either<String,String>->Void) {
     throw "SinkImp:reqUnsub, should be overridden";
   }
 
@@ -98,16 +99,16 @@ class SinkImpl implements Sink {
     throw "SinkImp:removeAllSubs, should be overridden";
   }
 
-  function reqMsg(pipe:Pipe<Dynamic>,pkt:Pkt<Dynamic>) {
+  function reqMsg(pipe:Chan<Dynamic>,pkt:Pkt<Dynamic>) {
     pipe._defaultFill(pkt,"",null);
   }
 
-  public function direct<T>(sessID:String):Pipe<T> {
-    return pipe("/__cs/"+sessID);
+  public function direct<T>(sessID:String):Chan<T> {
+    return chan("/__cs/"+sessID);
   }
   
   public function
-  authorize<T>(pipe:Pipe<T>):Outcome<String,Pipe<T>> {
+  authorize<T>(pipe:Chan<T>):Outcome<String,Chan<T>> {
     var oc = Core.outcome();
     trace("auth :"+pipe.pid());
     _conduit[0].authorize(pipe.pid())

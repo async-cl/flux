@@ -8,7 +8,7 @@ package cloudshift.channel;
 import cloudshift.Core;
 import cloudshift.Channel;
 import cloudshift.Session;
-import cloudshift.Flow;
+import cloudshift.channel.Flow;
 
 using cloudshift.Mixin;
 
@@ -57,7 +57,7 @@ class TChannelClient implements ChannelClient,
   public function
   channel<T>(id:String):Outcome<String,Chan<T>> {
     var oc = Core.outcome();
-    _sink.authorize(_sink.pipe(id)).outcome(function(val) {
+    _sink.authorize(_sink.chan(id)).outcome(function(val) {
         oc.resolve(Right(val));
       });
     return oc;
@@ -65,11 +65,11 @@ class TChannelClient implements ChannelClient,
 
   public function direct<T>(sessID:String):Outcome<String,Chan<T>> {
     var oc = Core.outcome();
-    _sink.authorize(_sink.pipe(sessID)).deliver(cast oc.resolve);
+    _sink.authorize(_sink.chan(sessID)).deliver(cast oc.resolve);
     return oc;
   }
 
   public function unsub(chan:Chan<Dynamic>) {
-    _sink.removePipe(chan);
+    _sink.removeChan(chan);
   }
 }

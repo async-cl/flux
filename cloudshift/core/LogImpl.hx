@@ -28,6 +28,7 @@ class LogImpl {
   
   public static function
   init(?fileName:String) {
+    haxe.Log.trace = myTrace;
 #if (!macro && nodejs)
     if ( fileName != null) {
       logFileFD = Node.fs.openSync(fileName,"a+",438);
@@ -82,12 +83,12 @@ class LogImpl {
   
   static public function
   info(msg:Dynamic,category="",?inf:haxe.PosInfos) {
-    doTrace("info",category,msg,inf);
+    doTrace("info ",category,msg,inf);
   }
 
   static public function
   warn(msg:Dynamic,category="",?inf:haxe.PosInfos) {
-    doTrace("warn",category,msg,inf);
+    doTrace("warn ",category,msg,inf);
   }
 
   static public function

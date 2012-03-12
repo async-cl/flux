@@ -1,5 +1,6 @@
 
 import cloudshift.Core;
+import cloudshift.Session;
 import cloudshift.Channel;
 using cloudshift.Mixin;
 
@@ -20,15 +21,24 @@ class ChatClient {
   }
 
   function login(nick:String) {
-    Channel.client()
-      .start(nick)
-      .outcome(function(client) {
-          _chanClient = client;
-          trace("starting room");
-          startRoom(nick,client);
-        },function(reason) {
-          trace(reason);
-        });
+    Session.client().start({}).outcome(function(sess) {
+        sess.login(nick).deliver(function(es) {
+            switch(es) {
+            case UserOk(sessID):
+              trace("got sessID:"+sessID);
+              Channel.client()
+                .start(sessID)
+                .outcome(function(client) {
+                    _chanClient = client;
+                    trace("starting room");
+                    startRoom(nick,client);
+                  },function(reason) {
+                    trace(reason);
+                  });
+            default:
+            }
+          });
+      });
   }
  
   public function
@@ -56,7 +66,7 @@ class ChatClient {
 
   
   function logout() {
-    _chanClient.logout();
+    //_chanClient.logout();
     _chanClient.unsub(_room);
     ChatUi.reset();
   }

@@ -7,7 +7,6 @@ import cloudshift.Core;
 using cloudshift.Mixin;
 
 class FutureImpl<T> implements Future<T> {
-  public var sequence:Int;
   var _listeners: Array<T -> Void>;
   var _result: T;
   var _isSet: Bool;
@@ -132,16 +131,6 @@ class FutureImpl<T> implements Future<T> {
 
     return this;
   }
-
-  public function deliverMe(f:Future<T>-> Void): Future<T> {
-    if (isCanceled()) return this;
-    else if (isDelivered()) f(this);
-    else _listeners.push(function(g) {
-        f(this);
-      });
-    return this;
-  }
-
   
   /** Uses the specified function to transform the result of this future into
    * a different value, returning a future of that value.
@@ -233,58 +222,5 @@ class FutureImpl<T> implements Future<T> {
   
   public static function create<T>(): Future<T> {
     return new FutureImpl<T>();
-  }
-
-  /*
-  public static function waitFor(toJoin:Array<Future<Dynamic>>):Future<Array<Dynamic>> {
-    var
-      joinLen = toJoin.length,
-      myprm = create(),
-      combined:Array<{seq:Int,val:Dynamic}> = [],
-      sequence = 0;
-        
-    toJoin.foreach(function(xprm:Dynamic) {
-        if(!Std.is(xprm,Future)) {
-          throw "not a promise:"+xprm;
-        }
-
-        xprm.sequence = sequence++; 
-        xprm.deliverMe(function(r:Dynamic) {
-            combined.push({ seq:r.sequence,val:r._result});
-            if (combined.length == joinLen) {
-              combined.sort(function(x,y) { return x.seq - y.seq; });
-
-              //trace("combined :"+combined.map(function(el) { return el.seq; }).stringify());              
-              myprm.resolve(combined.map(function(el) { return el.val; }));
-            }
-          });
-      });
-    
-    return myprm;
-  }
-  */
-
-  public static
-  function waitFor(toJoin:Array<Future<Dynamic>>):Future<Array<Dynamic>> {
-    var
-      count = toJoin.length,
-      fut = Core.future();
-    
-    toJoin.foreach(function(xprm:Future<Dynamic>) {
-        if(!Std.is(xprm,Future)) {
-          throw "not a future:"+xprm;
-        }
-
-        xprm.deliver(function(r:Dynamic) {
-            count--;
-            if (count == 0) {
-              fut.resolve(toJoin.map(function(el) {
-                    return el.value().get();
-                  }));
-            }
-          });
-      });
-    return fut;
-  } 
-  
+  }  
 }

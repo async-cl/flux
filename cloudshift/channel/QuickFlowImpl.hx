@@ -1,10 +1,10 @@
 
-package cloudshift.flow;
+package cloudshift.channel;
 
 import cloudshift.Core;
 import cloudshift.Http;
 import cloudshift.Session;
-import cloudshift.Flow;
+import cloudshift.channel.Flow;
 
 using cloudshift.Mixin;
 

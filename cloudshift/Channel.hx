@@ -12,9 +12,36 @@ import cloudshift.Http;
 #end
 
 import cloudshift.Session;
-import cloudshift.Flow;
 
-typedef Chan<T> = Pipe<T>;
+typedef TMeta = {
+    var ch:String;
+    var op:String;
+    var um:Dynamic; /* user meta data */
+}
+
+typedef Pkt<T> = {
+    var s:String; // session ID
+    var p:T;        // payload
+    var m:TMeta;    // meta
+}
+
+interface Chan<T> { 
+    // internal use only
+  var _fill:Dynamic->String->Dynamic->Void; 
+  function _defaultFill<T>(o:Dynamic,chanID:String,meta:Dynamic):Void;
+
+  // public
+  function pub(o:T,?meta:Dynamic):Void;
+  function sub(cb:T->Void,?info:Dynamic):Void->Void;
+  function subPkt(cb:Pkt<T>->Void,?info:Dynamic):Void->Void;
+  function filter(cb:T->Null<T>):Void->Void;
+  function filterPkt(cb:Pkt<T>->Null<Pkt<T>>):Void->Void;
+  function pid():String; 
+  function subs():Array<Dynamic>;
+  function removeAllSubs():Void;
+  function route<P>(chan:Chan<P>,?map:T->P):Void->Void;
+  function peek(cb:EOperation->Void):Void;
+}
 
 interface ChannelProvider {
   function channel<T>(chanID:String):Outcome<String,Chan<T>>;

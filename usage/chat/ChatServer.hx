@@ -4,7 +4,6 @@
 
 import cloudshift.Core;
 import cloudshift.Http;
-import cloudshift.Flow;
 import cloudshift.Session;
 using cloudshift.Mixin;
 import cloudshift.Channel;
@@ -20,6 +19,7 @@ class ChatServer {
   }
   
   public function new() {
+    Core.init();
     Http.server()
       .root("www")
       .start({host:"localhost",port:8082})
@@ -42,9 +42,10 @@ class ChatServer {
   }
 
   function sessAuth(event:ESessionOp) {
+    trace("authing");
     switch(event) {
     case Login(pkt,reply):
-
+      trace("logging in with "+pkt);
       var lp:LoginPkt = pkt;
       if (nicks.exists(lp.nick)) {
         trace("user exists");
@@ -74,23 +75,26 @@ class ChatServer {
 
   public function
   startRooms(cs:ChannelServer) {
-    var room:Chan<MsgTypes> = cs.channel("/chat/room");
-    room.filter(function(o) {
-        switch(o) {
-        case Chat(nick,msg):
-          return Chat(nick.toUpperCase(),msg);
-        default:
-        }
-        return o;
-      });
+    Core.listParts();
+    cs.channel("/chat/room").outcome(function(room) {
+        trace("added rooms");
+        room.filter(function(o) {
+            switch(o) {
+            case Chat(nick,msg):
+              return Chat(nick.toUpperCase(),msg);
+            default:
+            }
+            return o;
+          });
     
-    room.peek(function(pe) {
-        switch(pe) {
-        case Add(i):
-          room.fill(Chat("bot","someone entered"));
-        case Del(i):
-          room.fill(Chat("bot","someone left"));
-        }
+        room.peek(function(pe) {
+            switch(pe) {
+            case Add(i):
+              room.fill(Chat("bot","someone entered"));
+            case Del(i):
+              room.fill(Chat("bot","someone left"));
+            }
+          });
       });
   }
 

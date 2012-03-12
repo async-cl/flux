@@ -1,10 +1,10 @@
 
-package cloudshift.flow;
+package cloudshift.channel;
 
 import cloudshift.Http;
-import cloudshift.Flow;
-import cloudshift.flow.InternalApi;
-import cloudshift.flow.MessageQImpl;
+import cloudshift.channel.Flow;
+import cloudshift.channel.InternalApi;
+import cloudshift.channel.MessageQImpl;
 
 using cloudshift.Mixin;
 

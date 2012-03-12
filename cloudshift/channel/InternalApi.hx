@@ -1,8 +1,8 @@
 
-package cloudshift.flow;
+package cloudshift.channel;
 
 import cloudshift.Core;
-import cloudshift.Flow;
+import cloudshift.channel.Flow;
 
 interface MessageQ {
   function append(pkt:Dynamic):Void;

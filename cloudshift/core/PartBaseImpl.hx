@@ -4,12 +4,18 @@ import  cloudshift.Core;
 using cloudshift.Mixin;
 
 class PartBaseImpl<S,B,G,E> implements Part_<S,B,G,E> {
+  public static var runningParts:Array<AnyPart> = [];
+  
   public var partID(default,null):String;
   public var _events:Observable<EPartState<E>>;
+  public var state:EPartState<E>;
+  public var info:PartInfo;
   
   var parent:Dynamic;
-  public function new(parent:Dynamic) {
+
+  public function new(parent:Dynamic,?info:PartInfo) {
     this.parent = parent;
+    this.info = info;
     partID = Type.getClassName(Type.getClass(parent));
     _events = Core.event();
 #if debug
@@ -54,6 +60,10 @@ class PartBaseImpl<S,B,G,E> implements Part_<S,B,G,E> {
 #if debug
         Core.info("Part started:"+Type.getClassName(Type.getClass(parent)));
 #end
+        state = Started;
+
+        runningParts.push(parent);
+        
         _events.notify(Started);
       },function(msg) {
         return _events.notify(Error(Std.string(msg)));
@@ -69,6 +79,7 @@ class PartBaseImpl<S,B,G,E> implements Part_<S,B,G,E> {
     checkErr("stop",p);
     
     p.outcome(function(outcome) {
+        state = Stopped;
         _events.notify(Stopped);
       },function(msg) {
         _events.notify(Error(msg));

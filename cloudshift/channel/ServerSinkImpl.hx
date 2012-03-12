@@ -1,11 +1,12 @@
 
-package cloudshift.flow;
+package cloudshift.channel;
 
 import cloudshift.Core;
 import cloudshift.Session;
-import cloudshift.Flow;
+import cloudshift.Channel;
+import cloudshift.channel.Flow;
 import cloudshift.Http;
-import cloudshift.flow.InternalApi;
+import cloudshift.channel.InternalApi;
 
 using cloudshift.Mixin;
 
@@ -20,12 +21,12 @@ class ServerSinkImpl extends SinkImpl {
   }
     
   override function
-  reqSub(sessID:String,pipe:Pipe<Dynamic>,cb:Either<String,String>->Void) {
-    var pID = pipe.pid();
-    notify(Authorize(sessID,pipe,function(e:Either<String,String>) {
+  reqSub(sessID:String,chan:Chan<Dynamic>,cb:Either<String,String>->Void) {
+    var pID = chan.pid();
+    notify(Authorize(sessID,chan,function(e:Either<String,String>) {
           switch(e) {
           case Right(_):
-            var unsub = pipe.drain(function(payload:Dynamic) {
+            var unsub = chan.sub(function(payload:Dynamic) {
                   _conduit[0].pump(sessID,payload,pID,null);
               });
 
@@ -39,10 +40,10 @@ class ServerSinkImpl extends SinkImpl {
   }
 
   override function
-  reqUnsub(sessID:String,pipe:Pipe<Dynamic>,cb:Either<String,String>->Void) {
-    switch(_conduit[0].subscriptions(sessID).getOption(pipe.pid())) {
+  reqUnsub(sessID:String,chan:Chan<Dynamic>,cb:Either<String,String>->Void) {
+    switch(_conduit[0].subscriptions(sessID).getOption(chan.pid())) {
       case Some(f):
-        trace("remove function for "+pipe.pid());
+        trace("remove function for "+chan.pid());
         f();
         cb(Right(""));
       case None:
@@ -67,7 +68,7 @@ class ServerSinkImpl extends SinkImpl {
      world */
 
   function myfill(payload,chanID,meta) {
-    _pipes.get(chanID)._defaultFill(Flow.createPkt(payload,"server",chanID,meta),chanID,null);
+    _chans.get(chanID)._defaultFill(Flow.createPkt(payload,"server",chanID,meta),chanID,null);
   }
 
 }

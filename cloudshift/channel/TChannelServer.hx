@@ -5,7 +5,7 @@ import cloudshift.Core;
 import cloudshift.Channel;
 import cloudshift.Http;
 import cloudshift.Session;
-import cloudshift.Flow;
+import cloudshift.channel.Flow;
 using cloudshift.Mixin;
 
 class TChannelServer implements ChannelServer,implements Part<Dynamic,String,ChannelServer,ChannelEvent> {
@@ -21,7 +21,11 @@ class TChannelServer implements ChannelServer,implements Part<Dynamic,String,Cha
   
   public function
   new() {
-    part_ = Core.part(this);
+    part_ = Core.part(this,{
+        name:"Channel Server",
+        ver:"0.1",
+        auth:"Cloudshift"
+    });
   }
 
   public function
@@ -29,53 +33,50 @@ class TChannelServer implements ChannelServer,implements Part<Dynamic,String,Cha
     if (oc == null)
       oc = Core.outcome();
 
-    if (_session == null)
+    if (_session == null) {
       _session = Session.manager();
-
+      Core.info("created session");
+    }
     /* provide an http if the user does not */
     if (_http == null) {
       _http = Http.server();
       if (_host == null)
         _host = "localhost";
       if (_port == null)
-        _port = 3844;
-      
+        _port = 8082;
+
       _http.start({host:_host,port:_port}).outcome(function(http) {
           gotHttp(oc);
         });
     } else {
       /* use the users, assuming it's started */
-      gotHttp(oc);
+      if (_http.state() == Started) {
+        gotHttp(oc);
+      } else {
+        Core.error("you need to start the http server");
+      }
     }
-    
     return oc;
   }
 
   public function
   gotHttp(oc:Outcome<String,ChannelServer>) {
-    trace("starting session");
     _session.start(_http)
       .oflatMap(function(sess) {
           _session = sess;
           var myoc:Outcome<String,Conduit> = Core.outcome();
-          trace("got session");
-          /*
-          if (_sessionAuth == null) {
-            myoc.cancel();
-            oc.resolve(Left("need session auth"));
-          } else {
+          if (_sessionAuth != null) {
             _session.observe(_sessionAuth);
-          
-           
+          } else {
+            Core.warn("you may need to add a session authorizer");
           }
-          */
-         Flow.pushConduit(sess).start({},myoc);
+          
+          Flow.pushConduit(sess).start({},myoc);
           return myoc;
         })
       .oflatMap(function(push) {
           var myoc:Outcome<String,Sink> = Core.outcome();
           _conduit = push;
-          trace("got conduit");
           Flow.sink(push.session()).start(push,myoc);
           return myoc;
         })
@@ -90,7 +91,6 @@ class TChannelServer implements ChannelServer,implements Part<Dynamic,String,Cha
                 }
               });
           }
-          trace("got sink");
           oc.resolve(Right(cast this));
         });
   }
@@ -125,7 +125,7 @@ class TChannelServer implements ChannelServer,implements Part<Dynamic,String,Cha
   channel<T>(chanID:String):Outcome<String,Chan<T>> {
     var oc = Core.outcome();
     // on server getting a pipe is sync
-    oc.resolve(Right(_sink.pipe(chanID)));
+    oc.resolve(Right(_sink.chan(chanID)));
     return oc;
   }
 

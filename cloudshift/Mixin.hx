@@ -640,6 +640,17 @@ class PartX {
     part.part_._events.observe(cb);
   }
 
+  public static function
+  state<S,B,G,E>(part:Part<S,B,G,E>):EPartState<E> {
+    return part.part_.state;
+  }
+
+  public static function
+  info<S,B,G,E>(part:Part<S,B,G,E>) {
+    return part.part_.info;
+  }
+  
+  
 }
 
 class OutcomeX {

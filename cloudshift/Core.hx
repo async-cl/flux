@@ -17,15 +17,15 @@ enum Either<A, B> {
   Right(v: B);
 }
 
-enum EOperation {
-  Add(info:Option<Dynamic>);
-  Del(info:Option<Dynamic>);
-}
-
 enum ELogLevel {
   I(s:String);
   W(s:String);
   E(s:String);
+}
+
+enum EOperation {
+  Add(info:Option<Dynamic>);
+  Del(info:Option<Dynamic>);
 }
 
 interface Observable<T> {
@@ -38,10 +38,8 @@ interface Observable<T> {
 }
 
 interface Future<T> {
-  var sequence:Int;
   function resolve(t: T): Future<T>;
   function deliver(f: T -> Void): Future<T>;
-  function deliverMe(f:Future<T>-> Void): Future<T>;
   function isCanceled(): Bool;
   function ifCanceled(f: Void -> Void): Future<T>;
   function allowCancelOnlyIf(f: Void -> Bool): Future<T>;
@@ -66,10 +64,18 @@ enum EPartState<E> {
   Except(e:Dynamic);
 }
 
+typedef PartInfo = {
+    var name:String;
+    var ver:String;
+    var auth:String;
+}
+
 // (S) start param object, (B) bad return type, (G) good return type, (E) event enum
 interface Part_<S,B,G,E> {
   var _events:Observable<EPartState<E>>;
   var partID(default,null):String;
+  var state:EPartState<E>;
+  var info:PartInfo;
   function start(d:S,?oc:Outcome<B,G>):Outcome<B,G>;
   function stop(d:Dynamic):Outcome<String,Dynamic>;
   function observe(cb:E->Void,?info:Dynamic):Void->Void;
@@ -90,6 +96,22 @@ typedef AnyPart = Part<Dynamic,Dynamic,Dynamic,Dynamic>;
 class Core {
 
   public static var CSROOT = "/__cs/";
+
+  public static function
+  init() {
+    logInit();
+    #if nodejs
+    Sys.events().observe(function(e) {
+        switch(e) {
+        case ProcessUncaughtException(exc):
+          trace(exc);
+          trace(haxe.Stack.exceptionStack());
+        case ProcessExit:
+        case SigInt(sig):
+        }
+      });
+    #end
+  }
   
   public static inline function
   future<T>():Future<T> {
@@ -102,13 +124,8 @@ class Core {
   }
 
   public static function
-  part<S,B,G,E>(parent:Dynamic):Part_<S,B,G,E> {
-    return new cloudshift.core.PartBaseImpl(parent);
-  }
-
-  public static function
-  waitFor(toJoin:Array<Future<Dynamic>>):Future<Array<Dynamic>> {
-    return cloudshift.core.FutureImpl.waitFor(toJoin);
+  part<S,B,G,E>(parent:Dynamic,?info:PartInfo):Part_<S,B,G,E> {
+    return new cloudshift.core.PartBaseImpl(parent,info);
   }
 
   public static function cancelledFuture() {
@@ -126,7 +143,7 @@ class Core {
   }
 
   inline static public function
-  logTo(?fileName:String) {
+  logInit(?fileName:String) {
     LogImpl.init(fileName);
   }
 
@@ -191,7 +208,44 @@ class Core {
       });
     return oc;
   } 
-  
+
+  public static
+  function waitFor(toJoin:Array<Future<Dynamic>>):Future<Array<Dynamic>> {
+    var
+      count = toJoin.length,
+      fut = Core.future();
+    
+    toJoin.foreach(function(xprm:Future<Dynamic>) {
+        if(!Std.is(xprm,Future)) {
+          throw "not a future:"+xprm;
+        }
+
+        xprm.deliver(function(r:Dynamic) {
+            count--;
+            if (count == 0) {
+              fut.resolve(toJoin.map(function(el) {
+                    return el.value().get();
+                  }));
+            }
+          });
+      });
+    return fut;
+  } 
+
+  public static function
+  listParts() {
+    cloudshift.core.PartBaseImpl.runningParts.foreach(function(p) {
+        if (p.info() != null) {
+          trace(p.info());
+        }
+      });    
+  }
+
+  public static function
+  assert( cond : Bool, ?pos : haxe.PosInfos ) {
+    if( !cond )
+      Core.error("Assert failed in "+pos.className+"::"+pos.methodName,pos);
+  }
   
 }
 

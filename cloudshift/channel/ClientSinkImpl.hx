@@ -1,10 +1,11 @@
 
-package cloudshift.flow;
+package cloudshift.channel;
 
 import cloudshift.Core;
 import cloudshift.Session;
-import cloudshift.Flow;
-import cloudshift.flow.InternalApi;
+import cloudshift.Channel;
+import cloudshift.channel.Flow;
+import cloudshift.channel.InternalApi;
 
 
 class ClientSinkImpl extends SinkImpl {
@@ -23,15 +24,15 @@ class ClientSinkImpl extends SinkImpl {
   }
 
   override function
-  removePipe<T>(pipe:Pipe<T>) {
-    super.removePipe(pipe);
+  removeChan<T>(pipe:Chan<T>) {
+    super.removeChan(pipe);
     reqUnsub(_sessID,pipe,function(cb) {
         Core.info("ok unsubbed:"+pipe.pid());
       });
   }
 
   override function
-  reqUnsub(sessId,pipe:Pipe<Dynamic>,cb:Either<String,String>->Void) {
+  reqUnsub(sessId,pipe:Chan<Dynamic>,cb:Either<String,String>->Void) {
     _conduit[0].leave(pipe.pid()).deliver(cb);
   }
 }

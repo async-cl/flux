@@ -1,7 +1,7 @@
 
-package cloudshift.flow;
-import cloudshift.Flow;
-import cloudshift.flow.InternalApi;
+package cloudshift.channel;
+import cloudshift.channel.Flow;
+import cloudshift.channel.InternalApi;
 
 using cloudshift.Mixin;
 
