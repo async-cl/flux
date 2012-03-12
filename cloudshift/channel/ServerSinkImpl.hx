@@ -67,7 +67,7 @@ class ServerSinkImpl extends SinkImpl {
      world */
 
   function myfill(payload,chanID,meta) {
-    _chans.get(chanID)._defaultFill(Flow.createPkt(payload,"server",chanID,meta),chanID,null);
+    _chans.get(chanID)._defaultFill(Channel.createPkt(payload,"server",chanID,meta),chanID,null);
   }
 
 }

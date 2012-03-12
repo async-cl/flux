@@ -7,7 +7,7 @@ import cloudshift.channel.Flow;
 import cloudshift.core.ObservableImpl;
 using cloudshift.Mixin;
 
-using cloudshift.channel.Flow;
+using cloudshift.Channel;
 
 class SinkImpl implements Sink {
   public var part_:Part_<Conduit,String,Sink,SinkEvent>;

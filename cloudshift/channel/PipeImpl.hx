@@ -6,7 +6,7 @@ using cloudshift.Mixin;
 import cloudshift.Channel;
 import cloudshift.channel.Flow;
 
-using cloudshift.channel.Flow;
+using cloudshift.Channel;
 
 class PipeImpl<T> implements Chan<T> {
 

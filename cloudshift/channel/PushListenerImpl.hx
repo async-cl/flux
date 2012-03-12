@@ -11,7 +11,7 @@ import cloudshift.Http;
 import cloudshift.http.HttpImpl;
 import cloudshift.core.ObservableImpl;
 
-using cloudshift.channel.Flow;
+using cloudshift.Channel;
 using cloudshift.Mixin;
 
 import js.Node;

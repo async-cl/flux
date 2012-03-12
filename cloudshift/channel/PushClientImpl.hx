@@ -66,7 +66,7 @@ class PushClientImpl implements Conduit {
   public function
   pump(sessID:String,userData:Dynamic,chanID:String,meta:Dynamic) {
     var
-      ud = Flow.createPkt(userData,_sessID,chanID,"m",meta),
+      ud = Channel.createPkt(userData,_sessID,chanID,"m",meta),
       pl = haxe.Serializer.run(ud),
       req = new haxe.Http(_url+Flow.PUSH);
 
@@ -137,7 +137,7 @@ class PushClientImpl implements Conduit {
   function
   client(cmd:String,userData:Dynamic,chanID:String,cb:Dynamic->Void) {
     var
-      ud = Flow.createPkt(userData,_sessID,chanID,cmd),
+      ud = Channel.createPkt(userData,_sessID,chanID,cmd),
       pl = haxe.Serializer.run(ud),
       req = new haxe.Http(_url+Flow.PUSH);
 
