@@ -5,8 +5,8 @@ import cloudshift.Core;
 import cloudshift.Channel;
 import cloudshift.Http;
 import cloudshift.Session;
-import cloudshift.channel.Flow;
 using cloudshift.Mixin;
+import cloudshift.channel.Flow;
 
 class TChannelServer implements ChannelServer,implements Part<Dynamic,String,ChannelServer,ChannelEvent> {
   public var part_:Part_<Dynamic,String,ChannelServer,ChannelEvent>;

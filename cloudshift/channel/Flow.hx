@@ -8,9 +8,23 @@ import cloudshift.Channel;
 
 #if nodejs
 import cloudshift.Http;
-import cloudshift.channel.InternalApi;
 #end
 
+interface MessageQ {
+  function append(pkt:Dynamic):Void;
+  function setFlusher(cb:MessageQ->Bool):Void;
+  function sessID():String;
+  function deQueue():Array<Dynamic>;
+}
+
+interface ConduitSession {
+  function append(pkt:Dynamic):Void;
+  function flusher(flush:MessageQ->Bool):Void;
+  function subscriptions():Hash<Void->Void>;
+  function shutDown():Void;
+  var lastConnection(default,default):Float;
+  var sessID(default,default):String;
+}
 
 typedef ConduitClientStart = {
     var host:String;
@@ -52,15 +66,6 @@ enum SinkEvent {
   function direct<T>(sessID:String):Chan<T>;
 }
 
-
-  /*
-typedef QuickFlow = {
-    var conduit:Conduit;
-    var session:SessionMgr;
-    var sink:Sink;
-}
-  */
-  
 class Flow {
 
   public static var PUSH = Core.CSROOT+"p";

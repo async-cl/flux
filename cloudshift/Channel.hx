@@ -108,4 +108,44 @@ class Channel {
     return new cloudshift.channel.TChannelClient();
   }
   #end
+
+  public static function
+  chanID(pkt:Pkt<Dynamic>) {
+    return pkt.m.ch;
+  }
+    
+  public static function
+  operation(pkt:Pkt<Dynamic>) {
+    return pkt.m.op;
+  }
+
+  public static function
+  payload(pkt:Pkt<Dynamic>) {
+    return pkt.p;
+  }
+  
+  public static function
+  setPayload(pkt:Pkt<Dynamic>,pl:Dynamic) {
+    pkt.p = pl;
+  }
+  
+  public static function
+  sessID(pkt:Pkt<Dynamic>) {
+    return pkt.s;
+  }
+
+  public static function oldmeta(pkt:Pkt<Dynamic>) {
+    return pkt.m;
+  }
+
+  public static function meta(pkt:Pkt<Dynamic>):Dynamic {
+    return pkt.m.um;
+  }
+
+  public static function
+  createPkt<T>(userData:T,sessID:String,chan:String,op="m",meta:Dynamic=null):Pkt<T> {
+    return { p:userData,s:sessID,m:{ch:chan,op:op,um:meta} };
+  }
+
+
 }

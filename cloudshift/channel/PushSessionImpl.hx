@@ -3,7 +3,6 @@ package cloudshift.channel;
 
 import cloudshift.Http;
 import cloudshift.channel.Flow;
-import cloudshift.channel.InternalApi;
 import cloudshift.channel.MessageQImpl;
 
 using cloudshift.Mixin;

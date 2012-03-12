@@ -4,7 +4,6 @@ package cloudshift.channel;
 import cloudshift.Core;
 import cloudshift.Channel;
 import cloudshift.channel.Flow;
-import cloudshift.channel.InternalApi;
 import cloudshift.core.ObservableImpl;
 using cloudshift.Mixin;
 

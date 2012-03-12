@@ -6,7 +6,6 @@ import cloudshift.Session;
 import cloudshift.Channel;
 import cloudshift.channel.Flow;
 import cloudshift.Http;
-import cloudshift.channel.InternalApi;
 
 using cloudshift.Mixin;
 
