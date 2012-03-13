@@ -42,7 +42,6 @@ class ChatServer {
   }
 
   function sessAuth(event:ESessionOp) {
-    trace("authing");
     switch(event) {
     case Login(pkt,reply):
       trace("logging in with "+pkt);
@@ -78,6 +77,7 @@ class ChatServer {
     Core.listParts();
     cs.channel("/chat/room").outcome(function(room) {
         trace("added rooms");
+        /*
         room.filter(function(o) {
             switch(o) {
             case Chat(nick,msg):
@@ -90,11 +90,12 @@ class ChatServer {
         room.peek(function(pe) {
             switch(pe) {
             case Add(i):
-              room.fill(Chat("bot","someone entered"));
+              room.pub(Chat("bot","someone entered"));
             case Del(i):
-              room.fill(Chat("bot","someone left"));
+              room.pub(Chat("bot","someone left"));
             }
           });
+        */
       });
   }
 

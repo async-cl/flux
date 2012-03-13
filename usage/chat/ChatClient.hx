@@ -49,9 +49,9 @@ class ChatClient {
           ChatUi.status("authorized in room");
           ChatUi.setChat(function(msg) {
               trace("should be sending "+msg);
-              room.fill(Chat(nick,msg));
+              room.pub(Chat(nick,msg));
             });
-          room.drain(function(mt:MsgTypes) {
+          room.sub(function(mt:MsgTypes) {
               switch(mt) {
               case Chat(nick,msg):
                 ChatUi.msg(nick,msg);

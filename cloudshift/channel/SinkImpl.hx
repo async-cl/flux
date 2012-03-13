@@ -67,7 +67,7 @@ class SinkImpl implements Sink {
   chan<T>(pID):Chan<T> {
     var ch = _chans.get(pID) ;
     if (ch == null) {
-      ch = new PipeImpl<T>(pID);
+      ch = new ChanImpl<T>(pID);
       _chans.set(pID,ch);
       if (_myfill != null) {
         ch._fill = _myfill;
