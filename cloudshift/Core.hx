@@ -104,8 +104,8 @@ class Core {
     Sys.events().observe(function(e) {
         switch(e) {
         case ProcessUncaughtException(exc):
-          trace(exc);
-          trace(haxe.Stack.exceptionStack());
+          Core.error("Uncaught exception: "+exc);
+          Sys.exit(1);
         case ProcessExit:
         case SigInt(sig):
         }
@@ -210,7 +210,7 @@ class Core {
   } 
 
   public static
-  function waitFor(toJoin:Array<Future<Dynamic>>):Future<Array<Dynamic>> {
+  function waitFut(toJoin:Array<Future<Dynamic>>):Future<Array<Dynamic>> {
     var
       count = toJoin.length,
       fut = Core.future();
@@ -243,8 +243,12 @@ class Core {
 
   public static function
   assert( cond : Bool, ?pos : haxe.PosInfos ) {
-    if( !cond )
+    if( !cond ) {
       Core.error("Assert failed in "+pos.className+"::"+pos.methodName,pos);
+      #if nodejs
+      Sys.exit(1);
+      #end
+    }
   }
   
 }
