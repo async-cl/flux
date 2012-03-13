@@ -8,7 +8,7 @@ import cloudshift.channel.Flow;
 
 using cloudshift.Channel;
 
-class PipeImpl<T> implements Chan<T> {
+class ChanImpl<T> implements Chan<T> {
 
   var event_:cloudshift.core.ObservableImpl<Pkt<T>>;
   
