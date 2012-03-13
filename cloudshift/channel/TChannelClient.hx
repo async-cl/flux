@@ -34,7 +34,6 @@ class TChannelClient implements ChannelClient,
     Flow.pushConduit().start({host:"localhost",port:8082,sessID:sessID})
       .oflatMap(function(conduit) {
           _conduit = conduit;
-          trace("got conduit");
           return Flow.sink(sessID).start(_conduit);
         })
       .outcome(function(sink) {

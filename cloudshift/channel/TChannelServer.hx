@@ -35,7 +35,6 @@ class TChannelServer implements ChannelServer,implements Part<Dynamic,String,Cha
 
     if (_session == null) {
       _session = Session.manager();
-      Core.info("created session");
     }
     /* provide an http if the user does not */
     if (_http == null) {
