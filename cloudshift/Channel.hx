@@ -134,10 +134,6 @@ class Channel {
     return pkt.s;
   }
 
-  public static function oldmeta(pkt:Pkt<Dynamic>) {
-    return pkt.m;
-  }
-
   public static function meta(pkt:Pkt<Dynamic>):Dynamic {
     return pkt.m.um;
   }
