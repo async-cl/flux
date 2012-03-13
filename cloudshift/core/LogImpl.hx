@@ -76,7 +76,10 @@ class LogImpl {
   inline static function
   doTrace(type:String,category:String,msg:Dynamic,?inf:haxe.PosInfos) {
     if (type == "error") {
-      msg = msg + "\n"+haxe.Stack.toString(haxe.Stack.exceptionStack());
+      var stack = haxe.Stack.toString(haxe.Stack.exceptionStack());
+      if (stack.length == 0)
+        stack = "No haXe stack trace available";
+      msg = msg + "\n"+stack;
     }
     write(format(type,msg,category,inf),type);
   }
