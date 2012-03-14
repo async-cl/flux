@@ -36,7 +36,10 @@
 #+BEGIN_SRC haxe
      Http.server().handler(~/^\/remotes/,rem.httpHandler)   
 #+END_SRC
- 
+
+     For haXers a limited Neko api is also supported on handler req/resp objects to get
+     you going.
+
 ** Channel Module
 
    Publish/subscribe with session management, channel security. Currently a Push
