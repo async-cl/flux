@@ -12,8 +12,8 @@
   dealing with common problems;
   
   - *Asynchronous haXe remoting* for inter tier and sub-process communication
-  - *Outcome<T>* (a Future<Either<String,T>>) as the means for dealing with
-    async callback hell and error handling.
+  - *Outcome<A,B>* (a Future<Either<A,B>>) as the means for dealing with
+    async callback hell and error handling with helper functions provided as Mixins.
   - *Parts* are components which have an asynchronous new() in the start()
     method - start() and an optional asynchronous stop(). Parts are also
     Observable.
