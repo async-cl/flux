@@ -623,6 +623,10 @@ class PartX {
   public static function stop<S,B,G,E>(part:Part<S,B,G,E>,?data:Dynamic):Outcome<String,Dynamic> {
     return part.part_.stop(data);
   }
+
+  public static function stop_<S,B,G,E>(part:Part<S,B,G,E>,cb:Dynamic->Outcome<String,Dynamic>) {
+    part.part_.setStop(cb);
+  }
   
   public static function observe<S,B,G,E>(part:Part<S,B,G,E>,cb:E->Void) {
     part.part_.observe(cb);

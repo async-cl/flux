@@ -76,6 +76,8 @@ interface Part_<S,B,G,E> {
   var partID(default,null):String;
   var state:EPartState<E>;
   var info:PartInfo;
+  var sstopper:Dynamic->Outcome<String,Dynamic>;
+  
   function start(d:S,?oc:Outcome<B,G>):Outcome<B,G>;
   function stop(d:Dynamic):Outcome<String,Dynamic>;
   function observe(cb:E->Void,?info:Dynamic):Void->Void;
@@ -83,12 +85,12 @@ interface Part_<S,B,G,E> {
   function observeState(cb:EPartState<E>->Void):Void;
   function notifyState(s:EPartState<E>):Void;
   function peer():Dynamic;
+  function setStop(cb:Dynamic->Outcome<String,Dynamic>):Void;
 }
 
 interface Part<S,B,G,E> {
   var part_:Part_<S,B,G,E>;
   function start_(p:S,?oc:Outcome<B,G>):Outcome<B,G>;
-  function stop_(?d:Dynamic):Outcome<String,Dynamic>;
 }
 
 typedef AnyPart = Part<Dynamic,Dynamic,Dynamic,Dynamic>;

@@ -26,12 +26,16 @@ class SinkImpl implements Sink {
     _conduit = [];
     _chans = new Hash();
     addConduit(c);
+    
+    stop_(function(d) {
+        var soc = Core.outcome();
+        _conduit[0].stop();
+        soc.resolve(Right(""));
+        return soc;
+      });
+    
     oc.resolve(Right(cast(this,Sink)));
     return oc;
-  }
-
-  public function stop_(?d):Outcome<String,Dynamic> {
-    return _conduit[0].stop();
   }
 
   public function addConduit(c:Conduit) {
@@ -103,21 +107,18 @@ class SinkImpl implements Sink {
   }
 
   public function direct<T>(sessID:String):Chan<T> {
-    return chan("/__cs/"+sessID);
+    return chan(Core.CSROOT+"direct/"+sessID);
   }
   
   public function
   authorize<T>(pipe:Chan<T>):Outcome<String,Chan<T>> {
     var oc = Core.outcome();
-    trace("auth :"+pipe.pid());
     _conduit[0].authorize(pipe.pid())
       .deliver(function(conduitAuthorized) {
           switch(conduitAuthorized) {
           case Right(_):
-            trace("got a pipe back");
             oc.resolve(Right(pipe));
           case Left(msg):
-            trace("got a message back");
             oc.resolve(Left(msg));
           }
         });

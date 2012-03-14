@@ -3,12 +3,9 @@ package cloudshift.channel;
 
 import cloudshift.Core;
 import cloudshift.Channel;
-
 import cloudshift.channel.Flow;
 import cloudshift.Session;
-import cloudshift.core.ObservableImpl;
 using cloudshift.Mixin;
-using cloudshift.channel.Flow;
 
 class PushClientImpl implements Conduit {
   public var part_:Part_<ConduitClientStart,String,Conduit,ConduitEvent>;
@@ -29,18 +26,18 @@ class PushClientImpl implements Conduit {
     _url = "http://"+js.Lib.window.location.host;
     _sessID = cs.sessID;
     _parted = false;
+    
     remoteInit(function(ignore) {
-        trace("got remote init, resolving "+_sessID);
+        stop_(function(d) {
+            var soc = Core.outcome();
+            remoteClose(function(o) {
+                soc.resolve(o);
+              });
+            return soc;
+          });
+
         oc.resolve(Right(cast(this,Conduit)));
         poll();
-      });
-    return oc;
-  }
-
-  public function stop_(?d:Dynamic) {
-    var oc = Core.outcome();
-    remoteClose(function(o) {
-        oc.resolve(o);
       });
     return oc;
   }
@@ -119,7 +116,6 @@ class PushClientImpl implements Conduit {
   function
   remoteUnSub(chanID:String,cb:Dynamic->Void) {
     client("u",{},chanID,function(o) {
-        trace("Remove unsub:"+o);
         cb(o);
       });
   }
