@@ -19,7 +19,7 @@ class LogImpl {
     var category = if (cat != "") "|"+cat else cat;
     
     var time = d.getHours()+":"+d.getMinutes()+":"+d.getSeconds();
-    return "[" + type + "|"+time+"|"+pos+category+"] " +Std.string(msg);
+    return "[" + pos + "|" + time + "|"+type+category+"]"  +Std.string(msg);
   }
 
   static function myTrace(v : Dynamic, ?inf : haxe.PosInfos) {
@@ -86,12 +86,12 @@ class LogImpl {
   
   static public function
   info(msg:Dynamic,category="",?inf:haxe.PosInfos) {
-    doTrace("info ",category,msg,inf);
+    doTrace("info",category,msg,inf);
   }
 
   static public function
   warn(msg:Dynamic,category="",?inf:haxe.PosInfos) {
-    doTrace("warn ",category,msg,inf);
+    doTrace("warn",category,msg,inf);
   }
 
   static public function
