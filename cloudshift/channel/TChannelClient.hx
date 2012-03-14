@@ -47,13 +47,6 @@ class TChannelClient implements ChannelClient,
   }
 
   public function
-  stop_(?d:Dynamic) {
-    var oc = Core.outcome();
-    oc.resolve(Right(d));
-    return oc;
-  }
-
-  public function
   channel<T>(id:String):Outcome<String,Chan<T>> {
     return _sink.authorize(_sink.chan(id));
   }

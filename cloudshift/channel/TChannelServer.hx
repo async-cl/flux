@@ -95,13 +95,6 @@ class TChannelServer implements ChannelServer,implements Part<Dynamic,String,Cha
   }
 
   public function
-  stop_(?d:Dynamic) {
-    var oc = Core.outcome();
-    oc.resolve(Right(d));
-    return oc;
-  }
-
-  public function
   addHttpServer(http):ChannelServer {
     _http = http;
     return this;

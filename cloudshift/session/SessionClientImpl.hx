@@ -29,11 +29,6 @@ class SessionClientImpl implements Part<Dynamic,String,SessionClient,ESession>,i
     return oc;
   }
 
-  public function
-  stop_(?d:Dynamic):Outcome<String,Dynamic> {
-    return null;
-  }
-  
   function doLogin(p:Future<ESession>,e:ESession) {
     switch(e) {
     case UserOk(sid):

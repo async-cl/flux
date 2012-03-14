@@ -66,12 +66,6 @@ class PushListenerImpl implements Conduit {
     return oc;
   }
 
-  public function stop_(?d:Dynamic):Outcome<String,Dynamic> {
-    var prm = Core.outcome();
-    prm.resolve(Right(this));
-    return prm;
-  }
-
   function removeSession(session) {
     if (session != null) {
       Core.info("removing session");

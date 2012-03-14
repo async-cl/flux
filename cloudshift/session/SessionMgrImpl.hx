@@ -34,12 +34,6 @@ implements Part<HttpServer,String,SessionMgr,ESessionOp>, implements SessionMgr 
     return oc;
   }
 
-  
-  public function
-  stop_(?d:Dynamic):Outcome<String,Dynamic> {
-    return null;
-  }
-
   public function http() {
     return _http;
   }
