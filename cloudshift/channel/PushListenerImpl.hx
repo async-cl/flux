@@ -156,12 +156,12 @@ class PushListenerImpl implements Conduit {
   
   public function
   pump(sessID:String,payload:Dynamic,chanID:String,meta:Dynamic) {
-    _sessions.get(sessID).append(Flow.createPkt(payload,sessID,chanID,meta));
+    _sessions.get(sessID).append(Channel.createPkt(payload,sessID,chanID,meta));
   }
 
   public function
   direct(sessID:String,payload:Dynamic) {
-    _sessions.get(sessID).append(Flow.createPkt(payload,sessID,"/__cs/direct"));
+    _sessions.get(sessID).append(Channel.createPkt(payload,sessID,Core.CSROOT+"direct"));
   }
 
   public function

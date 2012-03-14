@@ -55,17 +55,11 @@ class TChannelClient implements ChannelClient,
 
   public function
   channel<T>(id:String):Outcome<String,Chan<T>> {
-    var oc = Core.outcome();
-    _sink.authorize(_sink.chan(id)).outcome(function(val) {
-        oc.resolve(Right(val));
-      });
-    return oc;
+    return _sink.authorize(_sink.chan(id));
   }
 
   public function direct<T>(sessID:String):Outcome<String,Chan<T>> {
-    var oc = Core.outcome();
-    _sink.authorize(_sink.chan(sessID)).deliver(cast oc.resolve);
-    return oc;
+    return _sink.authorize(_sink.chan(sessID));
   }
 
   public function unsub(chan:Chan<Dynamic>) {

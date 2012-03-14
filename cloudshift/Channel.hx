@@ -86,7 +86,7 @@ interface ChannelClient
       implements ChannelProvider,
       implements Part<String,ChannelClientError,ChannelClient,ESession> {
 
-  function unsub(chan:Chan<Dynamic>):Void;
+  //  function unsub(chan:Chan<Dynamic>):Void;
   function channel<T>(id:String):Outcome<String,Chan<T>>;
   function direct<T>(sessID:String):Outcome<String,Chan<T>>;
 }

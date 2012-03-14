@@ -57,7 +57,7 @@ enum SinkEvent {
   ConnectionClose(sessID:String);
 }
 
-  interface Sink implements Part<Conduit,String,Sink,SinkEvent>  {
+interface Sink implements Part<Conduit,String,Sink,SinkEvent>  {
   function chan<T>(chanID:String):Chan<T>;
   function addConduit(conduit:Conduit):Void ;  
   function chanFromId(chanID:String):Option<Chan<Dynamic>>;
@@ -84,15 +84,6 @@ class Flow {
     return pl;
   }
 
-
-  /*
-  public static function
-  quickFlow() {
-    return new cloudshift.channel.QuickFlowImpl();
-  }
-  */
- 
-  
   #elseif CS_BROWSER
 
   public static function
