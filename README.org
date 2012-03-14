@@ -11,19 +11,21 @@
   Cloudshift provides a consistent set of abstractions on client and server for
   dealing with common problems;
   
-  - Asynchronous *haXe remoting* for inter tier and sub-process communication
-  - *Outcome<T>* (approximately a Future<Either<String,T>>) as the means for
-    dealing with async callback hell and error handling.
+  - *Asynchronous haXe remoting* for inter tier and sub-process communication
+  - *Outcome<T>* (a Future<Either<String,T>>) as the means for dealing with
+    async callback hell and error handling.
   - *Parts* are components which have an asynchronous new() in the start()
-    method - start() returns an Outcome. Further they may be stopped
-    asynchronously with stop(). Parts are also Observable.
-  - *Mixins*, mostly the Stax prelude extensions.
+    method - start() and an optional asynchronous stop(). Parts are also
+    Observable.
+  - *Mixins*, mostly the Stax prelude extensions with extensions for Parts and
+    Outcomes.
+  - *Observables* - Typical observer functionality.
    
 ** Http Module
 
    Simplest example ...
 
-#+BEGIN_SRC as3
+#+BEGIN_SRC haxe
    Http.server()
    .root("/dir/to/serve")
    .start({host:"localhost",port:8080});
@@ -35,59 +37,76 @@
      Http.server().handler(~/^\/remotes/,rem.httpHandler)   
 #+END_SRC
  
-** Flow Module
+** Channel Module
 
    Publish/subscribe with session management, channel security. Currently a Push
    implementation (web socket conduit will be added).
-
-   Flow is comprised of Conduits, Sinks and Pipes. 
-
-   - Pipes are your typical channel and are created from Sinks (you drain and
-     fill sinks via pipes)
-   - Sinks also know about Sessions and Conduits
-   - Conduits are message streams from remote sources.
-
-   Having 3 large concepts means Flow could be difficult to setup, however there
-   is a Flow.quickFlow() method that creates a typical setup for you, e.g.,
 
 #+BEGIN_SRC haxe
     Http.server()
       .root("www")
       .start({host:"localhost",port:8082})
-      .deliver(function(http) {         
-          Flow.quickFlow()
-            .start(http)
-            .deliver(function(qf) {
-               var sink = qf.sink;
-               var conduit = qf.conduit;
-               var session = qf.session;
-
-               var mypipe<MyType> = sink.pipe("/my/pipe");
-               mypipe.fill({hello:"world"});
-            });
-        });
+      .outcome(function(http) {
+          Channel.server()
+            .addHttpServer(http)
+            .addChannelAuth(channelAuth)
+            .addSessionAuth(sessAuth)
+            .start({}).outcome(startRooms);
+        });    
 #+END_SRC
 
-  The quickFlow() method may be used on the client to provide the same basic interface.
-  See the chat example for more.
+    Once you have your client or server, you may get a channel and pub/sub
+
+#+BEGIN_SRC haxe
+    function startRooms(channelServer:ChannelServer) {
+    channelServer.channel("/chat/room").outcome(function(room) {
+        room.pub("blah");
+        room.sub(function(msg) {
+           
+        });
+    });
+
+#+END_SRC
    
 ** Data Module
 
    There is a database component with, so far, one driver, Sqlite3. The api is
-   asynchronous and NoSQL. It stores haXe serialized objects in Sqlite, yet
-   provides a general indexing facility which utilises the underlying sqlite
-   indexes. This does mean that there is no generalized query facility, haXe
-   programs require to be written to extract the data.
+   asynchronous and NoSQL where objects are stored in "buckets". JSON is the
+   default storage format but you may add serializers per bucket if you prefer to
+   store haXe serialized objects or anything else.
+
+   Data provides a general indexing facility which utilises the underlying sqlite
+   indexes. Objects are relatable and queryable across buckets.
 
    The Sqlite driver is a popular C++ module for Node.js supported by many of the
    leading names in the Node.js community. It's asynchronous and embedded in
-   the node.js instance, thus data access is very fast.
+   the node.js instance.
 
    So, each Cloudshift instance has it's own database, this can be easily augmented
    so that each instance running talks to a central Cloudshift instance just
    running data services. Cloudshift provides a remote api compatible driver for
-   this purpose. *The main point here is to think of the Node.js/Sqlite3
-   combination as a database server in it's own right*
+   this purpose. 
+
+
+#+BEGIN_SRC haxe
+        Data.store(REMOTESQLITE("http://localhost:8082/data")).outcome(function(store) {
+        store.bucket("woot").outcome(function(woot) {
+           
+            woot.where('name="lore"').outcome(function(recs) {
+                trace(recs.stringify());
+              });
+            
+            woot.insert({email:"lorena@ritchie.com",name:"lore",passwd:"and why not"})
+              .outcome(function(u) {
+                  trace("lore's id = "+Data.oid(u));
+              });
+          });
+#+END_SRC
+
+   Data also supplies a persistent hash.
+
+   *The main point here is to think of the Node.js/Sqlite3 combination as a
+   database server in it's own right*
 
 ** Worker Module
 
@@ -98,22 +117,18 @@
    File I/O, Process services wrapped in Outcomes as appropriate for this kind
    of usage:
 
-
 #+BEGIN_SRC haxe
-   Sys.writeFile("woot","hi there")
-      .onError(function(reason) {
-          trace("Err is :"+reason);
-        })
-      .flatMap(function(file) {
+    Sys.writeFile("woot","hi there")
+      .oflatMap(function(file) {
             return file.stat();
         })
-      .map(function(stat) {
+      .omap(function(stat) {
           return stat.path;
         })
-      .flatMap(function(path) {
+      .oflatMap(function(path) {
           return path.rename("niceone");
         })
-      .deliver(function(newFileName) {
+      .outcome(function(newFileName) {
           trace("cool "+newFileName);
               
           var p = Sys.events();
@@ -129,25 +144,7 @@
           trace(Sys.argv());
           trace(Sys.title());
           trace("osuptime:"+Sys.osUptime()+", uptime:"+Sys.uptime());
-          
-          
-          Sys.stdout().write("nice one laddie");
-          
-          Sys.spawn("ls").deliver(function(child) {
-              child.stdout.observe(function(e) {
-                  switch(e) {
-                  case Data(s):
-                    trace(s);
-                  default:
-                  }
-                });
-            });
-
-          Sys.execFile("ls").deliver(function(output) {
-                trace(output);              
-            });
-        });
-
+          });
 #+END_SRC
     
 
