@@ -22,7 +22,7 @@ typedef Subscription<T> = T->Dynamic->Void;
 private typedef Callback<T> = {fn:Array<Dynamic>->Void};
 
 class PushListenerImpl implements Conduit {
-  static inline var SESSION_EXPIRE = 60*1000;
+  static inline var SESSION_EXPIRE = 5*60*1000;
   static var _sessions = new Hash<ConduitSession>();
   
   public static inline var ERROR = 500;
@@ -189,7 +189,6 @@ class PushListenerImpl implements Conduit {
     flushCallbacks(sessID);
     var s = _sessions.get(sessID) ;
     if (s != null) {
-      trace("closing and removing session");
       removeSession(s);
     }
     prm.resolve(Right(""));

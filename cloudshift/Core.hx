@@ -107,7 +107,7 @@ class Core {
         switch(e) {
         case ProcessUncaughtException(exc):
           Core.error("Uncaught exception: "+exc);
-          Sys.exit(1);
+          //          Sys.exit(1);
         case ProcessExit:
         case SigInt(sig):
         }
