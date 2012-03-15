@@ -3,13 +3,11 @@ package cloudshift.channel;
 
 import cloudshift.Core;
 import cloudshift.Session;
-
 import cloudshift.Channel;
 
-import cloudshift.channel.Flow;
 import cloudshift.Http;
 import cloudshift.http.HttpImpl;
-import cloudshift.core.ObservableImpl;
+import cloudshift.channel.Flow;
 
 using cloudshift.Channel;
 using cloudshift.Mixin;
