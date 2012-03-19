@@ -75,7 +75,7 @@ interface Part_<S,B,G,E> {
   var _events:Observable<EPartState<E>>;
   var partID(default,null):String;
   var state:EPartState<E>;
-  var info:PartInfo;
+  var _info:PartInfo;
   var sstopper:Dynamic->Outcome<String,Dynamic>;
   
   function start(d:S,?oc:Outcome<B,G>):Outcome<B,G>;

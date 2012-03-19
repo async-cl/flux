@@ -5,20 +5,26 @@ using cloudshift.Mixin;
 
 class PartBaseImpl<S,B,G,E> implements Part_<S,B,G,E> {
   public static var runningParts:Array<AnyPart> = [];
+  static var _nextID = 0;
   
   public var partID(default,null):String;
   public var _events:Observable<EPartState<E>>;
   public var state:EPartState<E>;
-  public var info:PartInfo;
+  public var _info:PartInfo;
   public var sstopper:Dynamic->Outcome<String,Dynamic>;
-  
-  var parent:Dynamic;
+
+  var _observers:Array<Void->Void>;
+  var _ID:Int;
+  var _parent:Dynamic;
 
   public function new(parent:Dynamic,?info:PartInfo) {
-    this.parent = parent;
-    this.info = info;
-    partID = Type.getClassName(Type.getClass(parent));
+    _parent = parent;
+    _info = info;
+    _ID = _nextID++;
+    _observers = [];
+    partID = Type.getClassName(Type.getClass(_parent))+Std.string(_ID);
     _events = Core.event();
+
 #if debug
     partInfo("created");
 #end
@@ -30,7 +36,7 @@ class PartBaseImpl<S,B,G,E> implements Part_<S,B,G,E> {
   }
 
   public function peer():Dynamic {
-    return parent;
+    return _parent;
   }
 
   public function notify(e:E) {
@@ -42,13 +48,15 @@ class PartBaseImpl<S,B,G,E> implements Part_<S,B,G,E> {
   }
   
   public function observe(cb:E->Void,?info:Dynamic) {
-    return _events.observe(function(s) {
+    var unsub = _events.observe(function(s) {
         switch(s) {
         case Event(s):
           cb(s);
         default:
         }
-      },info);
+      },partID);
+    _observers.push(unsub);
+    return unsub;
    }
 
   public function observeState(cb:EPartState<E>->Void) {
@@ -57,7 +65,7 @@ class PartBaseImpl<S,B,G,E> implements Part_<S,B,G,E> {
                                 
   public function start(d:S,?oc:Outcome<B,G>):Outcome<B,G> {
 
-    var p:Outcome<B,G> = parent.start_(d,oc);
+    var p:Outcome<B,G> = _parent.start_(d,oc);
 
     checkErr("start",p);
     
@@ -65,7 +73,7 @@ class PartBaseImpl<S,B,G,E> implements Part_<S,B,G,E> {
         partInfo("started");
         state = Started;
 
-        runningParts.push(parent);
+        //        runningParts.push(_parent);
         
         _events.notify(Started);
       },function(msg) {
@@ -84,6 +92,9 @@ class PartBaseImpl<S,B,G,E> implements Part_<S,B,G,E> {
         state = Stopped;
         partInfo("stopped");
         _events.notify(Stopped);
+        _observers.foreach(function(observerRemove) {
+            observerRemove();
+          });
       },function(msg) {
         _events.notify(Error(msg));
       });    

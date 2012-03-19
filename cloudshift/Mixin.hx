@@ -395,7 +395,7 @@ class HashX {
   }
 
   public static function
-  keyArray<T>(h:Hash<T>) {
+  keyArray<T>(h:Hash<T>):Array<String> {
     var a = [];
     for (v in h.keys())
       a.push(v);
@@ -628,8 +628,8 @@ class PartX {
     part.part_.setStop(cb);
   }
   
-  public static function observe<S,B,G,E>(part:Part<S,B,G,E>,cb:E->Void) {
-    part.part_.observe(cb);
+  public static function observe<S,B,G,E>(part:Part<S,B,G,E>,cb:E->Void):Void->Void {
+    return part.part_.observe(cb);
   }
 
   public static function notify<S,B,G,E>(part:Part<S,B,G,E>,e:E) {
@@ -640,8 +640,8 @@ class PartX {
     return part.part_.partID;
   }
   
-  public static function observeState<S,B,G,E>(part:Part<S,B,G,E>,cb:EPartState<E>->Void):Void {
-    part.part_._events.observe(cb);
+  public static function observeState<S,B,G,E>(part:Part<S,B,G,E>,cb:EPartState<E>->Void):Void->Void {
+    return part.part_._events.observe(cb);
   }
 
   public static function
@@ -651,7 +651,7 @@ class PartX {
 
   public static function
   info<S,B,G,E>(part:Part<S,B,G,E>) {
-    return part.part_.info;
+    return part.part_._info;
   }
   
   
