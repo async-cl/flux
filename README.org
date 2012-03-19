@@ -46,16 +46,16 @@
    implementation (web socket conduit will be added).
 
 #+BEGIN_SRC haxe
-    Http.server()
-      .root("www")
-      .start({host:"localhost",port:8082})
+    Http.server().root("www").start({host:"localhost",port:8082})
       .outcome(function(http) {
-          Channel.server()
-            .addHttpServer(http)
-            .addChannelAuth(channelAuth)
-            .addSessionAuth(sessAuth)
-            .start({}).outcome(startRooms);
-        });    
+          Session.manager().start(http)
+            .outcome(function(sess:SessionMgr) {
+                sess.authorize(sessAuth);
+                Channel.server()
+                  .addChannelAuth(channelAuth)
+                  .start(sess).outcome(startRooms);
+              });
+        });
 #+END_SRC
 
     Once you have your client or server, you may get a channel and pub/sub
