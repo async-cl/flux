@@ -37,7 +37,8 @@ class ChatUi {
     chatBox = new JQuery("#chat");
     memBox = new JQuery("#members");
     say = new JQuery("#chatsay");
-    
+
+    say.unbind("keyup");
     say.keyup(function(e) {
         if (e.keyCode == 13) {
           var v = say.val();
