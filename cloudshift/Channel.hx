@@ -55,16 +55,13 @@ enum ChannelEvent {
   ESession(event:ESessionOp);
 }
 
+//typedef ChannelServerPrms = {http:HttpServer,sessMgr:SessionMgr};
+
 interface ChannelServer
            implements ChannelProvider,
-           implements Part<Dynamic,String,ChannelServer,ChannelEvent> {
+           implements Part<SessionMgr,String,ChannelServer,ChannelEvent> {
   
-  function addHttpServer(http:HttpServer):ChannelServer;
-  function addHostPort(host:String,port:Int):ChannelServer;
-  function addSessionMgr(sessionMgr:SessionMgr):ChannelServer;
   function addChannelAuth(cb:String->Chan<Dynamic>->(Either<String,String>->Void)->Void):ChannelServer;
-  function addSessionAuth(cb:ESessionOp->Void):ChannelServer;
-  function session():SessionMgr;
   function channel<T>(chanID:String):Outcome<String,Chan<T>>;
   function direct<T>(sessID:String):Outcome<String,Chan<T>>;
 }

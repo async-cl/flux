@@ -29,60 +29,48 @@ class SessionClientImpl implements Part<Dynamic,String,SessionClient,ESession>,i
     return oc;
   }
 
-  function doLogin(p:Future<ESession>,e:ESession) {
+  function doLogin(p:Outcome<String,String>,e:ESession) {
     switch(e) {
     case UserOk(sid):
       _sessID = sid;
+      trace("set sessID ok");
+      p.resolve(Right(_sessID));
     default:
+      p.resolve(Left(Std.string(e)));
     }
     notify(e);
-    p.resolve(e);
   }
 
   public function
-  login(pkt:Dynamic):Future<ESession> {
+  login(pkt:Dynamic):Outcome<String,String> {
     var p = Core.future();
     _proxy.login(pkt,callback(doLogin,p));
     return p;
   }
 
   public function
-  logout():Future<ESession> {
-    var p = Core.future();
-    _proxy.logout(_sessID,function(e:ESession) {
-        switch(e) {
-        case UserRemoved:
-          "user removed".info();
-        default:
-        }
-        _sessID = null;
-        notify(e);
-        p.resolve(e);
-      });
-    return p;
-  }
-
-  public function
-  signup(pkt):Future<ESession> {
+  signup(pkt):Outcome<String,String> {
     var p = Core.future();
     _proxy.signup(pkt,callback(doLogin,p));
     return p;
   }
 
-  public function sessID() { return _sessID; }
-
   public function
-  stash(key:String,?val:Dynamic):Option<Dynamic> {
-    if (_stash == null) {
-      _stash = new Hash();
-    }
-    
-    if (val == null)
-      return _stash.getOption(key);
-    
-    _stash.set(key,val);
-    
-    return None;
+  logout():Outcome<String,String> {
+    var p = Core.future();
+    _proxy.logout(_sessID,function(e:ESession) {
+        switch(e) {
+        case UserRemoved:
+          p.resolve(Right(""));
+        default:
+          p.resolve(Left("Can't remove user:"+Std.string(e)));
+        }
+        _sessID = null;
+        notify(e);
+      });
+    return p;
   }
+  
+  public function sessID() { return _sessID; }
 
 }

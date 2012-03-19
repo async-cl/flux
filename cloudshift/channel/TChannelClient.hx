@@ -16,7 +16,6 @@ class TChannelClient implements ChannelClient,
                      implements Part<String,ChannelClientError,ChannelClient,ESession> {
   
   public var part_:Part_<String,ChannelClientError,ChannelClient,ESession>;
-  var _conduit:Conduit;
   var _sink:Sink;
   var _host:String;
   var _port:Int;
@@ -31,14 +30,24 @@ class TChannelClient implements ChannelClient,
     if (oc == null)
       oc = Core.outcome();
 
+    trace("init conduit with sessID:"+sessID);
     Flow.pushConduit().start({host:"localhost",port:8082,sessID:sessID})
       .oflatMap(function(conduit) {
-          _conduit = conduit;
-          return Flow.sink(sessID).start(_conduit);
+          trace("--> setting sink with "+sessID+" new conduit ="+conduit);
+          return Flow.sink().start(conduit);
         })
       .outcome(function(sink) {
           _sink = sink;
-          trace("got sink");
+          trace("SET NEW SINK");
+          stop_(function(d) {
+              var soc = Core.outcome();
+              _sink.stop().outcome(function(el) {
+                  _sink = null;
+                  trace("STOPPING SINK");
+                  soc.resolve(Right(""));
+                });
+              return soc;
+            });
           
           oc.resolve(Right(cast this));
         });
@@ -55,7 +64,7 @@ class TChannelClient implements ChannelClient,
     return _sink.authorize(_sink.chan(sessID));
   }
 
-  public function unsub(chan:Chan<Dynamic>) {
+  public function removeChannel(chan:Chan<Dynamic>) {
     _sink.removeChan(chan);
   }
 }

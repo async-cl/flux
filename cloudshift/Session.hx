@@ -23,8 +23,8 @@ enum ESessionOp {
 #if CS_SERVER
 
 interface SessionMgr implements Part<HttpServer,String,SessionMgr,ESessionOp> {
+  function authorize(cb:ESessionOp->Void):Void->Void;
   function exists(sessID:String,cb:Bool->Void):Void;
-  function stash(sessID:String,key:String,?val:Dynamic):Option<Dynamic>;
   function logout(sessID:String,cb:ESession->Void):Void;
   function http():HttpServer;
 }
@@ -32,11 +32,14 @@ interface SessionMgr implements Part<HttpServer,String,SessionMgr,ESessionOp> {
 #elseif CS_BROWSER
 
 interface SessionClient implements Part<Dynamic,String,SessionClient,ESession> {
-  function login(pkt:Dynamic):Future<ESession>;
-  function logout():Future<ESession>;
-  function signup(pkt:Dynamic):Future<ESession>;
+  /**
+     ErrMsg on Left
+     SessionID on Right
+   */
+  function login(pkt:Dynamic):Outcome<String,String>;
+  function logout():Outcome<String,String>;
+  function signup(pkt:Dynamic):Outcome<String,String>;
   function sessID():String;
-  function stash(key:String,?val:Dynamic):Option<Dynamic>;
 }
 
 #end
