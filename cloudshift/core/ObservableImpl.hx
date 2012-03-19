@@ -20,6 +20,7 @@ class ObservableImpl<T> implements Observable<T> {
   
   public function
   notify(v:T) {
+
     #if debug
     if (v == null) {
       throw "huh? can't notify null object";
@@ -49,19 +50,26 @@ class ObservableImpl<T> implements Observable<T> {
       _event.notify(Add(info));
     
     return function() {
-      h.handler = null;
-      _unsubscribes++;
-      if (_unsubscribes >= CLEANUP) {
-        trace("cleaning up");
-        _unsubscribes = 0;
-        _observers = _observers.filter(function(s) {
-              return s.handler != null;
-          });
+      if (h.handler != null) { // check we don't call this twice
+        h.handler = null;
+        _unsubscribes++;
+        if (_unsubscribes >= CLEANUP) {
+          cleanup();
+        }
+        if (_event != null)
+          _event.notify(Del(info));
       }
-
-      if (_event != null)
-        _event.notify(Del(info));
     }
+  }
+
+  function cleanup() {
+    trace("cleaning up");
+    _unsubscribes = 0;
+    _observers = _observers.filter(function(s) {
+          if (s.handler == null)
+            trace("filtering "+s.info);
+          return s.handler != null;
+      });
   }
   
   public function
