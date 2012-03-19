@@ -6,32 +6,31 @@ import cloudshift.Session;
 import cloudshift.Channel;
 import cloudshift.channel.Flow;
 
+using cloudshift.Mixin;
 
 class ClientSinkImpl extends SinkImpl {
 
-  var _sessID:String;
-  
-  public function new(sess:String) {
+  public function new() {
     super();
-    _sessID = sess;
     _myfill = myfill;
   }
 
   function
   myfill(pkt:Pkt<Dynamic>,chan:String,?meta:Dynamic) {
-    _conduit[0].pump(_sessID,pkt,chan,meta);
+    _conduit.pump("dummy",pkt,chan,meta);
+    //notify(Outgoing("dummy",pkt,chan,meta));
   }
 
   override function
   removeChan<T>(pipe:Chan<T>) {
     super.removeChan(pipe);
-    reqUnsub(_sessID,pipe,function(cb) {
+    reqUnsub("dummy",pipe,function(cb) {
         Core.info("ok unsubbed:"+pipe.pid());
       });
   }
 
   override function
   reqUnsub(sessId,pipe:Chan<Dynamic>,cb:Either<String,String>->Void) {
-    _conduit[0].leave(pipe.pid()).deliver(cb);
+    _conduit.leave(pipe.pid()).deliver(cb);
   }
 }

@@ -11,11 +11,8 @@ using cloudshift.Mixin;
 
 class ServerSinkImpl extends SinkImpl {
 
-  var sessionMgr:SessionMgr;
-  
-  public function new(sessionMgr:SessionMgr) {
+  public function new() {
     super();
-    this.sessionMgr = sessionMgr;
     _myfill = myfill;
   }
     
@@ -26,11 +23,12 @@ class ServerSinkImpl extends SinkImpl {
           switch(e) {
           case Right(_):
             var unsub = chan.sub(function(payload:Dynamic) {
-                  _conduit[0].pump(sessID,payload,pID,null);
+                  _conduit.pump(sessID,payload,pID,null);
+                  //notify(Outgoing(sessID,payload,pID,null));
               });
 
             trace("added sub "+pID+" for "+sessID);
-            _conduit[0].subscriptions(sessID).set(pID,unsub);
+            _conduit.subscriptions(sessID).set(pID,unsub);
           cb(e);
           case Left(_):
             cb(e);
@@ -40,7 +38,7 @@ class ServerSinkImpl extends SinkImpl {
 
   override function
   reqUnsub(sessID:String,chan:Chan<Dynamic>,cb:Either<String,String>->Void) {
-    switch(_conduit[0].subscriptions(sessID).getOption(chan.pid())) {
+    switch(_conduit.subscriptions(sessID).getOption(chan.pid())) {
       case Some(f):
         trace("remove function for "+chan.pid());
         f();
@@ -50,13 +48,9 @@ class ServerSinkImpl extends SinkImpl {
       }
   }
 
-  public function mys():SessionMgr {
-    return sessionMgr;
-  }
-  
   override function
   removeAllSubs(sessID) {
-    var subs = _conduit[0].subscriptions(sessID) ;
+    var subs = _conduit.subscriptions(sessID) ;
     if (subs != null) 
       subs.values().foreach(function(f) f());
   }
