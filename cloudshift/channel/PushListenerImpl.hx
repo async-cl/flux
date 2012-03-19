@@ -86,7 +86,8 @@ class PushListenerImpl implements Conduit {
         
         _sessMgr.exists(sessID,function(exists) {
             if (!exists) {
-              write(res,ERROR,"no session");
+              Core.error("No session for "+sessID,"PUSH");
+              write(res,ERROR,"no session:"+sessID);
               return;
             }
             
@@ -128,7 +129,7 @@ class PushListenerImpl implements Conduit {
                 });
               
             default:
-              notify(Drain(pkt,sessID,function(sr:Either<String,String>) {
+              notify(Incoming(pkt,sessID,function(sr:Either<String,String>) {
                     write(res,OK,sr);
                   }));          
             }

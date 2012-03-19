@@ -12,8 +12,8 @@ using cloudshift.Channel;
 class SinkImpl implements Sink {
   public var part_:Part_<Conduit,String,Sink,SinkEvent>;
   
-  var _chans:Hash<Chan<Dynamic>>;
-  var _conduit:Array<Conduit>;
+  var _chans:Hash<Chan<Dynamic>>;  
+  var _conduit:Conduit;
   var _myfill:Dynamic->String->Dynamic->Void;
   
   public function new() {
@@ -21,33 +21,42 @@ class SinkImpl implements Sink {
   }
 
   public function start_(c:Conduit,?oc:Outcome<String,Sink>) {
+
     if (oc == null)
       oc = Core.outcome();
-    _conduit = [];
+
     _chans = new Hash();
+    _conduit = c;
+
     addConduit(c);
     
     stop_(function(d) {
         var soc = Core.outcome();
-        _conduit[0].stop();
-        soc.resolve(Right(""));
+        _conduit.stop().outcome(function(c) {
+            _conduit = null;
+          _chans = null;
+          soc.resolve(Right(""));
+        });
+
         return soc;
       });
     
-    oc.resolve(Right(cast(this,Sink)));
+    oc.resolve(Right(untyped this));
     return oc;
   }
 
   public function addConduit(c:Conduit) {
-    _conduit.push(c);
-    c.observe(function(f) {
+
+    // the sink observes the conduit ...
+    
+    var removeConduitOb = c.observe(function(f) {
         switch(f) {
-        case Drain(pkt,sessID,cb):
+        case Incoming(pkt,sessID,cb):
           var
             pID = pkt.chanID(),
             pip = _chans.get(pID),
             op = pkt.operation();
-    
+
           if (pip == null)
             pip = chan(pID);
     
@@ -63,14 +72,31 @@ class SinkImpl implements Sink {
         case ConduitNoConnection(sessID),ConduitSessionExpire(sessID):
           notify(ConnectionClose(sessID));
         }
-        
       });
+
+    /*
+    trace("adding conduit sink observer");
+    var removeSinkOb = observe(function(s) {
+          switch(s) {
+          case Outgoing(sessID,pkt,chan,meta):
+          trace("should be pumping, sess is:"+sessID);
+          c.pump(sessID,pkt,chan,meta);
+          default:
+          }  
+      });
+      
+    _conduitCleaners.push(function() {
+        removeSinkOb();
+        removeConduitOb();
+      });
+    */
   }
 
   public function
   chan<T>(pID):Chan<T> {
     var ch = _chans.get(pID) ;
     if (ch == null) {
+      trace("Creating new channel:"+pID);
       ch = new ChanImpl<T>(pID);
       _chans.set(pID,ch);
       if (_myfill != null) {
@@ -102,8 +128,8 @@ class SinkImpl implements Sink {
     throw "SinkImp:removeAllSubs, should be overridden";
   }
 
-  function reqMsg(pipe:Chan<Dynamic>,pkt:Pkt<Dynamic>) {
-    pipe._defaultFill(pkt,"",null);
+  function reqMsg(chan:Chan<Dynamic>,pkt:Pkt<Dynamic>) {
+    chan._defaultFill(pkt,"",null);
   }
 
   public function direct<T>(sessID:String):Chan<T> {
@@ -111,13 +137,13 @@ class SinkImpl implements Sink {
   }
   
   public function
-  authorize<T>(pipe:Chan<T>):Outcome<String,Chan<T>> {
+  authorize<T>(chan:Chan<T>):Outcome<String,Chan<T>> {
     var oc = Core.outcome();
-    _conduit[0].authorize(pipe.pid())
+    _conduit.authorize(chan.pid())
       .deliver(function(conduitAuthorized) {
           switch(conduitAuthorized) {
           case Right(_):
-            oc.resolve(Right(pipe));
+            oc.resolve(Right(chan));
           case Left(msg):
             oc.resolve(Left(msg));
           }

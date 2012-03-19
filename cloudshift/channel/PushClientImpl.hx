@@ -9,12 +9,13 @@ using cloudshift.Mixin;
 
 class PushClientImpl implements Conduit {
   public var part_:Part_<ConduitClientStart,String,Conduit,ConduitEvent>;
+
+  var _sessID:String;
   var _host:String;
   var _port:Int;
   var _url:String;
-  var _sessID:String;
   var _parted:Bool;
-  
+
   public function new() {
     part_ = Core.part(this);
   }
@@ -22,8 +23,10 @@ class PushClientImpl implements Conduit {
   public function start_(cs:ConduitClientStart,?oc:Outcome<String,Conduit>) {
     if (oc == null)
       oc = Core.outcome();
-    
+
     _url = "http://"+js.Lib.window.location.host;
+
+    trace("Setting client sessID tp :"+cs.sessID);
     _sessID = cs.sessID;
     _parted = false;
     
@@ -31,6 +34,8 @@ class PushClientImpl implements Conduit {
         stop_(function(d) {
             var soc = Core.outcome();
             remoteClose(function(o) {
+                _sessID = null;
+                _parted = true;
                 soc.resolve(o);
               });
             return soc;
@@ -61,7 +66,7 @@ class PushClientImpl implements Conduit {
   }
 
   public function
-  pump(sessID:String,userData:Dynamic,chanID:String,meta:Dynamic) {
+  pump(dummy:String,userData:Dynamic,chanID:String,meta:Dynamic) {
     var
       ud = Channel.createPkt(userData,_sessID,chanID,"m",meta),
       pl = haxe.Serializer.run(ud),
@@ -98,7 +103,7 @@ class PushClientImpl implements Conduit {
   function
   handlePoll(pkts:Array<Pkt<Dynamic>>) {
     for (p in pkts) {
-      notify(Drain(p,_sessID,function(e) { }));
+      notify(Incoming(p,_sessID,function(e) { }));
     }
     poll();
   }
@@ -132,6 +137,8 @@ class PushClientImpl implements Conduit {
   
   function
   client(cmd:String,userData:Dynamic,chanID:String,cb:Dynamic->Void) {
+
+    trace("Doing client req with "+_sessID);
     var
       ud = Channel.createPkt(userData,_sessID,chanID,cmd),
       pl = haxe.Serializer.run(ud),

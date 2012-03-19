@@ -33,7 +33,7 @@ typedef ConduitClientStart = {
 }
 
 enum ConduitEvent {
-  Drain(pkt:Pkt<Dynamic>,sessID:String,cb:Either<String,String>->Void);
+  Incoming(pkt:Pkt<Dynamic>,sessID:String,cb:Either<String,String>->Void);
   ConduitSessionExpire(sessID:String);
   ConduitNoConnection(sessID:String);
 }
@@ -55,6 +55,7 @@ interface Conduit implements Part<Dynamic,String,Conduit,ConduitEvent> {
 enum SinkEvent {
   Authorize(sessID:String,chan:Chan<Dynamic>,cb:Either<String,String>->Void);
   ConnectionClose(sessID:String);
+  Outgoing(sessID:String,pkt:Dynamic,chan:String,meta:Dynamic);
 }
 
 interface Sink implements Part<Conduit,String,Sink,SinkEvent>  {
@@ -73,8 +74,8 @@ class Flow {
   #if CS_SERVER
  
   public static function
-  sink(sessionMgr:SessionMgr):Sink {
-    return new cloudshift.channel.ServerSinkImpl(sessionMgr);
+  sink():Sink {
+    return new cloudshift.channel.ServerSinkImpl();
   }
 
   public static function
@@ -88,13 +89,12 @@ class Flow {
 
   public static function
   pushConduit():Conduit {
-    trace("inst PushClientImpl");
     return new cloudshift.channel.PushClientImpl();
   }
 
   public static function
-  sink(sessID:String):Sink {
-    return new cloudshift.channel.ClientSinkImpl(sessID);
+  sink():Sink {
+    return new cloudshift.channel.ClientSinkImpl();
   }
    
   #end
