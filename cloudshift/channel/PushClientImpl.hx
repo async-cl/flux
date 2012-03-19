@@ -26,7 +26,6 @@ class PushClientImpl implements Conduit {
 
     _url = "http://"+js.Lib.window.location.host;
 
-    trace("Setting client sessID tp :"+cs.sessID);
     _sessID = cs.sessID;
     _parted = false;
     
@@ -137,8 +136,6 @@ class PushClientImpl implements Conduit {
   
   function
   client(cmd:String,userData:Dynamic,chanID:String,cb:Dynamic->Void) {
-
-    trace("Doing client req with "+_sessID);
     var
       ud = Channel.createPkt(userData,_sessID,chanID,cmd),
       pl = haxe.Serializer.run(ud),
