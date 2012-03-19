@@ -9,8 +9,9 @@ import ChatTypes;
 
 class ChatClient {
 
-  var _chanClient:ChannelClient;
   var _room:Chan<Dynamic>;
+  var _session:SessionClient;
+  var _chanClient:ChannelClient;
   
   public static function main() {
     new ChatClient();
@@ -22,21 +23,18 @@ class ChatClient {
 
   function login(nick:String) {
     Session.client().start({}).outcome(function(sess) {
-        sess.login(nick).deliver(function(es) {
-            switch(es) {
-            case UserOk(sessID):
-              trace("got sessID:"+sessID);
-              Channel.client()
-                .start(sessID)
-                .outcome(function(client) {
-                    _chanClient = client;
-                    trace("starting room");
-                    startRoom(nick,client);
-                  },function(reason) {
-                    trace(reason);
-                  });
-            default:
-            }
+        _session = sess;
+        sess.login({nick:nick}).outcome(function(sessID) {
+            Channel.client()
+              .start(sessID)
+              .outcome(function(client) {
+                  _chanClient = client;
+                  startRoom(nick,client);
+                },function(reason) {
+                  trace(reason);
+                });
+          },function(err) {
+            trace("Can't login:"+err);
           });
       });
   }
@@ -51,12 +49,13 @@ class ChatClient {
               trace("should be sending "+msg);
               room.pub(Chat(nick,msg));
             });
+        
           room.sub(function(mt:MsgTypes) {
               switch(mt) {
               case Chat(nick,msg):
                 ChatUi.msg(nick,msg);
-                case System(smt):
-                  ChatUi.systemMsg(smt);
+              case System(smt):
+                ChatUi.systemMsg(smt);
               }
             });
         },function(reason) {
@@ -64,10 +63,15 @@ class ChatClient {
         });
   }
 
-  
+
   function logout() {
-    //_chanClient.logout();
-    _chanClient.unsub(_room);
+    _chanClient.stop().outcome(function(el) {
+      trace("stopped channelclient");
+      _session.logout().outcome(function(el) {
+        trace("invalidate session on server");
+        });
+      });
+    
     ChatUi.reset();
   }
 }
