@@ -667,8 +667,12 @@ class OutcomeX {
         else {
           if (err != null)
             err(either.left().get());
-          else
+          else {
             Core.error(Std.string(either.left().get()));
+#if (debug && nodejs)
+            Sys.exit(1);
+#end
+          }
         }
     });
   }
@@ -684,9 +688,9 @@ class OutcomeX {
               },err);
         } else {
           Core.error(Std.string(either.left().get()));
-          #if nodejs
+#if (debug && nodejs)
           Sys.exit(1);
-          #end
+#end
         }
       });
     return roc;
@@ -701,6 +705,12 @@ class OutcomeX {
         } else {
           if (err != null)
             err(either.left().get());
+          else {
+            Core.error(Std.string(either.left().get()));
+#if (debug && nodejs)
+            Sys.exit(1);
+#end
+          }
         }
       });
     return roc;
