@@ -28,7 +28,7 @@ class LogImpl {
   
   public static function
   init(?fileName:String) {
-    haxe.Log.trace = myTrace;
+    //    haxe.Log.trace = myTrace;
 #if (!macro && nodejs)
     if ( fileName != null) {
       logFileFD = Node.fs.openSync(fileName,"a+",438);

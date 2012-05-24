@@ -259,11 +259,11 @@ class Sys {
      @return Left(path) if does not exist, Right(path) if does exist
   **/
   public static function exists(path:String):Outcome<String,String> {
-    var prm = Core.outcome();
+    var oc = Core.outcome();
     Node.path.exists(path,function(exists) {
-        prm.resolve((exists) ? Right(path) : Left(path));
+        oc.resolve((exists) ? Right(path) : Left(path));
       });
-    return prm;
+    return oc;
   }
   
   /**
@@ -393,7 +393,7 @@ class Sys {
     return prm;
   }
 
-  public static function mkdir(path:String,mode:Int):Outcome<String,String>{
+  public static function mkdir(path:String,?mode:Int):Outcome<String,String>{
     var prm = Core.outcome();
     Node.fs.mkdir(path,mode,function(err) {
         prm.resolve((err != null) ? Left(err) : Right(path));
@@ -485,11 +485,11 @@ class Sys {
      @return an error message (left) or the contents of the file (right)
   **/
   public static function readFile(path:String,?enc:SysEnc):Outcome<String,String>{
-    var prm = Core.outcome();
+    var oc = Core.outcome();
     Node.fs.readFile(path,Sys.getEnc(enc),function(err,s) {
-        prm.resolve((err != null) ? Left(err) : Right(new String(s)));
+        oc.resolve((err != null) ? Left(err) : Right(new String(s)));
       });
-    return prm;
+    return oc;
   }
 
   /**

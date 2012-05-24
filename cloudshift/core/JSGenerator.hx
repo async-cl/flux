@@ -23,11 +23,8 @@
  * DAMAGE.
  */
 package cloudshift.core;
-
 import haxe.macro.Type;
 import haxe.macro.Expr;
-import haxe.macro.Context;
-
 using Lambda;
 
 class JSGenerator {
@@ -68,47 +65,13 @@ class JSGenerator {
 	}
 
 	inline function genExpr(e) {
-		print(api.generateExpr(e));
+		print(api.generateValue(e));
 	}
 
 	@:macro static function fprint( e : Expr ) {
-		switch( e.expr ) {
-		case EConst(c):
-			switch( c ) {
-			case CString(str):
-				var exprs = [];
-				var r = ~/%((\([^\)]+\))|([A-Za-z_][A-Za-z0-9_]*))/;
-				var pos = e.pos;
-				var inf = Context.getPosInfos(pos);
-				inf.min++; // string quote
-				while( r.match(str) ) {
-					var left = r.matchedLeft();
-					if( left.length > 0 ) {
-						exprs.push( { expr : EConst(CString(left)), pos : pos } );
-						inf.min += left.length;
-					}
-					var v = r.matched(1);
-					if( v.charCodeAt(0) == "(".code ) {
-						var pos = Context.makePosition( { min : inf.min + 2, max : inf.min + v.length, file : inf.file } );
-						exprs.push(Context.parse(v.substr(1, v.length-2), pos));
-					} else {
-						var pos = Context.makePosition( { min : inf.min + 1, max : inf.min + 1 + v.length, file : inf.file } );
-						exprs.push( { expr : EConst(CIdent(v)), pos : pos } );
-					}
-					inf.min += v.length + 1;
-					str = r.matchedRight();
-				}
-				exprs.push({ expr : EConst(CString(str)), pos : pos });
-				var ret = null;
-				for( e in exprs )
-					if( ret == null ) ret = e else ret = { expr : EBinop(OpAdd, ret, e), pos : pos };
-				return { expr : ECall({ expr : EConst(CIdent("print")), pos : pos },[ret]), pos : pos };
-			default:
-			}
-		default:
-		}
-		Context.error("Expression should be a constant string", e.pos);
-		return null;
+		var pos = haxe.macro.Context.currentPos();
+		var ret = haxe.macro.Format.format(e);
+		return { expr : ECall({ expr : EConst(CIdent("print")), pos : pos },[ret]), pos : pos };
 	}
 
 	function field(p) {
@@ -124,10 +87,10 @@ class JSGenerator {
 				continue;
 			packages.set(full, true);
 			if( prev == null )
-				fprint("if(typeof %x=='undefined') %x = {}");
+				fprint("if(typeof $x=='undefined') $x = {}");
 			else {
 				var p = prev + field(x);
-				fprint("if(!%p) %p = {}");
+				fprint("if(!$p) $p = {}");
 			}
 			newline();
 		}
@@ -139,29 +102,28 @@ class JSGenerator {
 
 	function checkFieldName( c : ClassType, f : ClassField ) {
 		if( forbidden.exists(f.name) )
-			Context.error("The field " + f.name + " is not allowed in JS", c.pos);
+			haxe.macro.Context.error("The field " + f.name + " is not allowed in JS", c.pos);
 	}
 
 	function genClassField( c : ClassType, p : String, f : ClassField ) {
 		checkFieldName(c, f);
 		var field = field(f.name);
-		fprint("%p.prototype%field = ");
-		if( f.expr == null )
+		fprint("$p.prototype$field = ");
+		var e = f.expr();
+		if( e == null )
 			print("null");
 		else {
-			api.setDebugInfos(c, f.name, false);
-      // blackdog addition
-      if (p.indexOf("Async_") != -1) {
-        var
-          gen = api.generateExpr(f.expr),
-          re = ~/,?([A-Za-z0-9]*)],null/;
+			 if (p.indexOf("Async_") != -1) {
+			  var
+                gen = api.generateValue(e),
+				re = ~/,?([A-Za-z0-9]*)],null/;
 
-      //      trace("gen is "+gen);
-      print(re.replace(gen,"],$1"));
-      } else {
-        print(api.generateExpr(f.expr));
-      }
+			  var n = re.replace(gen,"],$1");
+			  //trace("gen new  is "+n);
       
+			  print(n);
+			 } else
+		      genExpr(e);
 		}
 		newline();
 	}
@@ -169,14 +131,14 @@ class JSGenerator {
 	function genStaticField( c : ClassType, p : String, f : ClassField ) {
 		checkFieldName(c, f);
 		var field = field(f.name);
-		if( f.expr == null ) {
-			fprint("%p%field = null");
+		var e = f.expr();
+		if( e == null ) {
+			fprint("$p$field = null");
 			newline();
 		} else switch( f.kind ) {
 		case FMethod(_):
-			fprint("%p%field = ");
-			api.setDebugInfos(c, f.name, true);
-			genExpr(f.expr);
+			fprint("$p$field = ");
+			genExpr(e);
 			newline();
 		default:
 			statics.add( { c : c, f : f } );
@@ -185,22 +147,22 @@ class JSGenerator {
 
 	function genClass( c : ClassType ) {
 		genPackage(c.pack);
+		api.setCurrentClass(c);
 		var p = getPath(c);
-		fprint("%p = $hxClasses[\"%p\"] =  ");
-		api.setDebugInfos(c, "new", false);
+		fprint("$p =  $$hxClasses['$p'] = ");
 		if( c.constructor != null )
-			print(api.generateConstructor(c.constructor.get().expr));
+			genExpr(c.constructor.get().expr());
 		else
 			print("function() { }");
 		newline();
 		var name = p.split(".").map(api.quoteString).join(",");
-		fprint("%p.__name__ = [%name]");
+		fprint("$p.__name__ = [$name]");
 		newline();
 		if( c.superClass != null ) {
 			var psup = getPath(c.superClass.t.get());
-			fprint("%p.__super__ = %psup");
+			fprint("$p.__super__ = $psup");
 			newline();
-			fprint("for(var k in %psup.prototype ) %p.prototype[k] = %psup.prototype[k]");
+			fprint("for(var k in $psup.prototype ) $p.prototype[k] = $psup.prototype[k]");
 			newline();
 		}
 		for( f in c.statics.get() )
@@ -213,12 +175,12 @@ class JSGenerator {
 			}
 			genClassField(c, p, f);
 		}
-		fprint("%p.prototype.__class__ = %p");
+		fprint("$p.prototype.__class__ = $p");
 		newline();
 		if( c.interfaces.length > 0 ) {
 			var me = this;
 			var inter = c.interfaces.map(function(i) return me.getPath(i.t.get())).join(",");
-			fprint("%p.__interfaces__ = [%inter]");
+			fprint("$p.__interfaces__ = [$inter]");
 			newline();
 		}
 	}
@@ -228,28 +190,28 @@ class JSGenerator {
 		var p = getPath(e);
 		var names = p.split(".").map(api.quoteString).join(",");
 		var constructs = e.names.map(api.quoteString).join(",");
-		fprint("%p = $hxClasses[\"%p\"] = { __ename__ : [%names], __constructs__ : [%constructs] }");
+		fprint("$p = $$hxClasses['$p'] = { __ename__ : [$names], __constructs__ : [$constructs] }");
 		newline();
 		for( c in e.constructs.keys() ) {
 			var c = e.constructs.get(c);
 			var f = field(c.name);
-			fprint("%p%f = ");
+			fprint("$p$f = ");
 			switch( c.type ) {
 			case TFun(args, _):
 				var sargs = args.map(function(a) return a.name).join(",");
-				fprint('function(%sargs) { var $x = ["%(c.name)",%(c.index),%sargs]; $x.__enum__ = %p; $x.toString = $estr; return $x; }');
+				fprint('function($sargs) { var $$x = ["${c.name}",${c.index},$sargs]; $$x.__enum__ = $p; $$x.toString = $$estr; return $$x; }');
 			default:
 				print("[" + api.quoteString(c.name) + "," + c.index + "]");
 				newline();
-				fprint("%p%f.toString = $estr");
+				fprint("$p$f.toString = $$estr");
 				newline();
-				fprint("%p%f.__enum__ = %p");
+				fprint("$p$f.__enum__ = $p");
 			}
 			newline();
 		}
 		var meta = api.buildMetaData(e);
 		if( meta != null ) {
-			fprint("%p.__meta__ = ");
+			fprint("$p.__meta__ = ");
 			genExpr(meta);
 			newline();
 		}
@@ -259,8 +221,8 @@ class JSGenerator {
 	function genStaticValue( c : ClassType, cf : ClassField ) {
 		var p = getPath(c);
 		var f = field(cf.name);
-		fprint("%p%f = ");
-		genExpr(cf.expr);
+		fprint("$p$f = ");
+		genExpr(cf.expr());
 		newline();
 	}
 
@@ -279,37 +241,18 @@ class JSGenerator {
 	}
 
 	public function generate() {
-		print("var $_, $hxClasses = $hxClasses || {}, $estr = function() { return js.Boot.__string_rec(this,''); }
-function $extend(from, fields) {
-        function inherit() {}; inherit.prototype = from; var proto = new inherit();
-        for (var name in fields) proto[name] = fields[name];
-        return proto;
-}
-");
+		print("var $_, $hxClasses = $hxClasses || {}, $estr = function() { return js.Boot.__string_rec(this,''); }");
 		newline();
-		/*
-		(match ctx.namespace with
-		| None -> ()
-		| Some ns ->
-			print ctx "if(typeof %s=='undefined') %s = {}" ns ns;
-			newline ctx);
-		*/
 		for( t in api.types )
 			genType(t);
 		print("$_ = {}");
 		newline();
 		print("js.Boot.__res = {}");
 		newline();
-		if( Context.defined("debug") ) {
-			fprint("%(api.stackVar) = []");
-			newline();
-			fprint("%(api.excVar) = []");
-			newline();
-		}
 		print("js.Boot.__init()");
 		newline();
 		for( e in inits ) {
-			genExpr(e);
+			print(api.generateStatement(e));
 			newline();
 		}
 		for( s in statics ) {
@@ -327,8 +270,7 @@ function $extend(from, fields) {
 
 	#if macro
 	public static function use() {
-		haxe.macro.Compiler.setCustomJSGenerator(function(api)
-        new JSGenerator(api).generate());
+		haxe.macro.Compiler.setCustomJSGenerator(function(api) new JSGenerator(api).generate());
 	}
 	#end
 

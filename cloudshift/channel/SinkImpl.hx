@@ -59,8 +59,8 @@ class SinkImpl implements Sink {
 
           if (pip == null)
             pip = chan(pID);
-    
-          switch(op) {
+
+        switch(op) {
           case "s": // subscribe
             reqSub(sessID,pip,cb);
           case "u": // unsubscribe

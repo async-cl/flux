@@ -3,16 +3,22 @@
 -js chatServer.js
 -cp .
 -lib nodejs
--lib cloudshift
+--connect 6000
+-D CS_SERVER
+-debug
+-cp ../../
 --macro cloudshift.core.JSGenerator.use()
 -main ChatServer
 -cmd echo "chat server built"
  
 --next
 
+--connect 6000
 -cp .
--lib cloudshift
+-cp ../../
 -js www/client.js
+-debug
+-D CS_BROWSER
 --macro cloudshift.core.JSGenerator.use()
 -main ChatClient
 -cmd echo "chat client built"

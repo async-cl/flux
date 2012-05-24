@@ -425,7 +425,7 @@ class OptionX {
     return o2;
   }
   public static function foreach<T>(o: Option<T>, f: T -> Void): Void {
-    return switch (o) {
+    switch (o) {
       case None: 
       case Some(v): f(v);
     }
@@ -687,9 +687,9 @@ class OutcomeX {
                 roc.resolve(Right(val));
               },err);
         } else {
-          Core.error(Std.string(either.left().get()));
+            Core.error(Std.string(either.left().get()));
 #if (debug && nodejs)
-          Sys.exit(1);
+            Sys.exit(1);
 #end
         }
       });
