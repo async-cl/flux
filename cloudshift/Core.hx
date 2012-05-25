@@ -183,12 +183,12 @@ class Core {
 
   public static function
   parse(str:String):Dynamic {
-    return untyped __js__("JSON.parse(str)");
+    return haxe.Json.parse(str);
   }
 
   public static function
   stringify(obj:Dynamic):String {
-    return untyped __js__("JSON.stringify(obj)");
+    return haxe.Json.stringify(obj);
   }
 
   public static

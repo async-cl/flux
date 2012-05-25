@@ -32,7 +32,8 @@ enum SysWriteStreamEvents {
 enum SysReadStreamEvents {
   Data(d:String);
   Error(e:String);
-  End;
+
+    End;
   Close;
   Fd;
 }

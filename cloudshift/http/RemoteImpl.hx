@@ -12,7 +12,8 @@ class RemoteImpl extends Context, implements RemoteProvider {
   public function
   httpHandler(re:EReg,req:NodeHttpServerReq,resp:NodeHttpServerResp) {
     if(Reflect.field(req.headers,"x-haxe-remoting") == null){
-      resp.end("bad request");
+      resp.end("bad remoting request");
+      return;
     }
 
     HttpImpl.parseFields(req,function(flds,optFiles) {

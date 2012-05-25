@@ -33,7 +33,11 @@ class DynamicX {
 
   public static function
   stringify(o:Dynamic):String {
+    #if js
     return untyped __js__("JSON.stringify(o)");
+    #else
+    return Std.string(o);
+    #end
   }
 
 }
@@ -186,12 +190,20 @@ class StringX {
 
   public static function
   parse(str:String):Dynamic {
+  #if js
     return untyped __js__("JSON.parse(str)");
+   #else
+   	return haxe.Json.parse(str);
+   #end
   }
   
   public static inline function
   clone(o:Dynamic):Dynamic {
+  	#if js
     return untyped __js__("JSON.parse(JSON.stringify(o))");
+    #else
+    return haxe.Json.parse(haxe.Json.stringify(o));
+    #end
   }
 
   inline static public function
@@ -225,7 +237,11 @@ class DateX {
   }
 
   public static function UTCString(d:Date) : String {
+  	#if js
     return untyped __js__("d.toUTCString()");
+    #else
+    return Std.string(d);
+    #end
 	}
 }
 
@@ -233,7 +249,11 @@ class ArrayX {
 
   public static function
   stringify<T>(a:Array<T>):String {
+  #if js
     return untyped __js__("JSON.stringify(o)");
+  #else
+  	return Std.string(a);
+  #end
   }
 
   

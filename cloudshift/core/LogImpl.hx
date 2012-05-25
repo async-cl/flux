@@ -47,8 +47,11 @@ class LogImpl {
         var b = new NodeBuffer(msg+"\n",NodeC.UTF8);
         Node.fs.write(logFileFD,b,0,b.length,null);
       }
-      else
+      else {
+      #if js
         untyped __js__("console.log(msg)");
+      #end
+      }
     }
   }
 
@@ -56,6 +59,7 @@ class LogImpl {
 
   static function
   write(msg,type) {
+  #if js
     if (msg != null)
       switch(type) {
         case "info":
@@ -69,6 +73,7 @@ class LogImpl {
       default:
         untyped __js__("console.log(msg)");
       }
+   #end
   }
 
 #end
