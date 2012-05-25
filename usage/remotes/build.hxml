@@ -1,0 +1,17 @@
+
+-main Server
+-cp ../../
+-cp .
+-lib nodejs
+-D CS_SERVER
+-js server.js
+--macro cloudshift.core.JSGenerator.use()
+
+--next
+
+-main Client
+-cp .
+-cp ../../
+-D CS_BROWSER
+-js www/client.js
+--macro cloudshift.core.JSGenerator.use()
