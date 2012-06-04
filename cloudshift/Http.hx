@@ -36,6 +36,7 @@ interface HttpServer implements Part<HostPort,String,HttpServer,HttpEvents> {
   function notFound(cb:NodeHttpServerReq->NodeHttpServerResp->Void):HttpServer;
   function index(indexFile:String):HttpServer;
   function serverName(serverName:String):HttpServer;
+  function credentials(key:String,cert:String,?ca:Array<String>):HttpServer;
   function root(rootDir:String):HttpServer;  
 }
 

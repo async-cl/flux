@@ -1,0 +1,8 @@
+--times
+-js test.js
+-cp .
+-cp ../../
+-cp ../../../hx-node
+-D nodejs
+--macro cloudshift.core.JSGenerator.use()
+-main HttpTest

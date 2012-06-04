@@ -24,11 +24,12 @@ class HttpImpl implements HttpServer,implements Part<HostPort,String,HttpServer,
   var _getHandler:String->NodeHttpServerReq->NodeHttpServerResp->Int->Void;
   var _routes:Array<{re:EReg,handler:THandler}>;
   var _notFound:NodeHttpServerReq->NodeHttpServerResp->Void;
-
+  var _creds:NodeCredDetails;
+  
   var _index:String;
   var _root:String;
   var _serverName:String;
-
+ 
   static var readStreamOpt:ReadStreamOpt = cast {
         flags: 'r',
         mode: 0666
@@ -44,7 +45,7 @@ class HttpImpl implements HttpServer,implements Part<HostPort,String,HttpServer,
   new() {
     _routes = [];
 
-    _index = "index.html";
+    _index = "/index.html";
     _root = null;
     _serverName = "Cloudshift 0.2.3";
     
@@ -59,45 +60,14 @@ class HttpImpl implements HttpServer,implements Part<HostPort,String,HttpServer,
   start_(d:HostPort,?oc:Outcome<String,HttpServer>) {
     if (oc == null)
       oc = Core.outcome();
-    
-    var server = Node.http.createServer(function(req,resp) {
-        var
-        url = req.url,
-        match = false;
 
-        if (_routes != null) {
-          for (r in _routes) {
-            if (r.re.match(url)) {
-              match = true;
-              try {
-                r.handler(r.re,req,resp);
-              } catch(ex:Dynamic) {
-                Core.log(E("handler exp:"+ex));
-              }
-            
-              break;
-            }
-          }
-        }
-        
-        if (!match && _root != null) {
-            if (req.method == "GET") {
-                if (url == "/") url = _index;
-                _getHandler(url,req,resp,200);
-            }
-        }
-    });
+    var server =
+      if (_creds != null) 
+        Node.https.createServer(_creds,requestHandler);
+      else
+        Node.http.createServer(requestHandler);
 
-    Core.log(I("Starting "+_serverName+" on "+d.host+":"+d.port));
-
-    /*
-    _server.addListener(NodeC.EVENT_HTTPSERVER_REQUEST,function(request,response) {
-        notify(Request(request,response));
-      });
-    */
-    
     server.listen(d.port,d.host,function() {
-
         stop_(function(d) {
             var p = Core.outcome();
             server.close();
@@ -107,12 +77,47 @@ class HttpImpl implements HttpServer,implements Part<HostPort,String,HttpServer,
             return p;
           });
 
+
+        if (_creds != null)
+          Core.log(I("Listening on Https "+_serverName+" on "+d.host+":"+d.port));
+        else
+          Core.log(I("Listening on Http "+_serverName+" on "+d.host+":"+d.port));
         
         oc.resolve(Right(cast(this,HttpServer)));
       });
     
     return oc;
   }
+
+  function
+  requestHandler(req:NodeHttpServerReq,resp:NodeHttpServerResp) {
+      var
+        url = req.url,
+        match = false;
+
+      if (_routes != null) {
+        for (r in _routes) {
+          if (r.re.match(url)) {
+            match = true;
+            try {
+              r.handler(r.re,req,resp);
+            } catch(ex:Dynamic) {
+              Core.log(E("handler exp:"+ex));
+            }
+            
+            break;
+          }
+        }
+      }
+        
+      if (!match && _root != null) {
+        if (req.method == "GET") {
+          if (url == "/") url = _index;
+          _getHandler(url,req,resp,200);
+        }
+      }
+  }
+ 
 
   public function
   handler(r:EReg,handler:THandler):HttpServer {
@@ -140,11 +145,19 @@ class HttpImpl implements HttpServer,implements Part<HostPort,String,HttpServer,
   
   public function
   root(rootDir:String):HttpServer {
-    _root = if (!rootDir.endsWith("/")) rootDir + "/" ;
+    _root = if (!rootDir.endsWith("/")) rootDir else rootDir.substr(0,-1);
     _getHandler = serve;
     return this;
   }
 
+  public function
+  credentials(key:String,cert:String,?ca:Array<String>):HttpServer {
+    var k = Node.fs.readFileSync(key);
+    var c = Node.fs.readFileSync(cert);
+    _creds = {key:k, cert:c,ca:ca};
+    return this;
+  }
+  
   function
   defaultGetHandler(path:String,req:NodeHttpServerReq,resp:NodeHttpServerResp,statusCode:Int) {
     do404(req,resp);
@@ -180,6 +193,8 @@ class HttpImpl implements HttpServer,implements Part<HostPort,String,HttpServer,
   public function
   serve(path:String,req:NodeHttpServerReq,resp:NodeHttpServerResp,statusCode=200) {
     var fileToServe = if (_root != null ) _root+path else path;
+  trace("serving :"+path);
+
     Node.fs.stat(fileToServe,function (e, stat:NodeStat) {
         if (e != null) {
           do404(req,resp);
