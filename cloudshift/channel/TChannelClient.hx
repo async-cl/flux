@@ -31,20 +31,16 @@ class TChannelClient implements ChannelClient,
       oc = Core.outcome();
 
     var sessID = session.sessID();
-    trace("init conduit with sessID:"+sessID);
     Flow.pushConduit().start({endPoint:session.endPoint(),sessID:sessID})
       .oflatMap(function(conduit) {
-          trace("--> setting sink with "+sessID+" new conduit ="+conduit);
           return Flow.sink().start(conduit);
         })
       .outcome(function(sink) {
           _sink = sink;
-          trace("SET NEW SINK");
           stop_(function(d) {
               var soc = Core.outcome();
               _sink.stop().outcome(function(el) {
                   _sink = null;
-                  trace("STOPPING SINK");
                   soc.resolve(Right(""));
                 });
               return soc;

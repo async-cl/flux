@@ -26,10 +26,6 @@ class PushClientImpl implements Conduit {
 
     _url = cs.endPoint;
     _sessID = cs.sessID;
-
-
-    trace("client endPoint:"+_url);
-    
     _parted = false;
     
     remoteInit(function(ignore) {
