@@ -1,4 +1,8 @@
 
+/*
+  hxc: -D nodejs
+*/
+
 package ;
 
 #if nodejs

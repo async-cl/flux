@@ -22,11 +22,11 @@ class ChatClient {
   }
 
   function login(nick:String) {
-    Session.client().start({}).outcome(function(sess) {
+    Session.client().start({endPoint:"https://"+js.Lib.window.location.host}).outcome(function(sess) {
         _session = sess;
         sess.login({nick:nick}).outcome(function(sessID) {
             Channel.client()
-              .start(sessID)
+              .start(_session)
               .outcome(function(client) {
                   _chanClient = client;
                   startRoom(nick,client);

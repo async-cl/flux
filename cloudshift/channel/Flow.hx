@@ -27,8 +27,7 @@ interface ConduitSession {
 }
 
 typedef ConduitClientStart = {
-    var host:String;
-    var port:Int;
+    var endPoint:String;
     var sessID:String;
 }
 

@@ -7,22 +7,29 @@ using cloudshift.Mixin;
 
 private class SessionProxy extends haxe.remoting.AsyncProxy<cloudshift.session.SessionMgrProxy> { }
 
-class SessionClientImpl implements Part<Dynamic,String,SessionClient,ESession>,implements SessionClient {
+class SessionClientImpl implements Part<SessionStart,String,SessionClient,ESession>,implements SessionClient {
   var _sessID:String;
   var _proxy:SessionProxy;
   var _stash:Hash<Dynamic>;
+  var _endPoint:String;
   
-  public var part_:Part_<Dynamic,String,SessionClient,ESession>;
+  public var part_:Part_<SessionStart,String,SessionClient,ESession>;
 
   public function new() {
     part_ = Core.part(this);
   }
 
   public function
-  start_(d:Dynamic,?oc:Outcome<String,SessionClient>) {
+  start_(d:SessionStart,?oc:Outcome<String,SessionClient>) {
     if (oc == null)
       oc = Core.outcome();
-    var cnx = haxe.remoting.HttpAsyncConnection.urlConnect("http://"+js.Lib.window.location.host+Session.REMOTE);
+
+    if (d.endPoint == null)
+      Core.error("Session must be started with an endPoint (url)");
+
+    _endPoint = d.endPoint;
+    
+    var cnx = haxe.remoting.HttpAsyncConnection.urlConnect(_endPoint + Session.REMOTE);
     cnx.setErrorHandler( function(err) trace("Error : "+Std.string(err)) );
     _proxy = new SessionProxy(cnx.Auth);
     oc.resolve(Right(cast this));
@@ -72,5 +79,5 @@ class SessionClientImpl implements Part<Dynamic,String,SessionClient,ESession>,i
   }
   
   public function sessID() { return _sessID; }
-
+  public function endPoint() { return _endPoint ; }
 }

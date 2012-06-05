@@ -31,7 +31,9 @@ interface SessionMgr implements Part<HttpServer,String,SessionMgr,ESessionOp> {
 
 #elseif CS_BROWSER
 
-interface SessionClient implements Part<Dynamic,String,SessionClient,ESession> {
+typedef SessionStart = {endPoint:String};
+
+interface SessionClient implements Part<SessionStart,String,SessionClient,ESession> {
   /**
      ErrMsg on Left
      SessionID on Right
@@ -40,6 +42,7 @@ interface SessionClient implements Part<Dynamic,String,SessionClient,ESession> {
   function logout():Outcome<String,String>;
   function signup(pkt:Dynamic):Outcome<String,String>;
   function sessID():String;
+  function endPoint():String;
 }
 
 #end

@@ -13,9 +13,9 @@ import cloudshift.channel.Flow;
 using cloudshift.Mixin;
 
 class TChannelClient implements ChannelClient,
-                     implements Part<String,ChannelClientError,ChannelClient,ESession> {
+                     implements Part<SessionClient,ChannelClientError,ChannelClient,ESession> {
   
-  public var part_:Part_<String,ChannelClientError,ChannelClient,ESession>;
+  public var part_:Part_<SessionClient,ChannelClientError,ChannelClient,ESession>;
   var _sink:Sink;
   var _host:String;
   var _port:Int;
@@ -26,12 +26,13 @@ class TChannelClient implements ChannelClient,
   }
 
   public function
-  start_(sessID:String,?oc:Outcome<ChannelClientError,ChannelClient>) {
+  start_(session:SessionClient,?oc:Outcome<ChannelClientError,ChannelClient>) {
     if (oc == null)
       oc = Core.outcome();
 
+    var sessID = session.sessID();
     trace("init conduit with sessID:"+sessID);
-    Flow.pushConduit().start({host:"localhost",port:8082,sessID:sessID})
+    Flow.pushConduit().start({endPoint:session.endPoint(),sessID:sessID})
       .oflatMap(function(conduit) {
           trace("--> setting sink with "+sessID+" new conduit ="+conduit);
           return Flow.sink().start(conduit);

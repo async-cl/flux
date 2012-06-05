@@ -81,7 +81,7 @@ enum ChannelClientError {
 
 interface ChannelClient
       implements ChannelProvider,
-      implements Part<String,ChannelClientError,ChannelClient,ESession> {
+      implements Part<SessionClient,ChannelClientError,ChannelClient,ESession> {
 
   //  function unsub(chan:Chan<Dynamic>):Void;
   function channel<T>(id:String):Outcome<String,Chan<T>>;

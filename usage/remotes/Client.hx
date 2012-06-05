@@ -22,6 +22,9 @@ class Client {
     p.echo("woot",function(s) {
         trace("client return:"+s);
       });
+
+
+    
   }
 
   

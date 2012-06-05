@@ -22,7 +22,10 @@ class ChatServer {
   public function new() {
     Core.init();
 
-    Http.server().root("www").start({host:"localhost",port:8082})
+    Http.server()
+      .root("www")
+      .credentials("privatekey.pem","certificate.pem")
+      .start({host:"localhost",port:8082})
       .outcome(function(http) {
           Session.manager().start(http)
             .outcome(function(sess:SessionMgr) {

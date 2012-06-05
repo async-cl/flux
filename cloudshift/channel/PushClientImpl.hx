@@ -15,7 +15,7 @@ class PushClientImpl implements Conduit {
   var _port:Int;
   var _url:String;
   var _parted:Bool;
-
+  
   public function new() {
     part_ = Core.part(this);
   }
@@ -24,9 +24,12 @@ class PushClientImpl implements Conduit {
     if (oc == null)
       oc = Core.outcome();
 
-    _url = "http://"+js.Lib.window.location.host;
-
+    _url = cs.endPoint;
     _sessID = cs.sessID;
+
+
+    trace("client endPoint:"+_url);
+    
     _parted = false;
     
     remoteInit(function(ignore) {
