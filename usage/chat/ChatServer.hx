@@ -2,11 +2,11 @@
    hxc: -D nodejs
 */
 
-import cloudshift.Core;
-import cloudshift.Http;
-import cloudshift.Session;
-using cloudshift.Mixin;
-import cloudshift.Channel;
+import outflux.Core;
+import outflux.Http;
+import outflux.Session;
+using outflux.Mixin;
+import outflux.Channel;
 
 import ChatTypes;
 

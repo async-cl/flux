@@ -1,8 +1,8 @@
 
 package ;
 
-import cloudshift.Core;
-using cloudshift.Mixin;
+import outflux.Core;
+using outflux.Mixin;
 
 
 class ClientProxy extends haxe.remoting.AsyncProxy<Server>{}

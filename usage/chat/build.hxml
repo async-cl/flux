@@ -7,7 +7,7 @@
 -D CS_SERVER
 -debug
 -cp ../../
---macro cloudshift.core.JSGenerator.use()
+--macro outflux.core.JSGenerator.use()
 -main ChatServer
 -cmd echo "chat server built"
  
@@ -19,7 +19,7 @@
 -js www/client.js
 -debug
 -D CS_BROWSER
---macro cloudshift.core.JSGenerator.use()
+--macro outflux.core.JSGenerator.use()
 -main ChatClient
 -cmd echo "chat client built"
 

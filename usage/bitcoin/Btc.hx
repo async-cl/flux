@@ -1,8 +1,8 @@
 
-import cloudshift.Core;
-import cloudshift.Bitcoin;
+import outflux.Core;
+import outflux.Bitcoin;
 
-using cloudshift.Mixin;
+using outflux.Mixin;
 
 class Btc {
 

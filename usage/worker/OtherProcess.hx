@@ -1,4 +1,4 @@
-import cloudshift.Worker;
+import outflux.Worker;
 
 
 class OtherProcess extends Worker {

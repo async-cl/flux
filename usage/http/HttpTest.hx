@@ -8,9 +8,9 @@ openssl x509 -req -in certrequest.csr -signkey privatekey.pem -out certificate.p
 */
 
 
-import cloudshift.Core;
-import cloudshift.Http;
-using cloudshift.Mixin;
+import outflux.Core;
+import outflux.Http;
+using outflux.Mixin;
 
 class HttpTest {
 

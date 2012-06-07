@@ -1,8 +1,8 @@
 
-import cloudshift.Core;
-import cloudshift.Session;
-import cloudshift.Channel;
-using cloudshift.Mixin;
+import outflux.Core;
+import outflux.Session;
+import outflux.Channel;
+using outflux.Mixin;
 
 import ChatUi;
 import ChatTypes;
@@ -22,21 +22,23 @@ class ChatClient {
   }
 
   function login(nick:String) {
-    Session.client().start({endPoint:"https://"+js.Lib.window.location.host}).outcome(function(sess) {
-        _session = sess;
-        sess.login({nick:nick}).outcome(function(sessID) {
-            Channel.client()
-              .start(_session)
-              .outcome(function(client) {
-                  _chanClient = client;
-                  startRoom(nick,client);
-                },function(reason) {
-                  trace(reason);
-                });
-          },function(err) {
-            trace("Can't login:"+err);
-          });
-      });
+    Session.client()
+      .start({endPoint:"https://"+js.Lib.window.location.host})
+      .outcome(function(sess) {
+          _session = sess;
+          sess.login({nick:nick}).outcome(function(sessID) {
+              Channel.client()
+                .start(_session)
+                .outcome(function(client) {
+                    _chanClient = client;
+                    startRoom(nick,client);
+                  },function(reason) {
+                    trace(reason);
+                  });
+            },function(err) {
+              trace("Can't login:"+err);
+            });
+        });
   }
  
   public function

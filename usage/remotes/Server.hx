@@ -6,10 +6,10 @@
 package ;
 
 #if nodejs
-import cloudshift.Core;
-import cloudshift.Http;
-import cloudshift.Remote;
-using cloudshift.Mixin;
+import outflux.Core;
+import outflux.Http;
+import outflux.Remote;
+using outflux.Mixin;
 #end
 
 class Server {

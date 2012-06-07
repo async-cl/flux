@@ -5,7 +5,7 @@
 -lib nodejs
 -D CS_SERVER
 -js server.js
---macro cloudshift.core.JSGenerator.use()
+--macro outflux.core.JSGenerator.use()
 
 --next
 
@@ -14,4 +14,4 @@
 -cp ../../
 -D CS_BROWSER
 -js www/client.js
---macro cloudshift.core.JSGenerator.use()
+--macro outflux.core.JSGenerator.use()

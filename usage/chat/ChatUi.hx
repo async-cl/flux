@@ -1,5 +1,5 @@
 
-using cloudshift.Mixin;
+using outflux.Mixin;
 import ChatTypes;
 import js.JQuery;
 

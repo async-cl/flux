@@ -4,7 +4,7 @@
 -cp src
 -cp ../../base
 -cp ../
---macro cloudshift.base.JSGenerator.use()
+--macro outflux.base.JSGenerator.use()
 -lib nodejs
 -main Test
 

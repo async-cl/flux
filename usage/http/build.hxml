@@ -4,5 +4,5 @@
 -cp ../../
 -cp ../../../hx-node
 -D nodejs
---macro cloudshift.core.JSGenerator.use()
+--macro outflux.core.JSGenerator.use()
 -main HttpTest

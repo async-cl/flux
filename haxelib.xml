@@ -1,5 +1,5 @@
-<project name="cloudshift" url="http://www.cloudshift.cl" license="BSD">
-    <user name="cloudshift"/>
+<project name="outflux" url="https://github.com/outflux/outflux" license="BSD">
+    <user name="outflux"/>
     <tag v="node.js"/>
     <tag v="javascript"/>
     <tag v="js"/>

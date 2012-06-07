@@ -1,9 +1,9 @@
 
-import cloudshift.Http;
-import cloudshift.Core;
-import cloudshift.Data;
+import outflux.Http;
+import outflux.Core;
+import outflux.Data;
 
-using cloudshift.Mixin;
+using outflux.Mixin;
 
 class RemoteSource {
 

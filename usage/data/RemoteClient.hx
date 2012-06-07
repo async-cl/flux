@@ -1,9 +1,9 @@
 
-import cloudshift.Core;
-import cloudshift.Data;
-import cloudshift.Http;
+import outflux.Core;
+import outflux.Data;
+import outflux.Http;
 
-using cloudshift.Mixin;
+using outflux.Mixin;
 
 class RemoteClient {
 

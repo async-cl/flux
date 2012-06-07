@@ -5,7 +5,7 @@
 -js btc.js
 -D nodejs
 -main Btc
---macro cloudshift.core.JSGenerator.use()
+--macro outflux.core.JSGenerator.use()
 -cmd echo compiled server
 --times
 

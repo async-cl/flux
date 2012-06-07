@@ -1,5 +1,5 @@
 
-import cloudshift.Worker;
+import outflux.Worker;
 
 import OtherProcess;
 

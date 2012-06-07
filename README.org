@@ -1,14 +1,17 @@
 
-* Cloudshift - A haXe Stack for Node.js
+* outflux - A haXe Stack for Node.js
 
-  See [[http://www.cloudshift.cl][cloudshift.cl]] for full documentation.
 
-  Cloudshift is written and maintained by Ritchie Turner (blackdog@cloudshift.cl)
+  Formerly - cloudshift, name changed due to clash with other cloud product.
+
+  See [[http://www.outflux.cl][outflux.cl]] for full documentation.
+
+  outflux is written and maintained by Ritchie Turner (blackdog@outflux.cl)
   and is currently under heavy development; the apis are subject to change.
   
 ** Core Module
 
-  Cloudshift provides a consistent set of abstractions on client and server for
+  Outflux provides a consistent set of abstractions on client and server for
   dealing with common problems;
   
   - *Asynchronous haXe remoting* for inter tier and sub-process communication
@@ -85,9 +88,9 @@
    leading names in the Node.js community. It's asynchronous and embedded in
    the node.js instance.
 
-   So, each Cloudshift instance has it's own database, this can be easily augmented
-   so that each instance running talks to a central Cloudshift instance just
-   running data services. Cloudshift provides a remote api compatible driver for
+   So, each Outflux instance has it's own database, this can be easily augmented
+   so that each instance running talks to a central Outflux instance just
+   running data services. Outflux provides a remote api compatible driver for
    this purpose. 
 
 
@@ -158,14 +161,14 @@
   - npm install formidable
   - npm install sqlite3
   - haxelib install nodejs
-  - haxelib install cloudshift
+  - haxelib install outflux
   
-  Note, the cloudshift haxelib does not include the nodejs dependency by
-  default, as the cloudshift lib is used on both client and server having
+  Note, the outflux haxelib does not include the nodejs dependency by
+  default, as the outflux lib is used on both client and server having
   the -D nodejs defined automatically on the client is an unwanted side
   effect. So be sure to install nodejs bindings manually.
 
   - Formidable is the node.js POST multipart handler. (https://github.com/felixge/node-formidable)
   - Sqlite3 - not be available on Windows (https://github.com/developmentseed/node-sqlite3)
-  - nodejs (https://github.com/cloudshift/hx-node)
+  - nodejs (https://github.com/outflux/hx-node)
   

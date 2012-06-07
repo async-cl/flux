@@ -1,12 +1,12 @@
 
 
-import cloudshift.Core;
-import cloudshift.Sys;
+import outflux.Core;
+import outflux.Sys;
 
-using cloudshift.Sys;
-using cloudshift.Mixin;
+using outflux.Sys;
+using outflux.Mixin;
 
-import cloudshift.Sys;
+import outflux.Sys;
 
 class TestFs {
 
