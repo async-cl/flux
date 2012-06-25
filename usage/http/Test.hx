@@ -1,6 +1,6 @@
 
-import outflux.Core;
-import outflux.Http;
+import flux.Core;
+import flux.Http;
 
 
 
@@ -8,7 +8,7 @@ class Test {
 
   public static function
   main() {
-    Http.get("http://www.outflux.cl").deliver(html) {
+    Http.get("http://www.flux.cl").deliver(html) {
       trace(html);
     });
     

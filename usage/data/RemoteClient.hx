@@ -1,9 +1,9 @@
 
-import outflux.Core;
-import outflux.Data;
-import outflux.Http;
+import flux.Core;
+import flux.Data;
+import flux.Http;
 
-using outflux.Mixin;
+using flux.Mixin;
 
 class RemoteClient {
 

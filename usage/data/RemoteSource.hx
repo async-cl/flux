@@ -1,9 +1,9 @@
 
-import outflux.Http;
-import outflux.Core;
-import outflux.Data;
+import flux.Http;
+import flux.Core;
+import flux.Data;
 
-using outflux.Mixin;
+using flux.Mixin;
 
 class RemoteSource {
 

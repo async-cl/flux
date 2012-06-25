@@ -8,9 +8,9 @@ openssl x509 -req -in certrequest.csr -signkey privatekey.pem -out certificate.p
 */
 
 
-import outflux.Core;
-import outflux.Http;
-using outflux.Mixin;
+import flux.Core;
+import flux.Http;
+using flux.Mixin;
 
 class HttpTest {
 

@@ -1,5 +1,5 @@
 
-using outflux.Mixin;
+using flux.Mixin;
 import ChatTypes;
 import js.JQuery;
 

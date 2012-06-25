@@ -2,11 +2,11 @@
 * flux - A haXe Stack for Node.js
 
 
-  Formerly - cloudshift, name changed due to clash with other cloud product.
+  Formerly - cloudshift, name changed due to clash with an existing cloud product.
 
-  See [[http://www.outflux.cl][outflux.cl]] for full documentation.
+  See [[http://www.outflux.cl][async.cl]] for full documentation.
 
-  outflux is written and maintained by Ritchie Turner (blackdog@outflux.cl)
+  nflux is written and maintained by Ritchie Turner (blackdog@outflux.cl)
   and is currently under heavy development; the apis are subject to change.
   
 ** Core Module

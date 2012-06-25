@@ -1,8 +1,8 @@
 
 package ;
 
-import outflux.Core;
-using outflux.Mixin;
+import flux.Core;
+using flux.Mixin;
 
 
 class ClientProxy extends haxe.remoting.AsyncProxy<Server>{}

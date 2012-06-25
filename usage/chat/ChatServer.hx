@@ -2,11 +2,11 @@
    hxc: -D nodejs
 */
 
-import outflux.Core;
-import outflux.Http;
-import outflux.Session;
-using outflux.Mixin;
-import outflux.Channel;
+import flux.Core;
+import flux.Http;
+import flux.Session;
+using flux.Mixin;
+import flux.Channel;
 
 import ChatTypes;
 

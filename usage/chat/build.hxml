@@ -2,12 +2,12 @@
 --times
 -js chatServer.js
 -cp .
--lib nodejs
+-cp ../../../hx-node
 --connect 6000
 -D CS_SERVER
 -debug
 -cp ../../
---macro outflux.core.JSGenerator.use()
+--macro flux.core.JSGenerator.use()
 -main ChatServer
 -cmd echo "chat server built"
  
@@ -19,7 +19,7 @@
 -js www/client.js
 -debug
 -D CS_BROWSER
---macro outflux.core.JSGenerator.use()
+--macro flux.core.JSGenerator.use()
 -main ChatClient
 -cmd echo "chat client built"
 

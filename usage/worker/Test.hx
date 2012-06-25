@@ -1,5 +1,5 @@
 
-import outflux.Worker;
+import flux.Worker;
 
 import OtherProcess;
 

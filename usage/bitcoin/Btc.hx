@@ -1,8 +1,8 @@
 
-import outflux.Core;
-import outflux.Bitcoin;
+import flux.Core;
+import flux.Bitcoin;
 
-using outflux.Mixin;
+using flux.Mixin;
 
 class Btc {
 

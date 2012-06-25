@@ -1,12 +1,12 @@
 
 
-import outflux.Core;
-import outflux.Sys;
+import flux.Core;
+import flux.Sys;
 
-using outflux.Sys;
-using outflux.Mixin;
+using flux.Sys;
+using flux.Mixin;
 
-import outflux.Sys;
+import flux.Sys;
 
 class TestFs {
 

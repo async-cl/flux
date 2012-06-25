@@ -6,10 +6,10 @@
 package ;
 
 #if nodejs
-import outflux.Core;
-import outflux.Http;
-import outflux.Remote;
-using outflux.Mixin;
+import flux.Core;
+import flux.Http;
+import flux.Remote;
+using flux.Mixin;
 #end
 
 class Server {

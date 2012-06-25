@@ -1,8 +1,8 @@
 
-import outflux.Core;
-import outflux.Session;
-import outflux.Channel;
-using outflux.Mixin;
+import flux.Core;
+import flux.Session;
+import flux.Channel;
+using flux.Mixin;
 
 import ChatUi;
 import ChatTypes;

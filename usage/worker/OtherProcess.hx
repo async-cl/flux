@@ -1,4 +1,4 @@
-import outflux.Worker;
+import flux.Worker;
 
 
 class OtherProcess extends Worker {
