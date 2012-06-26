@@ -21,24 +21,14 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
  * DAMAGE.
- * hxc: -D nodejs
  */
 package haxe;
 
-#if neko
-import neko.net.Host;
-import neko.net.Socket;
-#elseif cpp
-import cpp.net.Host;
-import cpp.net.Socket;
-#elseif php
-import php.net.Host;
-import php.net.Socket;
-#elseif nodejs
-import js.Node;
-#end
+#if sys
 
-#if (neko || php || cpp)
+import sys.net.Host;
+import sys.net.Socket;
+
 private typedef AbstractSocket = {
 	var input(default,null) : haxe.io.Input;
 	var output(default,null) : haxe.io.Output;
@@ -48,27 +38,27 @@ private typedef AbstractSocket = {
 	function close() : Void;
 	function shutdown( read : Bool, write : Bool ) : Void;
 }
+
 #end
 
 class Http {
 
 	public var url : String;
-#if (neko || php || cpp)
+#if sys
 	public var noShutdown : Bool;
 	public var cnxTimeout : Float;
 	public var responseHeaders : Hash<String>;
-	var postData : String;
 	var chunk_size : Null<Int>;
 	var chunk_buf : haxe.io.Bytes;
 	var file : { param : String, filename : String, io : haxe.io.Input, size : Int };
 #elseif js
 	public var async : Bool;
-	var postData : String;
 #end
+	var postData : String;
 	var headers : Hash<String>;
 	var params : Hash<String>;
 
-	#if (neko || php || cpp)
+	#if sys
 	public static var PROXY : { host : String, port : Int, auth : { user : String, pass : String } } = null;
 	#end
 
@@ -82,7 +72,7 @@ class Http {
 		params = new Hash();
 		#if js
 		async = true;
-		#elseif (neko || php || cpp)
+		#elseif sys
 		cnxTimeout = 10;
 		#end
 		#if php
@@ -98,11 +88,12 @@ class Http {
 		params.set(param,value);
 	}
 
-	#if (neko || js || cpp || php)
 	public function setPostData( data : String ) {
+		#if (flash && !flash9)
+		throw "Not available";
+		#end
 		postData = data;
 	}
-	#end
 
 	public function request( post : Bool ) : Void {
 		var me = this;
@@ -139,7 +130,7 @@ class Http {
 				uri = "";
 			else
 				uri += "&";
-			uri += StringTools.urlDecode(p)+"="+StringTools.urlEncode(params.get(p));
+			uri += StringTools.urlEncode(p)+"="+StringTools.urlEncode(params.get(p));
 		}
 		try {
 			if( post )
@@ -200,7 +191,7 @@ class Http {
         uri += StringTools.urlDecode(p)+"="+StringTools.urlEncode(params.get(p));
       }
 
-    request.end(uri);
+    request.end(uri);    
     
 	#elseif flash9
 		var loader = new flash.net.URLLoader();
@@ -238,12 +229,16 @@ class Http {
 		var bug = small_url.split("xxx");
 
 		var request = new flash.net.URLRequest( small_url );
-		for( k in headers.keys() ){
+		for( k in headers.keys() )
 			request.requestHeaders.push( new flash.net.URLRequestHeader(k,headers.get(k)) );
-		}
 
-		request.data = vars;
-		request.method = if( post ) "POST" else "GET";
+		if( postData != null ) {
+			request.data = postData;
+			request.method = "POST";
+		} else {
+			request.data = vars;
+			request.method = if( post ) "POST" else "GET";
+		}
 
 		try {
 			loader.load( request );
@@ -286,7 +281,7 @@ class Http {
 		}
 		if( !r.sendAndLoad(small_url,r,if( param ) { if( post ) "POST" else "GET"; } else null) )
 			onError("Failed to initialize Connection");
-	#elseif (neko || php || cpp)
+	#elseif sys
 		var me = this;
 		var output = new haxe.io.BytesOutput();
 		var old = onError;
@@ -305,7 +300,7 @@ class Http {
 	#end
 	}
 
-#if (neko || php || cpp)
+#if sys
 
 	public function fileTransfert( argname : String, filename : String, file : haxe.io.Input, size : Int ) {
 		this.file = { param : argname, filename : filename, io : file, size : size };
@@ -321,7 +316,7 @@ class Http {
 		if( sock == null ) {
 			if( secure ) {
 				#if php
-				sock = Socket.newSslSocket();
+				sock = new php.net.SslSocket();
 				#elseif hxssl
 				sock = new neko.tls.Socket();
 				#else
@@ -407,7 +402,9 @@ class Http {
 			b.add(uri);
 		}
 		b.add(" HTTP/1.1\r\nHost: "+host+"\r\n");
-		if( postData == null && post && uri != null ) {
+		if( postData != null )
+			b.add("Content-Length: "+postData.length+"\r\n");
+		else if( post && uri != null ) {
 			if( multipart || headers.get("Content-Type") == null ) {
 				b.add("Content-Type: ");
 				if( multipart ) {
@@ -429,13 +426,11 @@ class Http {
 			b.add(headers.get(h));
 			b.add("\r\n");
 		}
+		b.add("\r\n");
 		if( postData != null)
 			b.add(postData);
-		else {
-			b.add("\r\n");
-			if( post && uri != null )
-				b.add(uri);
-		}
+		else if( post && uri != null )
+			b.add(uri);
 		try {
 			if( Http.PROXY != null )
 				sock.connect(new Host(Http.PROXY.host),Http.PROXY.port);
@@ -546,18 +541,23 @@ class Http {
 		headers.pop();
 		responseHeaders = new Hash();
 		var size = null;
+		var chunked = false;
 		for( hline in headers ) {
 			var a = hline.split(": ");
 			var hname = a.shift();
 			var hval = if( a.length == 1 ) a[0] else a.join(": ");
-			responseHeaders.set(hname,hval);
-			if( hname.toLowerCase() == "content-length" )
-				size = Std.parseInt(hval);
+			responseHeaders.set(hname, hval);
+			switch(hname.toLowerCase())
+			{
+				case "content-length":
+					size = Std.parseInt(hval);
+				case "transfer-encoding":
+					chunked = (hval.toLowerCase() == "chunked");
+			}
 		}
 
 		onStatus(status);
 
-		var chunked = responseHeaders.get("Transfer-Encoding") == "chunked";
 		var chunk_re = ~/^([0-9A-Fa-f]+)[ ]*\r\n/m;
 		chunk_size = null;
 		chunk_buf = null;
@@ -599,6 +599,7 @@ class Http {
 		if( status < 200 || status >= 400 )
 			throw "Http Error #"+status;
 		api.close();
+
 	}
 
 	function readChunk(chunk_re : EReg, api : haxe.io.Output, buf : haxe.io.Bytes, len ) {
