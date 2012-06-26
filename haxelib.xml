@@ -1,8 +1,8 @@
-<project name="outflux" url="https://github.com/outflux/outflux" license="BSD">
-    <user name="outflux"/>
+<project name="flux" url="https://github.com/async/flux" license="BSD">
+    <user name="async"/>
     <tag v="node.js"/>
     <tag v="javascript"/>
     <tag v="js"/>
     <description>A haXe Stack for Node.js</description>
-    <version name="0.2.6">Update JSGenerator for Haxe 2.09</version>
+    <version name="0.5">Renamed Cloudshift -> Flux</version>
 </project>

@@ -1,16 +1,20 @@
 
-* Flux - A haXe Stack for Node.js
+* Flux - A Haxe Stack for Node.js
 
 
   Formerly cloudshift, name changed due to clash with an existing cloud product.
 
   Flux is written and maintained by Ritchie Turner (ritchie@async.cl)
   and is currently under heavy development; the apis are subject to change.
-  
+
+  Flux hides the Node.js api, and attempts to be a general comprehensive stack
+  for async programming in Haxe, so that as other async libraries appear Node.js
+  could be swapped out. In the short term, Node.js is the first choice platform.
+
 ** Core Module
 
   Flux provides a consistent set of abstractions on client and server for
-  dealing with common problems;
+  dealing with common problems:
   
   - *Asynchronous haXe remoting* for inter tier and sub-process communication
   - *Outcome<A,B>* (a Future<Either<A,B>>) as the means for dealing with
@@ -86,11 +90,10 @@
    leading names in the Node.js community. It's asynchronous and embedded in
    the node.js instance.
 
-   So, each Outflux instance has it's own database, this can be easily augmented
-   so that each instance running talks to a central Outflux instance just
-   running data services. Outflux provides a remote api compatible driver for
+   So, each Flux instance has it's own database, this can be easily augmented
+   so that each instance running talks to a central Flux instance just
+   running data services. Flux provides a remote api compatible driver for
    this purpose. 
-
 
 #+BEGIN_SRC haxe
         Data.store(REMOTESQLITE("http://localhost:8082/data")).outcome(function(store) {
@@ -159,7 +162,7 @@
   - npm install formidable
   - npm install sqlite3
   - haxelib install nodejs
-  - haxelib install outflux
+  - haxelib install flux
   
   Note, the outflux haxelib does not include the nodejs dependency by
   default, as the outflux lib is used on both client and server having
