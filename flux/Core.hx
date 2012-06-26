@@ -17,12 +17,6 @@ enum Either<A, B> {
   Right(v: B);
 }
 
-enum ELogLevel {
-  I(s:String);
-  W(s:String);
-  E(s:String);
-}
-
 enum EOperation {
   Add(info:Option<Dynamic>);
   Del(info:Option<Dynamic>);
@@ -97,6 +91,7 @@ typedef AnyPart = Part<Dynamic,Dynamic,Dynamic,Dynamic>;
 
 class Core {
 
+  public static var VER = "0.5";
   public static var CSROOT = "/__cs/";
 
   public static function
@@ -147,18 +142,6 @@ class Core {
   inline static public function
   logInit(?fileName:String) {
     LogImpl.init(fileName);
-  }
-
-  static public function
-  log(l:ELogLevel,category="",?inf:haxe.PosInfos) {
-    switch(l) {
-    case I(m):
-      LogImpl.info(m,category,inf);
-    case W(m):
-      LogImpl.warn(m,category,inf);
-    case E(m):
-      LogImpl.error(m,category,inf);
-    }
   }
 
   inline static public function
@@ -255,11 +238,7 @@ class Core {
   
 }
 
-
-/** An option represents an optional value -- the value may or may not be
- * present. Option is a much safer alternative to null that often enables
- * reduction in code size and increase in code clarity.
- */
+/* Extensions ... */
 
 class DynamicX {   
 

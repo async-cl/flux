@@ -46,7 +46,7 @@ class HttpImpl implements HttpServer,implements Part<HostPort,String,HttpServer,
 
     _index = "/index.html";
     _root = null;
-    _serverName = "Cloudshift 0.2.3";
+    _serverName = "Async.cl Flux "+Core.VER;
     
     _getHandler = defaultGetHandler;
     _cache = new Hash();
@@ -78,9 +78,9 @@ class HttpImpl implements HttpServer,implements Part<HostPort,String,HttpServer,
 
 
         if (_creds != null)
-          Core.log(I("Listening on Https "+_serverName+" on "+d.host+":"+d.port));
+          Core.info("Listening on Https "+_serverName+" on "+d.host+":"+d.port);
         else
-          Core.log(I("Listening on Http "+_serverName+" on "+d.host+":"+d.port));
+          Core.info("Listening on Http "+_serverName+" on "+d.host+":"+d.port);
         
         oc.resolve(Right(cast(this,HttpServer)));
       });
@@ -101,7 +101,7 @@ class HttpImpl implements HttpServer,implements Part<HostPort,String,HttpServer,
             try {
               r.handler(r.re,req,resp);
             } catch(ex:Dynamic) {
-              Core.log(E("handler exp:"+ex));
+              Core.error("handler exp:"+ex);
             }
             
             break;
