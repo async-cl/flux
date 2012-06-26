@@ -4,10 +4,9 @@ package flux.data;
 import flux.externs.Sqlite3;
 
 import js.Node;
-import flux.Core;
+using flux.Core;
 import flux.Data;
 
-using flux.Mixin;
 
 class Sqlite3Bucket<T> implements Bucket<T> {  
   var _store:Sqlite3Store;

@@ -5,7 +5,7 @@
 -js remoteSource.js
 -D nodejs
 -main RemoteSource
---macro outflux.core.JSGenerator.use()
+--macro flux.core.JSGenerator.use()
 -cmd echo compiled server
 --times
 
@@ -16,7 +16,7 @@
 -cp .
 -D nodejs
 -main RemoteClient
---macro outflux.core.JSGenerator.use()
+--macro flux.core.JSGenerator.use()
 -js remoteClient.js
 -cmd echo compiled client
 

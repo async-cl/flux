@@ -1,9 +1,8 @@
 
 package flux.sys;
 
-import flux.Core;
+using flux.Core;
 import flux.Sys;
-using flux.Mixin;
 
 
 import js.Node;

@@ -1,7 +1,6 @@
 package flux.core;
 
-import  flux.Core;
-using flux.Mixin;
+using  flux.Core;
 
 class PartBaseImpl<S,B,G,E> implements Part_<S,B,G,E> {
   public static var runningParts:Array<AnyPart> = [];

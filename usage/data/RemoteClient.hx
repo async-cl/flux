@@ -1,9 +1,8 @@
 
-import flux.Core;
+using flux.Core;
 import flux.Data;
 import flux.Http;
 
-using flux.Mixin;
 
 class RemoteClient {
 

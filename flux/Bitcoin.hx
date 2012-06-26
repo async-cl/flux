@@ -1,9 +1,8 @@
 
 package flux;
 
-import flux.Core;
+using flux.Core;
 import flux.Http;
-using flux.Mixin;
 import js.Node;
 
 typedef RpcErr = {

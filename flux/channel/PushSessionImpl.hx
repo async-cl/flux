@@ -1,11 +1,11 @@
 
 package flux.channel;
 
-import flux.Http;
+using flux.Core;
+using flux.Http;
 import flux.channel.Flow;
 import flux.channel.MessageQImpl;
 
-using flux.Mixin;
 
 class PushSessionImpl implements ConduitSession {
   public var lastConnection(default,default):Float;

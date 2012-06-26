@@ -1,9 +1,8 @@
 package flux.sys;
 
-import flux.Core;
+using flux.Core;
 import flux.Sys;
 import js.Node;
-using flux.Mixin;
 
 class Events extends flux.core.ObservableImpl<SysEvents> {
   

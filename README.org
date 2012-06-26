@@ -1,17 +1,15 @@
 
-* flux - A haXe Stack for Node.js
+* Flux - A haXe Stack for Node.js
 
 
-  Formerly - cloudshift, name changed due to clash with other cloud product.
+  Formerly cloudshift, name changed due to clash with an existing cloud product.
 
-  See [[http://www.outflux.cl][outflux.cl]] for full documentation.
-
-  outflux is written and maintained by Ritchie Turner (blackdog@outflux.cl)
+  Flux is written and maintained by Ritchie Turner (ritchie@async.cl)
   and is currently under heavy development; the apis are subject to change.
   
 ** Core Module
 
-  Outflux provides a consistent set of abstractions on client and server for
+  Flux provides a consistent set of abstractions on client and server for
   dealing with common problems;
   
   - *Asynchronous haXe remoting* for inter tier and sub-process communication

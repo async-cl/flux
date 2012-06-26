@@ -5,9 +5,8 @@
 
 package flux.data;
 
-import flux.Core;
+using flux.Core;
 import flux.Data;
-using flux.Mixin;
 
 private class BucketProxy extends haxe.remoting.AsyncProxy<flux.data.RemoteBucketProxy> { }
 private class HashProxy extends haxe.remoting.AsyncProxy<flux.data.RemoteHashProxy> { }

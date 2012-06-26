@@ -1,8 +1,7 @@
 
 package flux.core ;
 
-import flux.Core;
-using flux.Mixin;
+using flux.Core;
 
 class ObservableImpl<T> implements Observable<T> {
 

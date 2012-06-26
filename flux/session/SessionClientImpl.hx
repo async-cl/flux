@@ -1,9 +1,8 @@
 
 package flux.session;
 
-import flux.Core;
+using flux.Core;
 import flux.Session;
-using flux.Mixin;
 
 private class SessionProxy extends haxe.remoting.AsyncProxy<flux.session.SessionMgrProxy> { }
 

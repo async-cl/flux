@@ -5,12 +5,11 @@
 */
 package flux.channel;
 
-import flux.Core;
+using flux.Core;
 import flux.Channel;
 import flux.Session;
 import flux.channel.Flow;
 
-using flux.Mixin;
 
 class TChannelClient implements ChannelClient,
                      implements Part<SessionClient,ChannelClientError,ChannelClient,ESession> {

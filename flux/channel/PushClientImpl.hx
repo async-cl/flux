@@ -1,11 +1,10 @@
 
 package flux.channel;
 
-import flux.Core;
+using flux.Core;
 import flux.Channel;
 import flux.channel.Flow;
 import flux.Session;
-using flux.Mixin;
 
 class PushClientImpl implements Conduit {
   public var part_:Part_<ConduitClientStart,String,Conduit,ConduitEvent>;

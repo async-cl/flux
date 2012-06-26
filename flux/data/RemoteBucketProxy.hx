@@ -1,8 +1,7 @@
 
 package flux.data;
 
-import flux.Core;
-using flux.Mixin;
+using flux.Core;
 import flux.Data;
 
 class RemoteBucketProxy  {

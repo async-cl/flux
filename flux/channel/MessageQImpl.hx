@@ -1,8 +1,8 @@
 
 package flux.channel;
+
 import flux.channel.Flow;
 
-using flux.Mixin;
 
 class MessageQImpl implements MessageQ {
 

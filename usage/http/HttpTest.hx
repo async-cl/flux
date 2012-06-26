@@ -8,9 +8,8 @@ openssl x509 -req -in certrequest.csr -signkey privatekey.pem -out certificate.p
 */
 
 
-import flux.Core;
+using flux.Core;
 import flux.Http;
-using flux.Mixin;
 
 class HttpTest {
 

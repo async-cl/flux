@@ -3,8 +3,7 @@ package flux.core;
 
 // snarfed from stax
 
-import flux.Core;
-using flux.Mixin;
+using flux.Core;
 
 class FutureImpl<T> implements Future<T> {
   var _listeners: Array<T -> Void>;
@@ -37,7 +36,7 @@ class FutureImpl<T> implements Future<T> {
    */
   public function resolve(t: T): Future<T> {
     return if (_isCanceled) this;
-    else if (_isSet) Mixin.error("Future already delivered");
+    else if (_isSet) throw "Future already delivered";
     else {
       _result = t;
       _isSet  = true;

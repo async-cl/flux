@@ -1,11 +1,10 @@
 
 package flux.channel;
 
-import flux.Core;
+using flux.Core;
 import flux.Channel;
 import flux.channel.Flow;
 import flux.core.ObservableImpl;
-using flux.Mixin;
 
 using flux.Channel;
 

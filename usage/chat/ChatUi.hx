@@ -1,5 +1,5 @@
 
-using flux.Mixin;
+using flux.Core;
 import ChatTypes;
 import js.JQuery;
 
@@ -49,6 +49,7 @@ class ChatUi {
          }
         }
       });    
+
   }
       
   public static function

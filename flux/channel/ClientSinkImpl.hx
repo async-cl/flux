@@ -1,12 +1,11 @@
 
 package flux.channel;
 
-import flux.Core;
+using flux.Core;
 import flux.Session;
 import flux.Channel;
 import flux.channel.Flow;
 
-using flux.Mixin;
 
 class ClientSinkImpl extends SinkImpl {
 

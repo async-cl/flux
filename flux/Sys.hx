@@ -1,8 +1,7 @@
 
 package flux;
 
-import flux.Core;
-using flux.Mixin;
+using flux.Core;
 
 import flux.sys.WriteStreamImpl;
 import flux.sys.ReadStreamImpl;

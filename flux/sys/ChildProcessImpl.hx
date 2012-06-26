@@ -2,11 +2,10 @@
 
 package flux.sys;
 
-import flux.Core;
+using flux.Core;
 import flux.Sys;
 
 import flux.core.ObservableImpl;
-using flux.Mixin;
 
 import js.Node;
 

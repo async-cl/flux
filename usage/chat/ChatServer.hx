@@ -2,10 +2,9 @@
    hxc: -D nodejs
 */
 
-import flux.Core;
+using flux.Core;
 import flux.Http;
 import flux.Session;
-using flux.Mixin;
 import flux.Channel;
 
 import ChatTypes;

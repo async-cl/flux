@@ -1,12 +1,11 @@
 
 package flux.session;
 
-import flux.Core;
+using flux.Core;
 import flux.Session;
 import flux.Http;
 import flux.Remote;
 
-using flux.Mixin;
 
 import flux.session.SessionMgrProxy;
 

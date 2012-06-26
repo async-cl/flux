@@ -4,7 +4,8 @@ package flux;
 import js.Node;
 using StringTools;
 
-using flux.Mixin;
+using flux.Core;
+
 import flux.core.Context;
 
 class Worker extends Context {

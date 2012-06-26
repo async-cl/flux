@@ -1,11 +1,10 @@
 
 package flux.data;
 
-import flux.Core;
+using flux.Core;
 import flux.Data;
 import flux.externs.Sqlite3;
 
-using flux.Mixin;
 
 import js.Node;
 

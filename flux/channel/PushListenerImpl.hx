@@ -1,7 +1,7 @@
 
 package flux.channel;
 
-import flux.Core;
+using flux.Core;
 import flux.Session;
 import flux.Channel;
 
@@ -10,7 +10,6 @@ import flux.http.HttpImpl;
 import flux.channel.Flow;
 
 using flux.Channel;
-using flux.Mixin;
 
 import js.Node;
 

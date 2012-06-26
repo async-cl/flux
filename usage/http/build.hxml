@@ -4,5 +4,5 @@
 -cp ../../
 -cp ../../../hx-node
 -D nodejs
---macro outflux.core.JSGenerator.use()
+--macro flux.core.JSGenerator.use()
 -main HttpTest

@@ -5,8 +5,7 @@
 
 package flux.http;
 
-import flux.Core;
-using flux.Mixin;
+using  flux.Core;
 import flux.Http;
 import flux.http.Mime;
 

@@ -1,11 +1,10 @@
 
 package flux.channel;
 
-import flux.Core;
+using flux.Core;
 import flux.Channel;
 import flux.Http;
 import flux.Session;
-using flux.Mixin;
 import flux.channel.Flow;
 
 class TChannelServer implements ChannelServer,implements Part<SessionMgr,String,ChannelServer,ChannelEvent> {
