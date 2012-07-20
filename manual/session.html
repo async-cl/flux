@@ -1,0 +1,121 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=windows-1252" />
+      <title>Cloudshift Application Framework</title>
+      <link href="/reset.css" rel="stylesheet" type="text/css" />
+      <link href="/content.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shCore.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shThemeEclipse.css" rel="stylesheet" type="text/css" />
+    </head>
+
+    <body>
+      <div id="ifc">
+<p></p><h1>Session</h1><p></p><p> Flux  Session  provides  some  infrastructure  for  managing  user  sessions  via     remotes.  It  provides  both  client  and  server  interfaces  to  make  it  easy  to  get  up     and  running.    </p><p> The  Channel  module  depends  on  it,  but  otherwise  it's  optional.  Channel  requires     to  be  able  to  identify  users  by  session  ID  and  allow  channel  access  based  on  it     or  the  attributes  of  a  user  it  can  look  up  using  the  session  ID.    </p><p> The  main  point  about  the  Session  module  is  it  does  not  maintain  session     data.  The  only  thing  it  needs  from  you  is  a  unique  session  id,  the  session     manager  let's  you  know  if  someone  is  logging  in,  logging  out  or  signing  up.  In     the  case  of  logging  or  signing  in  Session  will  pass  you  a  packet  which  you  will     know  the  structure  of  in  advance  from  the  client.    </p><p><pre>
+
+
+Http.server().root("www").start({host:"localhost",port:8082})
+      .outcome(function(http) {
+          Session.manager().start(http)
+            .outcome(function(sess:SessionMgr) {
+               // got the session here!
+                sess.authorize(sessAuth);
+
+              });
+        });
+
+</pre></p><p></p><p> The  Session  manager  uses  the  port  of  the  HttpServer  it  attaches  to,  and  uses  an     internal  Flux  url  (something  prefixed  with  __cs)  for  it's  remoting     purposes.    </p><p> On  the  client  the  session  creation  code  looks  like  this    </p><p><pre>
+
+    Session.client().start({}).outcome(function(sess) {
+        sess.login({nick:nick}).outcome(function(sessID) {
+           
+        }) ;
+    });
+</pre></p><p></p><p> If  you're  calling  the  session  from  a  browser  it  connects  back  to  the  host/port     of  the  site  automatically.    </p><p> Once  you  get  a  session  instance  you  need  to  login,  an  arbitrary  login  packet  is     sent  which  you  need  to  decode  appropriately  on  the  server  by  providing  a     authorization  function  to  the  session  manager.    </p><p></p><h1>Authorization</h1><p></p><p> The  crux  of  the  session  manager  is  the  authorization  of  users  on  login  or  signup     and  the  provision  of  a  unique  session  ID.    </p><p> You  provide  a  function  that  performs  all  of  these  tasks,  and  pass  it  to  the     session  manager  with    </p><p><pre>sess.authorize(cb:ESessionOp-&gt;Void)</pre>   </p><p> Your  provided  function  takes  an  ESessionOp  enum.    </p><p><pre>
+
+enum ESessionOp {
+  Login(pkt:Dynamic,cb:ESession-&gt;Void) ;
+  Logout(sessID:String,cb:ESession-&gt;Void) ;
+  Signup(pkt:Dynamic,cb:ESession-&gt;Void) ;
+}
+</pre></p><p></p><p> As  you  see  the  ESessionOp  tells  you  the  operation  that  has  been  performed  from     the  client  Login/Logout/Signup.  For  Login/Signup  a  pkt  of  information  that  you     require  to  decode  is  provided  that  will  have  the  user  credentials  or  signup     data.  Here's  an  example:    </p><p><pre>
+
+
+sess.authorize(sessAuth)
+
+...
+
+function sessAuth(event:ESessionOp) {
+    switch(event) {
+    case Login(pkt,reply):
+      trace("logging in with "+pkt);
+      var lp:LoginPkt = pkt;
+      if (_nicks.exists(lp.nick)) {
+        reply(UserExists);
+      } else {
+        var sessID = genID();
+        _nicks.set(lp.nick,sessID);
+
+        js.Node.setTimeout(function(a:Dynamic) {
+            _room.pub(System(Arrives(a[0],untyped a[1])));
+          },1000,[lp.nick,_nicks.keyArray()]);
+
+        reply(UserOk(sessID));
+      }
+
+    case Signup(pkt,reply):
+      reply(UserOk(genID()));
+
+    case Logout(sessID,reply):
+      for(n in _nicks.keys()) {
+        if (_nicks.get(n) == sessID) {
+          _nicks.remove(n);        
+        }
+      }
+      reply(UserRemoved);
+    }
+  }
+
+</pre></p><p></p><p> Each  case  comes  with  it's  own  reply  callback.  And  you  reply  with  an  ESession    </p><p><pre>
+
+enum ESession {
+  UserOk(sessID:String);
+  UserNoUser;
+  UserExists;
+  UserRemoved;
+}
+</pre></p><p></p><p> The  login  and  signup  packets  (pkt)  are  unfortunately  Dynamic  (the  remoting     facility  does  not  work  with  parameterized  types),  so  cast  them  asap  to  your     actual  types.  In  any  case  decode  your  packets,  and  return  to  the  session  manager     an  ESession  value    </p><p><strong>You're required to create a unique sessionID to manage your session.</strong>   </p><p> On  a  login  or  signup  you  generate  a  unique  sessionID  in  whatever  way  is     appropriate  to  your  system.    </p><p> The  session  manager  has  these  methods:    </p><p><pre>
+
+interface SessionMgr implements Part&lt;HttpServer,String,SessionMgr,ESessionOp&gt; {
+  function authorize(cb:ESessionOp-&gt;Void):Void-&gt;Void;
+  function exists(sessID:String,cb:Bool-&gt;Void):Void;
+  function logout(sessID:String,cb:ESession-&gt;Void):Void;
+  function http():HttpServer;
+}
+</pre></p><p></p><p></p><h1>On The Client</h1><p></p><p> The  client  session  object  implements:    </p><p><pre>
+
+interface SessionClient implements Part&lt;Dynamic,String,SessionClient,ESession&gt; {
+  function login(pkt:Dynamic):Outcome&lt;String,String&gt;; // sessID on Right
+  function logout():Outcome&lt;String,String&gt;; 
+  function signup(pkt:Dynamic):Outcome&lt;String,String&gt;; // sessID on Right
+  function sessID():String;
+}
+
+</pre></p><p></p><p></p><p> See  the  chat  client  and  server  for  an  example.    </div>
+</body>
+
+    <script type="text/javascript" src="/jquery.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shCore.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushJScript.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushAS3.js"></script>    
+
+    
+    <script type="text/javascript">
+      $(function() {
+      $("table").addClass("gridtable");
+      $("pre").addClass("brush: as3;");
+      SyntaxHighlighter.highlight();
+      });
+    </script>
+    
+</html>

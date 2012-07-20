@@ -1,0 +1,129 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=windows-1252" />
+      <title>Cloudshift Application Framework</title>
+      <link href="/reset.css" rel="stylesheet" type="text/css" />
+      <link href="/content.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shCore.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shThemeEclipse.css" rel="stylesheet" type="text/css" />
+    </head>
+
+    <body>
+      <div id="ifc">
+<p></p><h1>Bitcoin</h1><p></p><p> Flux  supports  the  Bitcoin  Api  from  it's  bitcoin  module.  The  main  provision     is  to  wrap  the  Bitcoin  JSON-RPC  calls  in  standard  Flux  Outcomes  to  provide     a  clean  integration  with  the  rest  of  the  system.    </p><p> Flux  wraps  this <a target="_blank" href="https://en.bitcoin.it/wiki/Original_Bitcoin_client/API_Calls_list">api</a> .    </p><p> To  use  you  add  user/pw  to  the  bitcoind  (daemon)  config  and  then  fire  up.  You  may     then  add  micropayments  to  your  site  easily.  You  may  fund  bitcoins  in  a  variety  of     exchanges,  e.g.  mtgox.com.    </p><p> I'm  still  working  on  it,  so  docs  will  improve  in  due  course.    </p><p> It  looks  like  this  ...    </p><p><pre>
+import flux.Core;
+import flux.Bitcoin;
+
+using flux.Mixin;
+
+class Btc {
+
+  public static function
+  main() {
+
+    var btc = new Bitcoin("localhost",8332,"ritchie","elena");
+    btc.balance().outcome(function(b) {
+        trace("balance = "+b);
+      });
+
+    
+    btc.transaction("a2fca474dc815873806f800f8dd5b5fd0b5ee4396bc1537c7e1ae96377a2f7a9")
+      .outcome(function(trans) {
+          trace(trans);
+          });
+
+    btc.account("151ubHvkw8f9eLHWddMSv4ex8zk8hEYhtu").outcome(function(account) {
+        trace("account="+account);
+        btc.listReceivedByAccount(account).outcome(function(res) {
+            trace("------------------------");
+            for (t in res) {
+              trace(t.account + ": "+t.amount);
+            }
+            trace("------------------------");
+          });
+
+        /*
+        btc.accountAddress(account).outcome(function(address) {
+          trace("address= "+address);
+          
+        });
+        */
+      });
+
+    btc.addressesByAccount("From tradehill").outcome(function(res) {
+        trace(res);
+      });
+
+    btc.blockCount().outcome(function(res) {
+        trace("blockcount = "+res);
+      });
+
+    btc.connectionCount().outcome(function(res) {
+        trace("connection count = "+res);
+      });
+
+    btc.difficulty().outcome(function(res) {
+        trace("difficulty = "+res);
+      });
+
+    btc.generate().outcome(function(res) {
+        trace("generating = "+res);
+      });
+
+    btc.hashesPerSec().outcome(function(res) {
+        trace("hashes persec = "+res);
+      });
+
+    btc.info().outcome(function(res) {
+        trace("info="+Core.stringify(res));
+      });
+
+    /*
+    btc.memoryPool().outcome(function(res) {
+        trace("mempool="+Core.stringify(res));
+      });
+    */
+    
+    btc.receivedByAccount("elena@ritchie.com").outcome(function(res) {
+        trace("recieved by elena="+res);
+      });
+
+
+    btc.transactionsSinceBlock("169110").outcome(function(listsince) {
+        for (t in listsince.transactions) {
+          trace(Std.format("--&gt; ${t.amount} ${t.account}"));
+        }
+      });
+
+    
+    /*
+    btc.accounts().outcome(function(accs) {
+        accs.foreach(function(acc) {
+            btc.transactions(acc.account).outcome(function(trans) {
+                trace(trans);
+              });
+          });
+      });
+    */
+  }
+
+
+}</pre></div>
+</body>
+
+    <script type="text/javascript" src="/jquery.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shCore.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushJScript.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushAS3.js"></script>    
+
+    
+    <script type="text/javascript">
+      $(function() {
+      $("table").addClass("gridtable");
+      $("pre").addClass("brush: as3;");
+      SyntaxHighlighter.highlight();
+      });
+    </script>
+    
+</html>

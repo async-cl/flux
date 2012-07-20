@@ -1,0 +1,121 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=windows-1252" />
+      <title>Cloudshift Application Framework</title>
+      <link href="/reset.css" rel="stylesheet" type="text/css" />
+      <link href="/content.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shCore.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shThemeEclipse.css" rel="stylesheet" type="text/css" />
+    </head>
+
+    <body>
+      <div id="ifc">
+<p></p><h1>Http</h1><p></p><p> The  Http  module  is  the  heart  of  the  system  and  is  used  by  other  services,     e.g.  Remotes  and  Session.    </p><p> At  it's  simplest  you  can  create  an  http  server  like  this    </p><p><pre>Http.server()
+   .root("/dir/to/serve")
+   .start({host:"localhost",port:8080});
+</pre></p><p></p><p> or  you  may  leave  root  null,  and  then  provide  handlers  to  create  virtual  urls     that  don't  necessarily  map  to  a  directory  at  all  as  in  the  example  below.  Or  you     may  provide  a  root  dir  and  handlers.    </p><p></p><h2>Creating a Server</h2><p></p><p> For  example,  this  website  has  the  server    </p><p><pre>
+using flux.Core;
+import flux.Http;
+import flux.Remote;
+
+import SiteRemotes;
+
+class Server {
+
+  public static function
+  main() {
+
+    var
+      http = Http.server(),
+      rem = Remote.provider("SiteRems",new SiteRemotes());
+
+    http
+      .handler(~/^\/upload/,function(re,req,resp) {
+          http.fields(req,function(flds,files) {
+              if (files != null) {
+                for (f in files) {
+                  resp.write("got field:"+f.field+", file:"+f.file.path+", size:"+f.file.size);
+                }
+              }
+              resp.end();
+            },"/home/blackdog/test");
+        })
+      .handler(~/^\/testupload/,function(re,req,resp) {
+          resp.end('&lt;form action="/upload" enctype="multipart/form-data" method="post"&gt;
+&lt;input type="text" name="title"&gt;&lt;br&gt;
+      &lt;input type="file" name="upload" multiple="multiple"&gt;&lt;br&gt;
+      &lt;input type="submit" value="Upload"&gt;
+      &lt;/form&gt;');
+        })
+      .handler(~/^\/remotes/,rem.httpHandler)
+      .handler(~/^\/nekoapi/,NekoApi.test)
+      .handler(~/^\//,function(re,req,resp) {
+
+          // handler for everything else
+          
+          if (req.url == "/") req.url = "/index.html";
+          http.serve("www/"+req.url,req,resp);
+        })
+      .notFound(function(req,resp) {
+
+          // if no file found return this
+          
+          var t = new haxe.Template("&lt;head&gt;&lt;body&gt;Can't find ::file::&lt;/body&gt;&lt;/head&gt;");
+          resp.end(t.execute({file:req.url}));
+        })
+      .start({host:js.Node.process.argv[2],port:Std.parseInt(js.Node.process.argv[3])});
+    
+  }
+}
+
+</pre></p><p> Where  Http.server()  has  the  signature,    </p><p> server(opt:HttpOptions):HttpServer  (see  Http.hx)    </p><p></p><table><thead><tr><th> Method                                   </th><th> Desc                                                                                    </th></tr></thead><tbody><tr><td> http.start({host:"localhost",port:8080}) </td><td> starts serving pages from the www directory, using index.html as the default start page </td></tr><tr><td> http.stop()                              </td><td> stops the server listening on the given port.                                           </td></tr></tbody></table><p> You  could  have  multiple  Http  servers,  e.g.  I  may  want  to  use  remotes  off  a     specific  port,  not  have  them  attached  to  the  same  server  as  the  content.    </p><p></p><h2>Creating Handlers</h2><p></p><p> A  handler  takes  a  regex  to  match  against  the  incoming  req.url  from  Node,  and  a     request  and  response  object.  By  providing  the  regex  that  matched  you  can  query     the  methods  to  get  more  info  about  the  match  itself.    </p><p> Each  handler  regex  is  tested  on  the  req.url,  in  sequence,  until  a  match  is  found     and  then  your  handler  is  executed.    </p><p> Typically  your  handler  will  serve  a  file.  The  http.serve()  function  caches     the  file  automatically.  Pass  it  the  path  of  the  file  to  serve  and  the  req  and     response  objects.    </p><p> Using  resp.end()  your  handler  can  return  any  string  or  Node  buffer.    </p><p> As  you  can  see  in  the  example  above  you  can  get  at  the  Node.js  request  and  response     headers  too.    </p><p> Creating  handlers  is  a  very  flexible  method  of  creating  server  side  content.  For     example,  you  may  do  server  side  templating  as  in  the  .notFound  handler  above,     or  database  access.  For  example,  Flux  remotes  are  created  by  attaching  the     remote  handler  to  a  specific  url,  from  the  above  example    </p><p><pre>    var rem = Remote.provider("SiteRems",new Remotes());
+    http.handler(~/^\/remotes/,rem.httpHandler)
+</pre></p><p></p><h1>haXe/Neko Api</h1><p></p><p><pre>using flux.http.Neko;</pre>   </p><p> Provides  most  of  the  neko.Web  functionality  on  the  Node  request/response     objects.  This  is  not  meant  to  be  api  compatible  rather  it  provides  similarity  to     the  standard  haXe  server  interface  to  ease  transition.    </p><p> For  example  if  you  want  request  cookies    </p><p><pre>req.getCookies();</pre>   </p><p> if  you  want  to  set  a  header    </p><p><pre>resp.setHeader(p,q)</pre>   </p><p> Here's  the  handler  on <a href="/nekoapi">nekoapi</a> on  this  server    </p><p><pre>using flux.Core;
+import flux.Http;
+import flux.Remote;
+
+using flux.http.Neko;
+
+import js.Node;
+
+class NekoApi {
+
+  static var clientprms = "&lt;h2&gt;Get Params&lt;/h2&gt;&lt;table&gt;
+::foreach hdr::&lt;tr&gt;&lt;td&gt;::header::&lt;/td&gt;&lt;td&gt;::value::&lt;/td&gt;&lt;/tr&gt;::end::
+&lt;/table&gt;";
+
+  static var querystring = "&lt;h2&gt;Query string&lt;/h2&gt;::qs::";
+  static var hoststring = "&lt;h2&gt;Hostname&lt;/h2&gt;::qs::";
+  static var paramstring = "&lt;h2&gt;User agent&lt;/h2&gt;::p::";
+
+  public static function
+  test(re:EReg,req:NodeHttpServerReq,resp:NodeHttpServerResp) {
+    resp.setHeader("Content-Type","html");
+    resp.write("&lt;html&gt;&lt;body&gt;");
+    resp.write(new haxe.Template(clientprms).execute({hdr:req.getClientHeaders()}));
+    resp.write(new haxe.Template(querystring).execute({qs:req.getParamsString()}));
+    resp.write(new haxe.Template(hoststring).execute({qs:req.getHostName()}));
+    resp.write(new haxe.Template(paramstring).execute({p:req.getClientHeader("user-agent")}));
+    
+    resp.end("&lt;/body&gt;&lt;/html&gt;");
+  }
+}
+  </pre></div>
+</body>
+
+    <script type="text/javascript" src="/jquery.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shCore.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushJScript.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushAS3.js"></script>    
+
+    
+    <script type="text/javascript">
+      $(function() {
+      $("table").addClass("gridtable");
+      $("pre").addClass("brush: as3;");
+      SyntaxHighlighter.highlight();
+      });
+    </script>
+    
+</html>

@@ -1,0 +1,56 @@
+html, body, div, span, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, abbr, address, cite, code, del, dfn, hr, em, img, ins, kbd, q, samp, small, strong, sub, sup, var, b, i, a, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, figcaption, figure, footer, header, hgroup, menu, nav, section, summary, time, mark, audio, video {
+    background: none repeat scroll 0 0 transparent;
+    border: 0 none;
+    font-size: 100%;
+    line-height: 1;
+    margin: 0;
+    outline: 0 none;
+    padding: 0;
+    vertical-align: baseline;
+}
+article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section {
+    display: block;
+}
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 400;
+}
+a {
+    text-decoration: none;
+}
+blockquote:before, blockquote:after, q:before, q:after {
+    content: none;
+}
+ul, ol, dl {
+    list-style: none outside none;
+}
+blockquote, q {
+    quotes: none;
+}
+ins {
+    background-color: #FFF583;
+    color: #000000;
+    text-decoration: none;
+}
+mark {
+    background-color: #FFF583;
+    color: #000000;
+    font-weight: 700;
+}
+del {
+    text-decoration: line-through;
+}
+abbr[title], dfn[title] {
+    border-bottom: 1px dotted;
+    cursor: help;
+}
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+hr {
+    border-top: 1px solid #CCCCCC;
+    display: block;
+}
+input, select {
+    vertical-align: middle;
+}

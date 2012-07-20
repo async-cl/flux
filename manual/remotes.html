@@ -1,0 +1,137 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=windows-1252" />
+      <title>Cloudshift Application Framework</title>
+      <link href="/reset.css" rel="stylesheet" type="text/css" />
+      <link href="/content.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shCore.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shThemeEclipse.css" rel="stylesheet" type="text/css" />
+    </head>
+
+    <body>
+      <div id="ifc">
+<p></p><h1>Remotes</h1><p></p><p></p><h2>Motivation</h2><p></p><p> The  main  method  of  inter  plaftform  communication  in  haXe  is  the  haXe     Remote,  documented  here:    </p><p></p><ul><li><a href="http://haxe.org/doc/remoting.">http://haxe.org/doc/remoting.</a><li><a href="http://haxe.org/doc/remoting/proxy">http://haxe.org/doc/remoting/proxy</a></ul><p></p><p> One  of  my  principles  for  Flux  is  to  minimise  the  friction  between  client     and  server,  and  the  way  to  do  this  is  reuse  types  across  that  boundary  and     remove  marshalling  between  wire  protocol  and  language.  Thus  the  use  of  haXe     remoting  achieves  that.  Now,  this  does  not  preclude  the  use  of  external  RESTful     interfaces,  but  the  app  communicates  between  it's  parts  via  haXe  remoting,  and     hence  guarantees  smooth,  frictionless  transfer  of  fully  typed  objects.    </p><p></p><h2>Flux Support</h2><p></p><p> Out  of  the  box  haXe  remoting  does  not  support  server  side  async  requests.  It     does  support  client  side  async,  but  haXe  was  designed  primarily  for  blocking     servers  so  the  server  side  support  was  missing.  haXe  serverside  remote  async  is     supported  out  of  the  box  with  Flux.    </p><p></p><h2>Creating Remotes</h2><p></p><p> A  remote  definition  is  an  ordinary  haXe  class  whose  public  methods  are  exposed     via  the  remote  handler.  Thus,  you  may  access  data  or  get  a  twitter  feed  etc     within  your  remote  and  return  the  data  to  whatever  the  client  happens  to  be.    </p><p><pre>    var rem = Remote.provider("SiteRems",new Remotes());
+    http.handler(~/^\/remotes/,rem.handler)
+</pre></p><p></p><p></p><p></p><p> A  Remote  provides  an  Http  handler  which  can  be  plugged  directly  into  Http  using     it's  handler  method  .  You  can  find  the  implementation  in     flux.http.RemoteImpl.hx  for  reference.    </p><p> You  can  see  the  example  above  that  it's  easy  to  attach  Http  async  remotes  to  an     Http  server.    </p><p> A  remote  follows  the  haXe  specification  for  a  remote.    </p><p><pre>
+using flux.Core;
+
+#if nodejs
+import js.Node;
+#end
+
+private typedef AMeta = {
+  var title:String;
+  var author:String;
+  var date:String;
+  var email:String;
+  var desc:String;
+  var keywords:String;
+  var fileName:String;
+  var index:String;
+}
+
+class SiteRemotes {
+
+  static var metaCache:Hash&lt;Array&lt;AMeta&gt;&gt;;
+  
+  public function new() {
+    metaCache = new Hash();
+  }
+  
+  public function index(dir:String,cb:Array&lt;AMeta&gt;-&gt;Void) {
+    #if nodejs
+    var root = "content/"+dir;
+    Node.path.exists(root+"/meta_update",function(exists) {
+        if (!exists) {
+          var meta = metaCache.get(root);
+          if (meta != null)
+            cb(meta);
+          else {
+            updateCache(root,cb);
+          }
+        } else {
+          Node.fs.unlinkSync(root+"/meta_update");
+          updateCache(root,cb);
+        }
+      });
+    #end
+  }
+
+  static function
+  updateCache(dir,cb:Array&lt;AMeta&gt;-&gt;Void) {
+    #if nodejs
+    Node.fs.readdir(dir,function(err,files) {
+        if (err != null) {
+          Core.log(E(err));
+          return;
+        }
+                
+        var meta =files.filter(function(el) {
+              return el.substr(el.lastIndexOf(".")+1) == "meta";
+          })
+          .map(function(metaFile) {
+                var m:AMeta = Node.parse(Node.fs.readFileSync(dir+"/"+metaFile));
+                m.fileName = metaFile.substr(0,metaFile.lastIndexOf("."));
+                return m;
+            });
+        
+        meta.sort((dir == "blog") ? sortByDate : sortByIndex);
+        
+        metaCache.set(dir,meta);
+        cb(meta);
+      });
+    #end
+  }
+
+  #if nodejs
+  static function sortByDate(a:AMeta,b:AMeta) {
+    var
+      da = a.date,
+      db = b.date;
+    
+    if (da != null &amp;&amp; db != null) {
+      var re = ~/^&lt;(\d{4}-\d{2}-\d{2})/; // org format &lt;2011-11-11 Fri&gt;
+      if (re.match(da)) {
+        var ma = re.matched(1);
+        if (re.match(db)) {
+          var
+            mb = re.matched(1),
+            va = Date.fromString(ma),
+            vb = Date.fromString(mb);
+          return Math.floor(vb.getTime() -va.getTime());
+        }
+      }
+    }
+    
+    return -1;
+  }
+
+  static function sortByIndex(a:AMeta,b:AMeta) {
+    var
+      da = Std.parseInt(a.index),
+      db = Std.parseInt(b.index);
+
+    return da - db;
+
+  }
+
+  #end
+}</pre></p><p> The  remote  function  index,  returns  an  array  of  AMeta  via  the  callback  cb.    </p><p> The  conditional  compilation  #nodejs  is  used  to  hide  the  internal  details  of  this     class  from  the  client  as  the  client  compiles  this  class  for  it's  signature,  but     of  course  can't  use  the  contents.  Given  that  Remotes  follow  standard  haXe     remoting  I  point  you <a href="http://haxe.org/doc/remoting/proxy">here</a> for  more  info.    </div>
+</body>
+
+    <script type="text/javascript" src="/jquery.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shCore.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushJScript.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushAS3.js"></script>    
+
+    
+    <script type="text/javascript">
+      $(function() {
+      $("table").addClass("gridtable");
+      $("pre").addClass("brush: as3;");
+      SyntaxHighlighter.highlight();
+      });
+    </script>
+    
+</html>

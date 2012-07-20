@@ -1,0 +1,92 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=windows-1252" />
+      <title>Cloudshift Application Framework</title>
+      <link href="/reset.css" rel="stylesheet" type="text/css" />
+      <link href="/content.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shCore.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shThemeEclipse.css" rel="stylesheet" type="text/css" />
+    </head>
+
+    <body>
+      <div id="ifc">
+<p></p><h1>Creating Parts</h1><p></p><p> In  Core.hx  a  Part  interface  is  defined  thusly    </p><p><pre>
+
+
+interface Part&lt;S,B,G,E&gt; {
+  var part_:Part_&lt;S,B,G,E&gt;;
+  function start_(p:S,?oc:Outcome&lt;B,G&gt;):Outcome&lt;B,G&gt;;
+}
+
+</pre></p><p></p><p> Where    </p><p></p><ul><li><strong>S</strong> is  the  start  function  parameter  object <li><strong>B</strong> the  type  of  the  bad  result  returned  in  the  start()  outcome <li><strong>G</strong> the  type  of  the  good  result  returned  from  the  start()  outcome <li><strong>E</strong> the  events  fired  by  the  part  (in  Flux  parts  usually  an  enum) </ul><p> A  user  must  implement  Part,  to  do  so  they  have  to  create  a  public  Part_  object     and  a  start()  function.    </p><p><pre>
+
+
+enum MyEvents {
+   Cool;
+}
+
+class MyPart extends MyBase , implements Part&lt;Dynamic,String,String,MyEvents&gt; {
+
+     static var myinfo = {
+         name:"My Part",
+         ver:"0.3",
+         auth:"Ritchie"
+     }
+
+      public var part_:Part_&lt;Dynamic,String,String,MyEvents&gt;;
+
+      public function new() {
+           part_ = Core.part(this,myinfo);
+     } 
+
+      public function start_() {
+         var oc = Core.outcome();
+         oc.resolve(Right("all good");
+         return oc;
+      }
+}
+
+</pre></p><p></p><p> Core.part()  is  supplied  to  create  the  base  part  object  to  delegate  to.     The  start_()  function  must  return  an  outcome  which  you  resolve  when  the  part     async  initialization  is  finished.    </p><p> The  info  is  optional  and  not  currently  fully  utilised,  currently  one  can  get  a     list  of  running  parts  with  Core.listParts().    </p><p> To  use  a  Part  you  mixin  Part  methods  with    </p><p><pre>using flux.Mixin;</pre>   </p><p> Then  the  start()/stop()  methods  become  available  to  the  user  of  the  part.    </p><p><strong>Note: You do not call start_()!!!</strong> What  happens  is  the  call  to  start_()  is     delegated  by  the  mixin  method  start()  to  an  internal  start  function  which  fires     the  Started  event  and  takes  care  of  any  internal  admin/logging  etc.    </p><p></p><h1>Adding a Stop</h1><p></p><p> The  "stop"  functionality  is  not  required  by  default.  If  you  part.stop()  on  a  part     that  does  not  have  "stop"  implemented  an  exception  is  thrown.    </p><p> Stop  is  not  implemented  as  a  Part  method  like  start_(),  rather  one  calls     stop_(mystopfunction)  usually  from  the  start_()  method,  like  this    </p><p></p><p><pre>
+
+  public function
+  start_(appModel:AppModel,?oc:Outcome&lt;String,LobbyView&gt;) {
+    if (oc == null)
+      oc = Core.outcome();
+    
+   var myobjtostop = new Obj().start({});
+
+    Tools.getPage("/lobby.html").outcome(function(html) {
+        new JQuery(parent).empty();
+        new JQuery("#pnlButton").html('&amp;nbsp;');
+        setHtml(appModel,html);
+        stop_(function(d) {
+            var soc = Core.outcome();
+            myobjecttostop.stop().outcome(function(x) {
+                soc.resolve(Right(""));
+            });
+            return soc;
+          });
+        oc.resolve(Right(this));
+      });
+    return oc;
+  }
+
+</pre></p><p></p><p> There  are  a  couple  of  good  reasons  for  this.    </p><p></p><ol><li> The  part  creation  process  is  simplified  by  only  having  to  implement  the  start_()  function. <li> Tends  to  reduce  class  state. </ol><p> If  you  have  stop_()  as  a  class  method  the  only  way  to  stop  the  class  is  to  store     the  stoppable  entities  in  the  class  itself,  thus  creating  state.  However,  one     finds  that  what  you  start  in  start_()  tends  to  be  what  you  want  to  stop  when  you     stop_()  thus  you  have  all  the  references  right  there  in  start_().  Thus  via     closure  the  stop_()  may  pick  up  the  objects  required  to  stop  without  creating     state.  This  is  not  always  the  case,  but  it's  quite  helpful.  Of  course  you  can     setup  stop_()  from  anywhere  inside  your  class,  and  use  class  vars  if  you  want.    </p><p> So  in  the  example  above  the  myobjtostop  reference  is  stored  in  the  stop_()     closure  without  having  to  add  it  as  a  class  var.    </div>
+</body>
+
+    <script type="text/javascript" src="/jquery.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shCore.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushJScript.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushAS3.js"></script>    
+
+    
+    <script type="text/javascript">
+      $(function() {
+      $("table").addClass("gridtable");
+      $("pre").addClass("brush: as3;");
+      SyntaxHighlighter.highlight();
+      });
+    </script>
+    
+</html>

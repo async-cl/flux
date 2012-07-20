@@ -1,0 +1,31 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=windows-1252" />
+      <title>Cloudshift Application Framework</title>
+      <link href="/reset.css" rel="stylesheet" type="text/css" />
+      <link href="/content.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shCore.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shThemeEclipse.css" rel="stylesheet" type="text/css" />
+    </head>
+
+    <body>
+      <div id="ifc">
+<p></p><h1>Flux Releases</h1><p></p><p> Tagged  release  to  be  found  at <a target="_blank" href="http://github.com/flux/flux/">Github</a> and  on <a target="_blank" href="http://lib.haxe.org/p/flux">lib.haxe.org</a> .    </p><p></p><h2>0.2.5</h2><p></p><p></p><ul><li> Rework  Outcomes,  an  Outcome<A,B>  is  now  simply  a  Future<Either<A,B>>  with  extension  methods. <li> The  Flow  module  has  been  deprecated  as  it  was  complicated  by  implementation  leakage.  Flow  is  used  internally,  but  the  Channel  module  takes  it's  places  as  a  simpler  public  API  for  pub/sub. <li> Only  start_()  is  required  for  a  Part  definition.  stop_(mystopfunc)  is  used  to  add  the  stop  function. </ul><p></p><h2>0.2.4</h2><p></p><p></p><ul><li> Add  Http  post/get  client  methods. <li> Add  Http  upload  handler. <li> Add  Bitcoin  module. </ul><p></p><h2>0.2.3</h2><p></p><p></p><ul><li> Fix  data  remoting.  Remote  clients  can  now  interact  with  buckets  and  hashes  over  haxe  remoting. <li> Provide  haxe.Http  override  to  standard  library  which  includes  a  Node.js  Http  client  impl. </ul><p></p><p></div>
+</body>
+
+    <script type="text/javascript" src="/jquery.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shCore.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushJScript.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushAS3.js"></script>    
+
+    
+    <script type="text/javascript">
+      $(function() {
+      $("table").addClass("gridtable");
+      $("pre").addClass("brush: as3;");
+      SyntaxHighlighter.highlight();
+      });
+    </script>
+    
+</html>

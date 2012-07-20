@@ -1,0 +1,236 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=windows-1252" />
+      <title>Cloudshift Application Framework</title>
+      <link href="/reset.css" rel="stylesheet" type="text/css" />
+      <link href="/content.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shCore.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shThemeEclipse.css" rel="stylesheet" type="text/css" />
+    </head>
+
+    <body>
+      <div id="ifc">
+<p></p><h1>Data</h1><p></p><p> The  Data  module  stores  haXe  objects  to  Sqlite  (or  Redis  coming  soon).  The  primary     idea  is  to  consider  a  Node.js/Sqlite  instance  a  database  server.  The  Node.js     instance  uses  an  embedded  async <a target="_blank" href="https://github.com/developmentseed/node-sqlite3">sqlite driver</a> ,  so  is  very  fast.    </p><p> By  default  the  data  is  stored  in  JSON  format  in  the  sqlite  database.  However,     you  can  supply  complementary  serializer/deserializers  to  store  you  data  in  any     way  you  want  per  Bucket.  For  example,  you  may  use  the  haXe  serialiser  to  store     class  instances  or  enums.    </p><p> The  Data  module  is  optional,  it  doesn't  prejudice  any  other  Node.js  data     solution.    </p><p> The  main  API  looks  like  this    </p><p><pre>
+
+interface Bucket&lt;T&gt; {
+  function insert(obj:T):Outcome&lt;String,T&gt;;
+  function update(obj:T):Outcome&lt;String,T&gt;;
+  function delete(obj:T):Outcome&lt;String,T&gt;;
+
+  function getByOid(id:Int):Outcome&lt;String,T&gt;;
+  function deleteByOid(id:Int):Outcome&lt;String,Int&gt;;
+
+  function indexer(name:String,cb:Indexer&lt;T&gt;,?typeHint:String,?unique:Bool):Outcome&lt;String,Bool&gt;;
+  function index():Outcome&lt;String,Bool&gt;;
+  function where(where:String):Outcome&lt;String,Array&lt;T&gt;&gt;;
+  function find(query:Dynamic):Outcome&lt;String,Array&lt;T&gt;&gt;;
+
+  function link(bucketValue:BucketValue,obj:T):Outcome&lt;String,Bool&gt;;
+  function child(obj:Dynamic):BucketValue;
+  function linked&lt;Q&gt;(bucket:Bucket&lt;Q&gt;,val:T):Outcome&lt;String,Option&lt;Array&lt;Q&gt;&gt;&gt;;
+  function unlink(child:BucketValue,parent:T):Outcome&lt;String,Bool&gt;;
+
+  function store():Store;
+  function name():String;
+}
+</pre></p><p></p><p> The  implementation  allows  you  to  do  the  usual  CRUD  operations  and  receive  good     or  bad  responses  via  Outcomes.    </p><p> A  Bucket  will  typically  hold  data  of  the  same  type,  so  are  equivalent  to  tables,     except  you  store  entire  objects  at  one  time.    </p><p> Buckets  may  be  indexed  by  providing  a  function  that  executes  on  the  object  being     inserted  or  updated,  an  indexer.  Multiple  indexers  may  be  supplied  per     bucket.  An  indexer  stores  the  index  value  in  a  normal  sqlite  index,  so  indexed     access  should  be  fast.    </p><p> The  functions  find()  and  where()  can  be  used  to  search  the  index,  and  return  an     array  of  matches.    </p><p> Values  in  one  bucket  may  be  linked  to  values  in  another  in  a  parent  child  relationship.    </p><p> There  are  two  implementations  currently  of  this  API  an  in-process,  and  an  out  of     process.    </p><p></p><h1>Buckets</h1><p></p><p> Here's  how  you  access  and  load  bucket  references  from  a  sqlite  db.    </p><p><pre>
+
+  public static function
+  getUserBuckets():Outcome&lt;String,UserBuckets&gt; {
+    var prm = Core.outcome();
+    Data.store(SQLITE("test.db")).deliver(function(store) {
+        Core.waitOutcomes([store.bucket("txns"),store.bucket("users")])
+          .onError(function(reason) {
+              prm.resolve(Left(reason));
+            })
+          .deliver(function(outcomes) {
+              var mo:Array&lt;Dynamic&gt; = outcomes;
+              prm.resolve(Right({txns:mo[0],users:mo[1]}));
+            });
+      });
+    return prm;
+  }
+
+</pre></p><p></p><p> To  change  the  default  serializer  per  bucket  you  may  add  a  serializer  instance  to     the  bucket()  function  of  store    </p><p><pre>
+
+store.bucket("txns",Data.haxeSerializer())
+</pre></p><p></p><p> similarly  there  Data.jsonSerializer()  method  but  this  is  the  default.    </p><p> A  serializer  is  defined  like  this    </p><p><pre>
+
+typedef Serializer = {
+  var serialize:Dynamic-&gt;String;
+  var deSerialize:String-&gt;Dynamic;
+}
+</pre></p><p></p><p> Thus  you  may  easily  add  and  create  your  own  serializers.  For  example,  I  like  to  use  haXe     enums  a  lot  in  data  objects  but  not  classes,  thus  I  can  create  serializers  for     specific  objects  to  save  and  load  the  enums  as  typed  objects.    </p><p></p><h1>In-Process or Remote Drivers</h1><p></p><p> Generally  for  simple  apps  and  testing  you'd  use  the  in-process  driver  where  a     Node.js  instance  is  it's  own  db  server  too.  However,  for  distributed  apps,     having  multiple  model  instances  talk  to  a  single,  or  more,  database  server  may     be  more  appropriate.  For  this  kind  of  app,  a  remote  driver  is  provided.  All     the  remote  driver  does  is  marshall  the  object  over  the  wire  and  receives  the     Outcome.  In  fact  the  both  remote  and  in-process  APIs  are  implementations  of     Bucket  above.    </p><p> So  because  we've  made  an  upfront  choice  of  Async  everywhere  going  from     in-process  to  distributed  is  a  no  brainer.    </p><p> Here's  how  you  publish  a  bucket  for  remoting  ...    </p><p><pre>
+import flux.Http;
+using flux.Core;
+import flux.Data;
+
+
+class RemoteSource {
+
+  public static function main(){ 
+    Http.server().root("www").start({host:"localhost",port:8082}).outcome(function(http) {
+        Data.store(SQLITE("test.db")).outcome(function(store) {
+                store.bucket("woot").outcome(function(woot) {
+                    woot.indexer("name",function(o:Dynamic) {
+                        return o.name;
+                      }).outcome(function(el) {
+                          Data.serveBucket(http,woot,"/data/woot");
+                        });
+                  });
+                store.hash("peeps").outcome(function(peeps) {
+                    Data.serveHash(http,peeps,"/data/peeps");
+                  });
+            });
+      });
+  }
+
+}</pre></p><p> and  here's  the  client  ...    </p><p><pre>
+using flux.Core;
+import flux.Data;
+import flux.Http;
+
+
+class RemoteClient {
+
+  public static function main(){
+     Data.store(REMOTESQLITE("http://localhost:8082/data")).outcome(function(store) {
+        store.bucket("woot").outcome(function(woot) {
+           
+            woot.where('name="lore"').outcome(function(recs) {
+                trace(recs.stringify());
+              });
+            
+            woot.insert({email:"lorena@ritchie.com",name:"lore",passwd:"and why not"})
+              .outcome(function(u) {
+                  trace("lore's id = "+Data.oid(u));
+              });
+          });
+
+        store.hash("peeps").outcome(function(peeps) {
+            peeps.set("me",{email:"lorena@ritchie.com",name:"lore",passwd:"and why not"})
+              .outcome(function(p) {
+                  peeps.get("me").outcome(function(me) {
+                      if (me.name == "lore")
+                        trace("yep got it");
+                    });
+                });
+          });
+       });
+  }
+}</pre></p><p></p><h2>Redis</h2><p></p><p> As  a  further  option,  I  will  implement  a  Redis  remote  driver  as  time  permits.    </p><p></p><h1>Example </h1><p></p><p> The  example  below  demonstrates  update  of  a  user  object,  and  the  linking  of  a     transaction  to  it.    </p><p><pre>
+
+  typedef User = {
+    var email:String;
+    var passwd:String;
+    var name:String;
+    var balance:Float;
+  }
+
+....
+
+  public static function
+  transact(sessID:String,txn:TxnType,cb:Bool-&gt;Float-&gt;Void) {
+    var
+      userID = Data.oid(Session.users.get(sessID)),
+      at = Date.now().toString();
+
+    users.getByOid(userID).deliver(function(u) {
+        switch(txn) {
+        case DEBIT(value,desc):
+          if (u.balance &gt;= value) {
+            var newBal = Utils.round(u.balance - value);
+            u.balance = newBal;
+            users.update(u).deliver(function(mod) {
+                txns.insert({value:value,newBalance:newBal,at:at,descr:desc }).deliver(function(t) {
+                    users.link(txns.child(t),u).deliver(function(outcome) {
+                        cb(true,newBal);
+                      });
+                  });
+              });
+          } else {
+            cb(false,u.balance);
+          }
+        case CREDIT(value,desc):
+          var newBal = Utils.round(u.balance + value);
+          u.balance = newBal;
+          users.update(u).deliver(function(mod) {
+              txns.insert({value:value,newBalance:newBal,at:at,descr:desc }).deliver(function(t) {
+                  users.link(txns.child(t),u).deliver(function(outcome) {
+                      cb(true,newBal);
+                    });
+                });
+              });
+        }
+      });
+  }
+</pre></p><p></p><p></p><h1>Persistent Hashes</h1><p></p><p> The  module  also  implements  a  persistent  hash  with  this  interface    </p><p><pre>
+
+interface BHash&lt;T&gt; {
+  function get(key:String):Outcome&lt;String,T&gt;;
+  function set(key:String,val:T):Outcome&lt;String,T&gt;;
+  function remove(key:String):Outcome&lt;String,String&gt;;
+  function keys(?like:String):Outcome&lt;String,Array&lt;String&gt;&gt;;
+  function values(?like:String):Outcome&lt;String,Array&lt;T&gt;&gt;;
+}
+</pre></p><p></p><p> Here's  an  example    </p><p><pre>
+
+ Data.store(SQLITE("test.db")).then(function(store) {
+
+    store.hash("userhash").then(function(users:BHash&lt;User&gt;) {
+        users.set("ritchie", {name:"ritchie",balance:1.0}).deliver(function(u) {
+            users.get("ritchie").then(function(ur) {
+                trace("balance:"+ur.balance);
+              });
+          });
+
+        users.set("elena", {name:"elena",balance:1.0});
+        users.set("lorena", {name:"lorena",balance:1.0});
+
+        users.keys("rit*").deliver(function(keys) {
+            keys.stringify().info();
+          });
+
+        users.keys().deliver(function(keys) {
+            keys.stringify().info();
+          });
+
+        users.remove('ritchie').deliver(function(ok) {
+          switch(ok) {
+          case Ok:
+            'user del ok'.info();
+            users.keys("rit*").deliver(function(keys) {
+                keys.stringify().info();
+              });
+
+          case Err(e):
+            Core.info(e);
+          }
+        });
+
+        users.values('*na').deliver(function(v) {
+            v.stringify().info();
+          });
+        
+      });
+ });
+
+</pre></p><p></div>
+</body>
+
+    <script type="text/javascript" src="/jquery.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shCore.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushJScript.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushAS3.js"></script>    
+
+    
+    <script type="text/javascript">
+      $(function() {
+      $("table").addClass("gridtable");
+      $("pre").addClass("brush: as3;");
+      SyntaxHighlighter.highlight();
+      });
+    </script>
+    
+</html>

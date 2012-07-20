@@ -1,0 +1,75 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=windows-1252" />
+      <title>Cloudshift Application Framework</title>
+      <link href="/reset.css" rel="stylesheet" type="text/css" />
+      <link href="/content.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shCore.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shThemeEclipse.css" rel="stylesheet" type="text/css" />
+    </head>
+
+    <body>
+      <div id="ifc">
+<p></p><h1>Unobtrusive Class Extensions</h1><p></p><p> As  a  framework  developer,  one  of  my  concerns  is  how  to  introduce  functionality     with  as  little  disruption  to  the  user  of  the  framework  as  possible.    </p><p> For  example,  inheritance  as  the  primary  mechanism  of  extension  is  used  as  the     first  resort  for  most  users,  hence  if  the  framework  forces  the  use  of  it’s  base     classes  it  becomes  a  larger  question  if  it  will  be  used.    </p><p> Let  me  explain  my  problem.  I  want  to  integrate  a  component  model  into  an     application,  I  want  to  be  able  to  start/stop  components,  to  query  their  state,     to  observe  them  using  an  Observer  pattern.  But  I  don’t  want  to  introduce  a     special  base  class  to  do  this,  this  enables  my  component  model  to  be  more     readily  adopted.    </p><p> One  can  implement  an  interface,  but  if  your  extension  requires  state,  and  has     many  methods  it’s  fairly  intrusive.    </p><p> One  can  use  “using”  to  mixin  static  methods,  but  as  a  framework  developer  your     mixin  methods  will  not  be  tied  to  a  user’s  class  but  something  more  generic.    </p><p> So  the  solution  is  to  use  a  combination  of  the  two  methods  above.  In  the  code  my     component  is  called  a  Part,  so  I  want  to  be  able  to  mixin  Part  functionality     with  minimal  intrusion  to  a  user  class,  so  I  defined  a  Part  interface  with  a     single  var.    </p><p><pre>
+
+
+interface Part {
+     var part_:Part_;
+}
+
+</pre></p><p></p><p> To  use  my  component  model  the  user  must  implement  Part,  to  do  so  they  have  to  use  the  real  Part_  implementation  class.    </p><p><pre>
+
+
+class MyClass extends MyBase , implements Part {
+
+      public var part_:Part_;
+      public function new() {
+           part_ = new Part_();
+     } 
+
+      public function start() {
+           part_.notify(“started”);
+      }
+
+}
+
+</pre></p><p></p><p> The  user  requires  to  create  a  part_  var  and  initialize  it  -  the  part_  var     provides  any  plumbing  the  extension  requires  within  the  class,  e.g.  in  my  Part  I     initialize  an  observable  and  have  other  functionality.    </p><p> When  one  uses  the  class,  you  want  the  Part  functionality  without  accessing     part_,  and  this  is  where  we  can  use  “using”  to  make  the  extension  as  seamless  as     possible.    </p><p><pre>
+
+
+class PartExtensions {
+
+     public static var observe(Part:p,cb:Dynamic-&gt;Void){
+         p.part_.events.observe(cb);
+    }
+
+}
+
+</pre></p><p></p><p> Finally    </p><p><pre>
+import MyClass;
+using PartExtensions;
+
+var inst = new MyClass() ;
+
+….
+
+inst.observe(function(msg) { });
+
+</pre></p><p></p><p> For  two  lines  of  code  to  get  started  the  user  can  get  full  integration  with  Part     extensions  without  having  to  rethink  their  class  hierarchy.  That’s  pretty  good     without  macros.    </div>
+</body>
+
+    <script type="text/javascript" src="/jquery.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shCore.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushJScript.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushAS3.js"></script>    
+
+    
+    <script type="text/javascript">
+      $(function() {
+      $("table").addClass("gridtable");
+      $("pre").addClass("brush: as3;");
+      SyntaxHighlighter.highlight();
+      });
+    </script>
+    
+</html>

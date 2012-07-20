@@ -1,0 +1,338 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=windows-1252" />
+      <title>Cloudshift Application Framework</title>
+      <link href="/reset.css" rel="stylesheet" type="text/css" />
+      <link href="/content.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shCore.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shThemeEclipse.css" rel="stylesheet" type="text/css" />
+    </head>
+
+    <body>
+      <div id="ifc">
+<p></p><h1>A Flux Bingo Game</h1><p></p><p> 4  separate  games  of  different  types:    </p><p></p><ul><li> 75  ball  bingo  with  patterns,  multiple  winners,  pot  split. <li> 90  ball  bingo  with  3  ways  to  win,  each  with  multiple  winners,  pot  split. </ul><p></p><h1>Server Setup</h1><p></p><p> This  site  is  proxied  behind  Nginx  on  a  single  Flux  Node.js  server.    </p><p> The  idea  is  to  have  multiple  sites  each  playing  multiple  games  on  their  own  Node.js     servers.    </p><p> By  employing  Nginx  as  a  front  end  proxy  each  site  could  be  moved  to  it's  own     server  transparently  if  required.    </p><p> This  site  is  running  on  a  15Euro  per  month  linux  virtual  server  with  512MB  or     RAM.  Part  of  my  attraction  of  Node.js  is  it's  minimal  (compared  to  Java)  server     requirements  -  approx  17mb  per  node  instance.  I'm  running  6  node.js  instances  on     this  server  at  the  moment.    </p><p></p><h1>Build Client and Server</h1><p></p><p> The  haXe  build  file  (a  .hxml)  is  a  simple  means  of  building  multiple  compilation     units.  In  the  example  below  i'm  building  client  and  server    </p><p><pre>
+
+-cp ../../hx-node
+-cp ../../flux
+-cp ../
+-cp .
+-js bingoServer.js
+-D nodejs
+-main bingo.Bingo
+--macro flux.core.JSGenerator.use()
+--macro include('config')
+-cmd echo compiled bingo server
+--times
+
+--next
+
+-cp ../../flux
+-cp ../
+-cp .
+-main bingo.ui.Controller
+#-D LOCAL
+--macro flux.core.JSGenerator.use()
+--macro include('config')
+-js www/bingoClient.js
+-cmd echo compiled bingo client
+</pre></p><p></p><p> Multiple  compilation  units  are  strung  together  with  --next,  here  I'm  building     bingoServer.js  and  bingoClient.js    </p><p> Also  note,  the  --macro  where  one  can  set  a  javascript  generator  to  use.  I  have     tweaked  the  default  js  generator  to  better  support  server  side  support  for  async     remoting.  This  capability  is  huge.    </p><p></p><h1>Synchronization</h1><p></p><p> The  Flow  module  provides  both  chat  and  server  synchronization  (1  per  sec)  using     http  push.  Each  room  when  started  creates  4  or  so  pipes  (channels)  back  to  the  server.    </p><p> Currently  I'm  using  this  game  to  test  Flux,  so  i  don't  think  a  1  sec     signal  per  client  is  really  a  good  idea,  I'd  alter  that  granularity  from  the     server  and  have  the  client  do  some  local  timing  in  the  production  case.    </p><p> Here's  the  startup  of  the  bingo  server.  Database  is  initialised  first     asynchronously,  followed  by  Http,  followed  by  Flow.  The  quickFlow()  method  creates     a  Flow  modules  push  conduit,  sink  and  session  objects.    </p><p><pre>
+
+    Accounts
+      .start()
+      .deliver(function(outcome) {
+        Http.server().root("www")
+          .start({host:hostPort[0],port:Std.parseInt(hostPort[1])})
+          .deliver(function(http) {
+              Flow.quickFlow()
+                .start(http)
+                .deliver(function(quickFlow) {
+                    observeSession(quickFlow.session);
+                    createRooms(http,quickFlow);
+                    roomAuthorization(quickFlow);
+                    createRemotes(http,quickFlow);
+                });
+            });
+      });
+
+</pre></p><p></p><p></p><h1>Processes</h1><p></p><p> During  the  game  certain  tasks  could  hold  up  the  Node.js  event  processing  loop,     specifically  card  creation  and  the  calculation  of  winners.    </p><p> Thus  when  a  room  starts,  it  creates  a  Flux  worker  process  for  this     task.  So,  the  main  Node.js  event  loop  spawns  (in  this  instance)  4  other     sub-processes,  1  per  room.    </p><p> When  a  request  for  cards  is  received  it  is  immediately  given  to  the  sub  process,     and  forgotten  about  until  the  sub  process  calls  back  with  all  the  relevant     information.  Thus  the  Node.js  event  loop  continues  servicing  incoming  requests     unhindered.    </p><p> If  I  wanted  to  run  100  games,  having  100  sub-processes  is  not  on,  so  I'd  start  a     pool  of  sub-process  and  round  robin  to  them  appropriately,  so  the  current     implementation  is  naive.    </p><p> Here's  the  Worker  for  the  75  ball  game  whose  cards  function  is  called  from  the     main  process    </p><p><pre>
+
+
+class Worker75 extends Worker {
+  public static inline var WIDTH = 5;
+  public static inline var HEIGHT = 5;
+  public static inline var PERCOL = 15;
+
+  static var cardID = 0;
+  
+  public function
+  cards(calls:Array&lt;Int&gt;,handSize:Int,norm:Array&lt;Int&gt;,cb:Array&lt;Card75&gt;-&gt;Void) {
+    var crds = [];    
+    for (i in 0 ... handSize) {
+      var
+        vals = cardValues(),
+        sig = significant(vals,norm);
+      crds.push({ els:vals, low:matchWinners(calls,sig), sig:sig, id:cardID++});
+    }
+    cb(crds);
+  }
+
+  ..... other methods missing
+
+}
+</pre></p><p></p><p> and  here's  the  call;  _workerProxy  is  the  call  to  the  subprocess,  the  cb  returns     the  cards  to  the  client  after  the  room  caches  them  ...    </p><p><pre>
+
+  override function
+  genCards(sessID:String,cb:Dynamic-&gt;Void) {
+    var nCard = _config.handSize;
+    _workerProxy.cards(_game.balls,nCard,_game.norm,function(crds:Array&lt;Card75&gt;) {
+        var ca = _cardsBySess.get(sessID);
+        _cardsBySess.set(sessID,(ca == null) ? crds : ca.concat(crds));        
+        _cardsPurchased += nCard;
+        _winner = crds
+          .map(function(v) return v.low)
+          .foldl(_winner,function(v,o) { return if (v &lt; o)  v else o; });
+        Core.info("returning cards:"+Node.stringify(crds));
+        cb(crds);
+      });
+  }
+  
+</pre></p><p></p><p> and  finally  here's  the  worker  proxy  definition    </p><p><pre>
+
+private class WorkerProxy extends haxe.remoting.AsyncProxy&lt;bingo.game75.Worker75&gt; { }
+</pre></p><p></p><p> All  these  definitions  are  in  the  same  compilation  unit,  and  are  all  type  checked     by  the  compiler.  This  is  really  nice.    </p><p></p><h1>Data</h1><p></p><p> The  data  is  stored  in  a  sqlite  database  per  Node.js  instance.  If  I  wanted  to     aggregate  data  over  multiple  sites  in  a  single  database  I  could  use  the  Data     modules  remote  facility  with  almost  0  change  to  the  existing  node  code.    </p><p> This  example  demonstrates  getting,  updating,  inserting  and  linking.    </p><p><pre>
+
+  public static function
+  transact(sessID:String,txn:TxnType,cb:Bool-&gt;Float-&gt;Void) {
+    var
+      userID = Data.oid(Session.users.get(sessID)),
+      at = Date.now().toString();
+
+    users.getByOid(userID).deliver(function(u) {
+        switch(txn) {
+        case DEBIT(value,desc):
+          if (u.balance &gt;= value) {
+            var newBal = Utils.round(u.balance - value);
+            u.balance = newBal;
+            users.update(u).deliver(function(mod) {
+                txns.insert({value:value,newBalance:newBal,at:at,descr:desc }).deliver(function(t) {
+                    users.link(txns.child(t),u).deliver(function(outcome) {
+                        cb(true,newBal);
+                      });
+                  });
+              });
+          } else {
+            cb(false,u.balance);
+          }
+        case CREDIT(value,desc):
+          var newBal = Utils.round(u.balance + value);
+          u.balance = newBal;
+          users.update(u).deliver(function(mod) {
+              txns.insert({value:value,newBalance:newBal,at:at,descr:desc }).deliver(function(t) {
+                  users.link(txns.child(t),u).deliver(function(outcome) {
+                      cb(true,newBal);
+                    });
+                });
+              });
+        }
+      });
+  }
+</pre></p><p></p><p></p><h1>Views</h1><p></p><p> On  the  client  side  I  use  Flux  parts  for  Views.  A  Part  can  fire  events  and     start/stop  itself  asychronously.  Here's  the  Views  part  which  manages  the     internal  views.    </p><p><pre>
+
+enum ViewEvents {
+  STARTROOM(room:Room&lt;Config75&gt;);
+}
+
+class Views implements Part&lt;SessionClient,Views,ViewEvents&gt; {
+  public var part_:Part_&lt;SessionClient,Views,ViewEvents&gt;;
+
+  public static var loginView:LoginView;
+  public static var registerView:RegisterView;
+  public static var controller:Controller;
+  public static var baseView:BaseView;
+  public static var lobbyView:LobbyView;
+
+  static var _curController:AnyPart;
+  
+  public function new() {
+    part_ = Core.part(this);
+  }
+
+  public function stop_(?d:Dynamic) {
+    return null;
+  }
+
+  public function
+  start_(session:SessionClient) {
+    var
+      oc = Core.outcome();
+    
+    loginView = new LoginView("#pageView");
+    registerView = new RegisterView("#pageView");
+    controller = new Controller();
+    lobbyView = new LobbyView("#pageView");
+    baseView = new BaseView(session);
+
+    controller.start(session);
+    controller.observeState(function(state) {
+        switch(state) {
+        case Event(s):
+          switch(s) {
+          case ControllerEvents.Login(sessID,gameAttrs,sink,user):
+            loginView.stop();
+            lobbyView.start({attrs:gameAttrs,user:user});
+            baseView.setView(user.name);
+          case ControllerEvents.Logout:
+            lobbyView.stop();
+            baseView.setView(null);
+            loginView.start({});
+          case WinBal(balance,prize): // this is a private message
+            Core.info("new bal is :"+balance);
+            baseView.balance(balance);
+          }
+        default:
+        }
+      });
+
+    baseView.observe(function(e) {
+        switch(e) {
+        case ShowLobby:
+          showLobby();
+        case DoLogout:
+          session.logout();
+          loginView.start({});
+          
+        }
+      });
+    
+    loginView.observeState(function(state) {
+        switch(state) {
+        case Started:
+        case Stopped:
+        case Error(s):
+        case Except(ex):
+          ex.toString().info();
+        case Event(s):
+          switch(s) {
+          case onLogin(email,passwd):
+            controller.doLogin(session,email,passwd);
+          case onRegisterView:
+            loginView.stop();
+            registerView.start({});
+          }
+        }
+      });
+
+    registerView.observeState(function(state) {
+        switch(state) {
+        default:
+        case Started:
+        case Event(e):
+          switch(e) {
+          case onRegister(email,password,name):
+            controller.doRegister(session,email,password,name);
+          case onLoginView:
+            registerView.stop();
+            loginView.start({});
+          }
+        }
+      });
+
+    lobbyView.observeState(function(state) {
+        switch(state) {
+        default:
+        case Started:
+          baseView.setRoom(null);
+        case Event(e):
+          switch(e) {
+          case LAUNCHGAME(gameType):
+            switch(gameType) {
+            case CONFIG75(config):
+              baseView.setRoom(config.name);
+              new Room(config)
+                .start(controller.sink)
+                .deliver(start75);
+            case CONFIG90(config):
+              baseView.setRoom(config.name);
+              new Room(config)
+                .start(controller.sink)
+                .deliver(start90);
+            }
+          }
+        }
+      });
+        
+    loginView.start({});
+    oc.resolve(Right(this));
+
+    return oc;
+  }
+
+</pre></p><p></p><p> and  for  completeness  here's  the  LoginView  class,  as  you'd  expect  the  fact  that  I     use  Jquery  is  contained  completely  within  the  view  classes.  Notice  that  having     an  asynchronous  start()  and  Outcomes  is  crucial.    </p><p><pre>
+
+
+class LoginView extends ViewPart&lt;LoginView,LoginEvents&gt; {
+
+  var _parent:JQuery;
+  
+  public function
+  new(p:Dynamic) {
+    super();
+    _parent = new JQuery(p);
+  }
+  
+  override function
+  start_(d) {
+    var p:Outcome&lt;String,LoginView&gt; = Core.outcome();
+    Ui.getPage("/login.html").deliver(function(html) {
+        setHtml(html);
+        p.resolve(Right(this));
+      });
+    return p;
+  }
+
+  function setHtml(html) {
+    _parent.html(html);
+
+    new JQuery("#loginView").show();
+
+    var
+      txtEmail = new JQuery("#txtEmail"),
+      txtPass = new JQuery("#txtPassword");
+    
+    new JQuery("#btnLogin").click(function(e) {
+        notify(onLogin(txtEmail.val(),txtPass.val()));
+      });
+    
+    new JQuery("#btnShowRegister").click(function(e) {
+        notify(onRegisterView);
+      });
+  }
+
+  override function
+  stop_(?d:Dynamic) {
+    var p = Core.outcome();
+    new JQuery("#loginView").empty();
+    p.resolve(Right(cast this));
+    return p;
+  }
+
+}
+</pre></p><p></div>
+</body>
+
+    <script type="text/javascript" src="/jquery.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shCore.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushJScript.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushAS3.js"></script>    
+
+    
+    <script type="text/javascript">
+      $(function() {
+      $("table").addClass("gridtable");
+      $("pre").addClass("brush: as3;");
+      SyntaxHighlighter.highlight();
+      });
+    </script>
+    
+</html>

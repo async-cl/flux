@@ -1,0 +1,137 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=windows-1252" />
+      <title>Cloudshift Application Framework</title>
+      <link href="/reset.css" rel="stylesheet" type="text/css" />
+      <link href="/content.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shCore.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shThemeEclipse.css" rel="stylesheet" type="text/css" />
+    </head>
+
+    <body>
+      <div id="ifc">
+<p></p><p></p><h1>Assemblies and Parts Redux</h1><p></p><p> Parts  and  Assemlies  are  used  by  Flux  but  their  use  by  you  is  not  mandated     by  the  framework.    </p><p></p><ul><li> A  Part  is  a  component  with  events. <li> An  Assembly  provides  coordination  of  multiple  Parts. </ul><p> To  provide  some  context,  a  Part  would  be  roughly  equivalent  to  a  RobotLegs  Actor     and  an  Assembly  a  Mediator;  a  normal  function/closure  is  equivalent  to  a     RobotLegs  Command.    </p><p></p><h2>Part Overview</h2><p></p><p> I  blogged  previously  about  assemblies  and  parts  in  "Unobtrusive  Class  Extensions",     so  most  of  the  ideas  for  Parts  is  there.  To  sum  up,  a  Part  is  a  component  that     has  an  asynchronous  start()/stop()  returning  an  Outcome  (Future<Either>).  A  Part     is  also  Observable,  so  it  may  be  observed  and  notify  events.    </p><p> As  a  component  a  Part  should  not  interact  with  outside  objects,  it's  state  is     changed  by  calling  it's  methods  and  it  flags  it's  state  change  via  events.    </p><p> The  events  for  a  Part  are  defined  in  an  enum,  so  when  one  declares  a  Part  an     enum  is  provided,  e.g.    </p><p><pre>
+
+enum MyEvents {
+   Blah;
+}
+
+class MyPart implements Part&lt;MyPart,StartParams,MyEvents&gt; {
+...
+    notify(Blah);
+..,
+}
+
+</pre></p><p></p><p> In  addition  to  Part  defined  events  a  Part  may  also  notify  generic  events;     exceptions,  errors,  started  and  stopped  events.    </p><p><pre>notifyState(Error("woops"));</pre>   </p><p> or    </p><p><pre>notifyState(Exeption(ex));</pre>   </p><p> A  further  goal  of  a  Part  is  to  be  as  unobtrusive  as  possible  so  you  don't     extend,  you  implement,  thus  it  can  be  added  to  an  existing  class  which  already     extends  some  other  object,  I  won't  go  into  the  details  of  that  here.  StartParams     is  the  type  of  object  passed  to  the  start()  method,  so  you  interact  with  a  Part     in  a  fully  typed  way.    </p><p></p><h2>Assembly Creation</h2><p></p><p> An  assembly  is  an  aggregation  of  Parts  and  is  defined  by  an  enum,  e.g.    </p><p><pre>
+
+enum MyAssembly {
+    MYPART(mypart:MyPart);
+    ANOTHER(another:AnotherPart);
+}
+</pre></p><p></p><p> The  main  purpose  of  an  assembly  is  to  provide  a  single  place  to  manage  the     interactions  of  multiple  Parts.  Because  Parts  emit  well  defined  events,  events     for  all  parts  in  an  assembly  are  forwarded  to  a  single  handler,  in  the  following     way    </p><p><pre>
+
+
+Core.assembly(MyAssembly)
+  .part(MYPART(new MyPart()))
+  .part(ANOTHER(new AnotherPart()))
+  .manager(function(asm:MyAssembly_,part,event) {
+     switch(part) {
+        case MYPART(mp):
+           switch(event) {
+             case Exception(ex):
+             case Started:
+             case Stopped:
+             case Event(e):
+                switch(e){
+                case Blah:
+                   asm.another.anotherMethod();
+                }
+             default:
+           }
+        case ANOTHER(ap):
+          switch(event) {
+              ...
+          }
+     }
+  });
+</pre></p><p></p><p> The  function  provided  as  a  manager  is  fired  on  any  event  from  any  part  and  deals     with  the  event  accordingly,  each  switch  on  part  provides  the  part  reference  for     the  currently  executing  part,  .e.g.  mp  or  ap.    </p><p> However,  the  purpose  of  an  assembly  is  to  coordinate  multiple  parts,  therefore     the  parts  must  be  able  to  reference  other  parts  within  their  blocks.  For  this     purpose,  the  manager  function  is  provided  with  a  new  class  instance,  fully  typed,     that  has  the  part  references  embedded.    </p><p> From  the  example  above    </p><p><pre>asm.another.anothermethod()</pre>   </p><p> The  names  of  the  part  instances  come  from  the  original  part  defining  enum.  Thus,     any  Part  event  can  effect  the  state  of  any  other  Part  in  the  assembly.    </p><p> In  summation,  an  assembly  provides  a  common  pattern  for  coordinating  state     between  Parts  -  although  this  can  be  easily  modeled  in  a  class  the  hope  is     facilitating  this  kind  of  usage  reduces  the  number  of  external  references     embedded  in  a  Part.    </p><p></p><h1>Example 1 - Managing a View and Model</h1><p></p><p> In  this  example,  parts  are  used  for  both  a  game  model  and  a  game  view.    </p><p><pre>
+
+enum GameParts {
+  GAMEVIEW(view:bingo.client.GameView);
+  GAMEMODEL(model:bingo.client.GameModel);
+}
+</pre></p><p></p><p> Not  suprisingly,  model  events  call  methods  in  the  view  and  vice  versa.     This  example  also  shows  the  begin  method  of  an  assembly  which  is  simply  passed     the  assembly  reference,  so  that  everything  can  occur  without  creating  a  var  for     Core.assembly.    </p><p><pre>
+
+      Core.assembly(GameParts)
+      .part(GAMEMODEL(new GameModel()))
+      .part(GAMEVIEW(new GameView("#pageView")))
+      .manager(function(asm:GameParts_,part,state) {
+          switch(part) {
+          case GAMEVIEW(gv):
+            switch(state) {
+            case Event(e):
+              switch(e) {
+                case BuyCards:
+                asm.model.buyCards();
+              case Prev:
+                asm.model.prev();
+              case Next:
+                asm.model.next();
+              }
+            default:
+            }
+          case GAMEMODEL(gm):
+            switch(state) {
+            case Event(e):
+              switch(e) {
+              case ATSTART:
+                asm.view.atStart();
+              case ATEND:
+                asm.view.atEnd();
+              case ROW(r,total):
+                asm.view.row(r,total);
+              case BEST(toGo,bestID):
+                asm.view.best(toGo,bestID);
+              case BALL(ball):
+                asm.view.ball(ball);
+              case TXN(txn):
+                asm.view.txn(txn);
+              case RENDER(cards,call,values):
+                asm.view.render(cards,call,values);
+              case GAME(game):
+                asm.view.game(game);
+              case BALANCE(bal):
+                asm.view.balance(bal);
+              case SYNC(s):
+                asm.view.sync(s);
+              case PRIZE(p):
+                asm.view.prize(p);
+              }
+            default:
+            }
+          }
+        })
+      .begin(function(asm:GameParts_) {
+          asm.model.start(room);
+          asm.view.start({});
+        });
+
+</pre></p><p></p><p></p><h1>Example 2 - Managing Multiple Views</h1><p></p><p> This  example  shows  how  view  hiding/showing  can  be  accomplished.  Of  interest  here     is  that  the  assembly  is  contained  within  another  Part  (Views),  and  notice  how     the  assembly  fires  off  an  event  for  it's  containing  part    </p><p><pre>notify(STARTROOM(room));</pre>   </p><p><pre>/home/blackdog/Projects/cs-bingo/src/bingo/client/Views.hx not found!</pre></p><p></p><h2>Notes:</h2><p></p><p> Also  the  start()  methods  for  the  views,  although  they  return  Outcomes,  are  not     asynchronous  as  the  views  are  loaded  as  resources    </div>
+</body>
+
+    <script type="text/javascript" src="/jquery.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shCore.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushJScript.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushAS3.js"></script>    
+
+    
+    <script type="text/javascript">
+      $(function() {
+      $("table").addClass("gridtable");
+      $("pre").addClass("brush: as3;");
+      SyntaxHighlighter.highlight();
+      });
+    </script>
+    
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=windows-1252" />
+      <title>Cloudshift Application Framework</title>
+      <link href="/reset.css" rel="stylesheet" type="text/css" />
+      <link href="/content.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shCore.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shThemeEclipse.css" rel="stylesheet" type="text/css" />
+    </head>
+
+    <body>
+      <div id="ifc">
+<p></p><h1>Sys</h1><p></p><p> Sys  provides  a  higher  level  interface  to  elements  of  Node.js  api  not  covered  by     any  of  the  other  modules.  Sys  takes  a  lispish  style  and  stuffs  60  functions  in     one  namespace,  e.g.    </p><p><pre>
+
+  Sys.chdir("my/path");
+  Sys.mkdir("my/path");
+  Sys.exec("myexec");  
+</pre></p><p></p><p> Further,  all  of  the  Sys  async  functions  return  Outcomes    </p><p> Sys  provides  Streams  as  Observables  with  typed  enum  events.    </p><p> Here's  an  example.    </p><p><pre>
+
+using flux.Core;
+import flux.Sys;
+
+using flux.Sys;
+
+import flux.Sys;
+
+class TestFs {
+
+  public static function
+  main() {
+
+    Sys.writeFile("woot","hi there")
+      .oflatMap(function(file) {
+            return file.stat();
+        })
+      .omap(function(stat) {
+          return stat.path;
+        })
+      .oflatMap(function(path) {
+          return path.rename("niceone");
+        })
+      .outcome(function(newFileName) {
+          trace("cool "+newFileName);
+              
+          var p = Sys.events();
+        
+          p.observe(function(o) {
+              switch(o) {
+              case ProcessUncaughtException(ex):
+                trace("uuncauthg exp:"+ex);
+              default:
+              }
+            });
+
+          trace(Sys.argv());
+          trace(Sys.title());
+          trace("osuptime:"+Sys.osUptime()+", uptime:"+Sys.uptime());
+          
+          
+          Sys.stdout().write("nice one laddie");
+          
+          Sys.spawn("ls").outcome(function(child) {
+              child.stdout.observe(function(e) {
+                  switch(e) {
+                  case Data(s):
+                    trace(s);
+                  default:
+                  }
+                });
+            });
+
+          Sys.execFile("ls").outcome(function(output) {
+                trace(output);              
+            });
+        });
+  }
+
+}</pre></div>
+</body>
+
+    <script type="text/javascript" src="/jquery.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shCore.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushJScript.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushAS3.js"></script>    
+
+    
+    <script type="text/javascript">
+      $(function() {
+      $("table").addClass("gridtable");
+      $("pre").addClass("brush: as3;");
+      SyntaxHighlighter.highlight();
+      });
+    </script>
+    
+</html>

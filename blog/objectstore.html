@@ -1,0 +1,31 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=windows-1252" />
+      <title>Cloudshift Application Framework</title>
+      <link href="/reset.css" rel="stylesheet" type="text/css" />
+      <link href="/content.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shCore.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shThemeEclipse.css" rel="stylesheet" type="text/css" />
+    </head>
+
+    <body>
+      <div id="ifc">
+<p></p><h1>haXe, Node.js Object Store</h1><p></p><p> I’ve  posted <a href="https://github.com/flux/Data">here</a> a  Sqlite  backed  object  store  for  haXe/Node.js,  fully     asynchronous  and  Future  based.  Classes  or  typedefs  are  stored  as  serialized     objects  and  there’s  no  class  annotation  required.    </p><p> No  spod  as  it’s  not  async.  The  design  is  based  on  initial  work  i  did  with     pstore,  an  experimental  Redis  object  store.    </p><p> There  is  a  persistent  hash.  Usage.    </p><p> There  is  a  concept  of  “buckets”.  A  bucket  contains  an  object  of  a  given     type.  Usage.    </p><p> The  bucket  provides  indexing  by  supporting  “indexers”,  functions  that  are  run  on     your  object  to  produce  an  index  key  before  the  object  is  serialized  to  the  data     store  on  an  insert  or  update.  Indexer  values  are  indexed  ultimately  by  sqlite     indexes.  Indexers  are  the  query  mechanism  too.  If  your  indexer  returns  null,  the     object  will  be  ignored  in  searches  on  that  index.    </p><p> You  may  link  objects  between  buckets,  thereby  producing  relations.    </p><p> Future  directions  will  be  more  drivers  as  required  probably  Redis  to  start,     command  line  backup/dump  to  json.    </div>
+</body>
+
+    <script type="text/javascript" src="/jquery.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shCore.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushJScript.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushAS3.js"></script>    
+
+    
+    <script type="text/javascript">
+      $(function() {
+      $("table").addClass("gridtable");
+      $("pre").addClass("brush: as3;");
+      SyntaxHighlighter.highlight();
+      });
+    </script>
+    
+</html>

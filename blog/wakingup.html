@@ -1,0 +1,130 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=windows-1252" />
+      <title>Cloudshift Application Framework</title>
+      <link href="/reset.css" rel="stylesheet" type="text/css" />
+      <link href="/content.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shCore.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shThemeEclipse.css" rel="stylesheet" type="text/css" />
+    </head>
+
+    <body>
+      <div id="ifc">
+<p></p><h1>Waking up to haXe Macros</h1><p></p><p> I’ve  been  a  bit  slow  to  get  into  haXe  macros  but  i  found  a  use  case  that  I     wasn’t  able  to  solve  to  my  satisfaction  any  other  way.    </p><p> I  blogged  previously  about  a  Part  -  a  self  contained  component.  A  Part  knows  how     to  start/stop  itself,  can  signal  errors  and  exceptions  and  has  it’s  own  set  of     events.    </p><p> I  wanted  to  combine  Parts  into  Assemblies,  where  an  Assembly  knows  what  it’s     parts  are  and  contains  the  logic  that  specifies  how  these  Parts  interact,  via     the  events  the  parts  emit.  An  assembly  is  also  a  Part.  So  an  Assembly  is  a     typical  collection  class,  which  you  can  iterate  over.    </p><p> To  retain  typing  when  dealing  with  an  Assembly  and  it’s  constituent  Parts  one     needs  to  use  an  Enum  as  a  container,  e.g.  to  specify  an  Assembly  and  it’s  Parts     I  do  this.    </p><p><pre>
+
+
+enum ViewParts {
+  LOGINVIEW(loginView:LoginView);
+  REGISTERVIEW(registerView:RegisterView);
+  LAUNCHVIEW(launchView:LaunchView);
+  BASEVIEW(baseView:BaseView);
+  CONTROLLER(controller:Controller);
+}
+
+ _viewAsm = new ViewAssembly();
+
+_viewAsm.add(REGISTERVIEW(new RegisterView(“#pageView”)));   
+_viewAsm.add(LOGINVIEW(newLoginView(“#pageView”)));
+_viewAsm.add(LAUNCHVIEW(new LaunchView(“#pageView”)));
+_viewAsm.add(BASEVIEW(new BaseView()));
+_viewAsm.add(CONTROLLER(new Controller()));
+
+</pre></p><p></p><p> The  whole  point  of  an  assembly  is  to  provide  controlling  logic  for  the     constituent  parts,  but  the  problem <span style="text-decoration:underline">was</span> that  adding  the  view  to  the  collection     as  an  enum  greatly  inhibits  the  ease  at  which  you  can  get  at  the  objects  you     want  to  manipulate,  i.e.  you  need  to  use  a  switch  to  get  at  them.    </p><p> So  with  a  simple  macro  I’ve  been  able  to  remove  this  limitation.  Below  is  the     controller  code  from  within  the  _viewAsm  assembly  which  switches  between  the     views,  I’ve  only  included  two  cases  for  brevity.  The  main  point  to  note  is  that     I  can  access  my  views  by  name;  loginView,  registerView,  controller  etc.  These     are  fully  typed,  no  manual  var  declarations,  no  untyped  string  switches  in     sight,  or  unnecessary  switch  dereference  to  get  an  object  from  it’s  container!    </p><p><pre>
+
+
+watch(function(vp,state) {       
+    switch(vp) {        
+         case LOGINVIEW(lv):
+           switch(state) {
+           case Started:
+           case Stopped:
+            
+           case Error(s):
+           case Except(ex):
+                ex.toString().info();
+           case Event(s):
+                switch(s) {
+                    case onLogin(email,passwd):
+                         controller.doLogin(email,passwd);
+                    case onRegisterView:
+                         lv.stop();
+                         registerView.start();
+                }
+    }
+
+    case REGISTERVIEW(rv):
+           switch(state) {
+                  case Started:
+                        rv.observe(function(op) {
+                              switch(op) {
+                                   case onRegister(email,password,name):
+                                        controller.doRegister(email,password,name);
+                                   case onLoginView:
+                                        registerView.stop();
+                                        loginView.start();
+                              }
+                        });
+       default:
+       }
+});
+
+</pre></p><p></p><p> The  Assembly  class  has  a  macro  that  adds  for  each  constructor  of  the  enum  a  new     field  of  the  correct  type  into  the  Assembly  class,  thus  all  the  parts  added  may     be  accessed  internally  or  externally  by  name.  The  Assembly,  in  a  way,  implements     a  Dynamic<ViewParts>.    </p><p> The  new  assembly  field  name  is  created  by  the  macro  from  the  enum  by  extracting     the  var  name,  e.g.  loginView  from  the  constructor    </p><p> LOGINVIEW(loginView:LoginView);    </p><p> and  adding  it  as  haXe  meta  data  to  the  enum.  At  runtime  the  meta  data  is     extracted  and  applied  as  each  new  enum  constructor  is  added.    </p><p> What’s  great  with  this  is  I  get  single  instance  dependency  injection  to  boot!    </p><p> Here’s  how  I  attach  the  macro  to  the  Assembly  class  (which  ViewAssembly  derives  from)    </p><p><pre>
+
+
+@:autoBuild(flux.core.PartAssemblyMacro.build())
+class AssemblyImpl&lt;T,Q&gt; implements PartAssembly&lt;T,Q&gt;, implements Part&lt;Q&gt;{}
+
+And here’s the macro
+
+class PartAssemblyMacro {
+  @:macro public static function build() : Array&lt;Field&gt; {        
+    var pos = haxe.macro.Context.currentPos();
+    var fields = haxe.macro.Context.getBuildFields();
+    var local = haxe.macro.Context.getLocalClass().get();
+
+    switch(local.superClass.params[0]) {
+    case TEnum(t,params):
+      var en = t.get();
+      for (n in en.names) {
+        var enumFld = en.constructs.get(n);
+        switch(enumFld.type) {
+        case TFun(args,ret):
+          for (a in args) {
+            var thispos = haxe.macro.Context.currentPos();
+            enumFld.meta.add(“woot”,[{ expr : EConst(CString(a.name)), pos : thispos }],thispos);
+            switch(a.t)  {
+            case TInst(ref,prms):
+              var classDef = ref.get();
+              var myt = TPath({ pack : [], name : classDef.name, params : [], sub : null });
+              fields.push({ name : a.name, doc : null, meta : [], access : [APublic], kind : FVar(myt,null), pos : pos });
+            default:
+            }
+          }
+        default:
+        }
+      }
+    default:
+    }  
+  return fields;
+  }
+} 
+
+</pre></p><p></p><p> I  haven’t  included  the  runtime  where  I  decode  the  metadata  and  add  the  field     into  the  assembly  instance  but  it’s  trivial.    </p><p> To  sum  up,  I’m  blown  away  by  the  possibilies  now  that  I’ve  woken  up  to  haXe     macros.    </p><p> My  Part/Assembly  system  will  be  posted  on  Github  after  a  bit  more  testing  as  part  of  the <a href="https://github.com/flux/Core">https://github.com/flux/Core</a>   </div>
+</body>
+
+    <script type="text/javascript" src="/jquery.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shCore.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushJScript.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushAS3.js"></script>    
+
+    
+    <script type="text/javascript">
+      $(function() {
+      $("table").addClass("gridtable");
+      $("pre").addClass("brush: as3;");
+      SyntaxHighlighter.highlight();
+      });
+    </script>
+    
+</html>

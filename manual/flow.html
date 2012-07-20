@@ -1,0 +1,141 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=windows-1252" />
+      <title>Cloudshift Application Framework</title>
+      <link href="/reset.css" rel="stylesheet" type="text/css" />
+      <link href="/content.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shCore.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shThemeEclipse.css" rel="stylesheet" type="text/css" />
+    </head>
+
+    <body>
+      <div id="ifc">
+<p></p><h1>Flow</h1><p></p><p> Flow  is  the  Cloudshift  message  service.  Currently  it  supports  push  messaging     over  http,  but  as  you  will  see,  it  has  the  ability  to  support  multiple     transports.    </p><p></p><h2>Metaphor</h2><p></p><p> Flow  is  based  on  a  plumbing  metaphor,  it  deals  with  Conduits,  Sinks  and  Pipes.    </p><p></p><table><thead><tr><th> Abstraction </th><th> Description                                              </th></tr></thead><tbody><tr><td> Sink        </td><td> The sink can be filled or drained via Conduits and Pipes </td></tr><tr><td> Conduit     </td><td> Provides a link to an external resource                  </td></tr><tr><td> Pipe        </td><td> Provides a link to your application                      </td></tr></tbody></table><p> A  sink  may  be  filled  or  drained  over  the  network  via  a  Conduit  or  filled  and     drained  from  your  app  via  a  Pipe  (aka  Channel);    </p><p> I'm  not  yet  totally  sold  on  this  metaphor  but  it  works  for  now.    </p><p></p><h1>Server Setup</h1><p></p><p> Flow  uses  the  Http  and  Session  modules.  The  Http  module  provides  the     transportation  of  packets  and  Session  allows  for  the  abilty  to  authorize     or  deny  clients  on  specific  pipes.  This  means  that  a  client  must  authenticate     with  the  server  before  being  able  to  use  Flow.    </p><p> Here  is  an  out  of  context  example  of  a  setup  to  provide  a  flavor.    </p><p><pre>
+
+    var
+      http = Http.server().root("www"),
+      sess = Session.manager(http),
+      push = Flow.pushConduit(http,sess),
+      sink = Flow.sink(sess);
+
+    http.start({host:"localhost",port:8082});
+    sink.start(push); // you can add more conduits with sink.addConduit(c)
+
+</pre></p><p></p><p> First  you  need  an  http  server,  and  a  session  manager.    </p><p> Flow.pushConduit()  creates  an  Http  push  conduit  on  an  internal  Cloudshift  url  on     the  Http  servers  port.  The  conduit  does  a  handshake  with  incoming  clients  and     validates  their  session  id's  with  the  session  manager.  Thus  the  client  must     already  have  performed  some  kind  of  authorization  with  the  session  manager.    </p><p> Further  conduits  will  be  added  in  the  future,  e.g.  socket  and  websocket.  For  now     http  is  satisfactory  for  testing  purposes.  The  idea  being,  you  may  have  older     browsers  connecting  on  push  and  newer  browers  connecting  on  websockets  or     network  client  connecting  over  sockets.  All  kinds  of  client  can  participate,     their  conduits  providing  the  appropriate  adaptation.    </p><p> Once  you  have  sink,  you  can  create  pipes  to  drain  and  fill  it.  Filling  a  sink     (via  a  pipe)  pushes  a  message  out  to  all  the  attached  conduits  and  each  of  their     clients.  Draining  a  sink  (via  a  pipe)  allows  you  to  inspect  messages  send  via     that  pipe.    </p><p> You  may  have  multiple  pipes  on  a  single  sink,  each  must  be  identified  in  some     way,  I  use  the  typical  method  of  a  hierarchical  /  notation  but  it's  arbitary.    </p><p> The  idea  of  course  is  that  the  pipe  "/my/pipe"  is  available  on  both  client  and     server  and  can  be  filled  or  drained  on  both  sides.    </p><p><pre>
+
+typedef MyObj = {
+  var nickName:String;
+}
+
+...
+
+var ch:Pipe&lt;MyObj&gt; = sink.pipe("/my/pipe");
+
+ch.drain(function(p) {
+   trace("OK payload only="+(p.stringify()));
+});
+
+ch.drainPkt(function(pkt) {
+   trace("OK packet="+(pkt.stringify()));
+   trace("my sessId = "+Flow.sessID(pkt));
+});
+
+ch.fill({nickName:"Blah"});
+
+</pre></p><p></p><p> There  are  two  ways  of  draining  pipe,  drain()  and  drainPkt().    </p><p></p><p> Drain  returns  the  actual  data  sent  by  the  fill()  operation,  however  that  wasn't     all  the  data  sent  over  the  wire  with  the  packet,  importantly  the  sessId  of  the     sender  is  also  available  but  obviously  you  don't  want  to  have  to  type  that  into     your  data  packet.    </p><p> Thus  drainPkt()  provides  the  wire  object  Pkt  as  defined  in  Flow.hx.  Rather  than     know  the  internal  details  of  Pkt  which  may  change  it's  better  to  get  specific     information  from  the  raw  packet  by  using  some  query  function  defined  in  Flow.hx,     e.g.    </p><p><pre>Flow.sessID(pkt)</pre>   </p><p> and    </p><p><pre>Flow.pipeID(pkt)</pre>   </p><p> probably  being  the  only  useful  ones  at  the  moment.    </p><p> Thus  you  are  able  to  intercept  packets  based  on  sessID,  and  do  useful  stuff.    </p><p></p><h1>Client Setup</h1><p></p><p> First  you  need  to  get  a  valid  session  from  the  server    </p><p><pre>
+
+
+    var sess = Session.client();
+    sess.start({host:"localhost",port:8082});
+
+    sess.login({name:"ritchie"}).then(function(es) {
+        switch(es) {
+          case UserOk(sessID):
+              start();
+          default:
+            ... problem ....
+        }
+    });
+
+</pre></p><p></p><p> Once  you  have  a  reply  from  the  session  manager,  with  a  valid  session  ID  you  may     use  that  information  to  start  your  push  conduit  client.    </p><p><pre>
+
+  function start() {
+    var
+      conduit = Flow.pushConduit();
+    
+    conduit
+      .start({host:"localhost",port:8082,sessID:sess.sessID()})
+      .then(function(outcome) {
+          switch(outcome) {
+          case Ok:
+            var sink = Flow.sink(sess);
+            sink.start(conduit);
+            var p = sink.pipe("/my/pipe");
+            sink.authorize(p).then(function(auth:EOutcome) {
+                switch(auth) {
+                case Ok:
+                  p.fill({nickName:"ritchie"});          
+                  p.drain(function(pkt) {
+                      trace("woohoo:"+pkt.stringify());
+                    });
+
+                case Err(_):
+                }
+              });
+          case Err(msg):
+            trace("cannot start conduit:"+msg);
+          }
+        });
+  }
+
+</pre></p><p></p><p> In  the  example  abover  the  conduit  is  started  on  the  appropriate  host/port,  and     with  the  valid  sessionID.    </p><p> A  new  sink  is  created  on  the  client  with  a  reference  to  the  session  client,  and     the  sink  is  started  with  the  conduit  back  to  the  server.  To  use  a  pipe  a  client     must  authorize  it's  use  on  the  server.    </p><p> The  sink  knows  about  the  users  session,  thus    </p><p><pre>sink.authorize(p)</pre>   </p><p> performs  the  authorization  for  this  client.    </p><p> When  authorization  is  complete  one  may  fill  and  drain  from  the  pipe.    </p><p></p><h1>Pipe Authorization </h1><p></p><p> Not  all  pipes  on  a  server  should  be  available  to  all  connecting  clients,  we  need     a  method  of  restricting  access  to  specific  pipes.    </p><p> On  both  client  and  server  the  Sink  has  access  to  session  information,  it  also     has  access  to  incoming  packets,  thus  it's  a  good  place  to  authorize  incoming     subscriptions.    </p><p> A  sink  fires  an  Authorization  event,  it  does  so  on  an  authorize  call  from  a     client.    </p><p><pre>
+
+
+    sink.observe(function(dd:ESink) {
+        switch(dd) {
+        case Authorize(sessID,pipe,cb):
+          if (pipe.pid() != "/notauth") {
+            cb(Ok);
+          } else {
+            cb(Err("no way"));
+          }
+        }
+      });
+    
+</pre></p><p></p><p> The  Authorize  event  is  provisioned  with  the  sessID,  pipeID  and  callback  to     inform  the  system  if  authorization  was  successful  or  not.    </p><p> Thus  armed  with  the  sessID  you  may  look  up  your  users  details  and  check  to  see     if  they  have  permission  to  inspect  the  pipe  given  by  pipeID.    </p><p></p><h1>Filters</h1><p></p><p> You  may  filter  packets  on  a  given  pipe  by  calling  the  filter()  or  filterPkt()     methods  on  a  pipe.  These  have  the  same  semantics  as  adding  a  drain.  With  filter()     you  are  provided  with  your  typed  data  object  with  filterPkt()  you're  provided  the     wire  object  including  sessionID  and  potentially  other  meta  data  I  don't  know     about  yet.    </p><p> The  filter  is  called  once  per  packet  before  broadcast.     Return  null  to  cancel  the  broadcast  of  the  packet.     Return  the  packet  or  a  modified  version  to  broadcast.    </p><p> For  example,    </p><p><pre>
+
+pipe.filter(function(o) {
+ o.nickName = o.nickName.toUpperCase();
+ return o;
+});
+
+    
+pipe.filterPkt(function(pkt) {
+ trace("session id = "+Flow.sessID(pkt));
+ return pkt;
+});
+
+</pre></p><p></p><p></p><h1>Meta Data</h1><p></p><p> You  can  add  meta  data  to  your  object  for  routing  and  filtering  purposes  among  others.    </p><p> To  do  so  add  a  meta  data  object  when  filling,  the  meta  data  is  stored  with  the     wire  object  and  not  with  your  data.    </p><p><pre>pipe.fill(myobj,mymeta);</pre>   </p><p> to  inspect  meta  data  you  need  to  use  either  drainPkt()  or  filterPkt().  Get  the     meta  data  from  the  packet  using  the  Flow.meta().    </p><p><pre>
+
+pipe.filterPkt(function(pkt) {
+    var mymeta = Flow.meta(pkt);
+    });
+</pre></p><p></p><p> That  also  means  you  can  filter  on  meta  data.    </div>
+</body>
+
+    <script type="text/javascript" src="/jquery.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shCore.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushJScript.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushAS3.js"></script>    
+
+    
+    <script type="text/javascript">
+      $(function() {
+      $("table").addClass("gridtable");
+      $("pre").addClass("brush: as3;");
+      SyntaxHighlighter.highlight();
+      });
+    </script>
+    
+</html>

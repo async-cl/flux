@@ -1,0 +1,53 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=windows-1252" />
+      <title>Cloudshift Application Framework</title>
+      <link href="/reset.css" rel="stylesheet" type="text/css" />
+      <link href="/content.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shCore.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shThemeEclipse.css" rel="stylesheet" type="text/css" />
+    </head>
+
+    <body>
+      <div id="ifc">
+<p></p><h1>Data Client Sneak Peak</h1><p></p><p> I  recently  posted  a  haxe  data  store  I’m  working  on  here    </p><p><a href="https://github.com/flux/Data">https://github.com/flux/Data</a></p><p></p><p> it  has  persistent  hashes  and  indexable/relatable  buckets.    </p><p> example  here <a href="https://github.com/flux/Data/blob/master/usage/Test.hx">https://github.com/flux/Data/blob/master/usage/Test.hx</a>   </p><p> I  have  first  cut  of  a  remote  client  working,  flavor  ..    </p><p><pre>
+
+import flux.Core;
+using flux.Mixin;
+import flux.Data;
+
+class TestRemote {
+  public static function
+  main() {
+ Data.store(REMOTESQLITE(“http://localhost:8083/”)).then(function(store) {
+        store.bucket(“users”).then(function(users) {
+            users.where(‘blah=”elennena”’).then(function(recs) {
+                trace(recs.stringify());
+              });
+users.insert({email:”lorena@ritchie.com”,name:”lore”,passwd:”and why not”}).then(function(u) {
+                trace(u);
+              });
+          });
+      });
+  }
+}
+
+</pre></p><p></p><p> This  has  the  same  bucket  interface  as  the  in-process  version  (couple  of  methods     throw  as  not  applicable  on  client).  Works  over  haXe  remoting,  and  with  a  tweak     to  the  neko  code  generator  that  I’ve  already  made  to  my  js  generator,  would  be     client  compatible  with  neko.    </p><p> Any  serverside  bucket  can  be  made  available  over  http  -  via  http  async     remoting  -  and  security  can  be  added  with  my  session  project.    </p><p> Because  proxy  async  works  via  haxe.Http  I’ve  had  to  modify  haxe.Http  and  add  a     \#if  nodejs  for  requests,  but  I  can  ship  this  in  the  nodejs  haxelib  until     Nicolas  sees  fit  to  recognize  Node.js  as  a  first  class  platform  -  but  don’t  hold     your  breath.    </p><p> Node  complements  sqlite  very  well  as  being  a  great  single  threaded  server  on  a     very  fast  database  that  prefers  non  concurrent  access.  So  now  you  don’t  have  to     do  your  data  access  in-process  and  can  spread  the  load  over  multiple  buckets  on     multiple  servers.    </p><p> I’ve  posted  to  github,  I  won’t  complete  til  end  of  next  week  as  there’s  a  long     weekend  here  and  I  haven’t  finalised  the  api.    </p><p> R    </p><p></div>
+</body>
+
+    <script type="text/javascript" src="/jquery.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shCore.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushJScript.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushAS3.js"></script>    
+
+    
+    <script type="text/javascript">
+      $(function() {
+      $("table").addClass("gridtable");
+      $("pre").addClass("brush: as3;");
+      SyntaxHighlighter.highlight();
+      });
+    </script>
+    
+</html>

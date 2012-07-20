@@ -1,0 +1,67 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=windows-1252" />
+      <title>Cloudshift Application Framework</title>
+      <link href="/reset.css" rel="stylesheet" type="text/css" />
+      <link href="/content.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shCore.css" rel="stylesheet" type="text/css" />
+      <link href="/syntax/styles/shThemeEclipse.css" rel="stylesheet" type="text/css" />
+    </head>
+
+    <body>
+      <div id="ifc">
+<p></p><h1>Workers</h1><p></p><p> Node.js  is  single  threaded,  so  holding  up  the  event  loop  with  heavy  processing     is  a  no-no.    </p><p> The  way  of  solving  this  problem  is  to  start  a  new  sub-process  that  does  the     heavy  lifting,  connect  to  it’s  stdin/stdout  and  then  manage  some  kind  of     protocol  between  the  main  and  the  sub-process.    </p><p> This  is  a  great  way  of  doing  things,  the  main  event  loop  fires  off  a  sub-process     and  continues  on  it’s  merry  way  until  there  is  some  data  returned.  Further,  the     OS  can  schedule  the  sub-processes  over  multiple  cores  and  it  removes  an  entire     class  of  bugs  associated  with  threaded  programming.    </p><p> Node  makes  it  quite  easy  to  perform  this  task  with  it’s  childprocess  function,     however  at  each  stage  you’re  continually  thinking  of  a  new  protocol  to  talk  to     the  sub-process  over  the  wire.    </p><p> haXe  already  has  the  remoting  protocol,  so  all  we  need  is  an  async  stdio     remoting  protocol  to  take  advantage  of  typed  calls  to  sub-process.    </p><p><pre>
+
+import flux.Worker;
+
+class OtherProcess extends Worker {
+
+  public function foo(x,y,cb:Int-&gt;Void):Void {
+      cb(x+y);
+  }
+}
+
+</pre></p><p></p><p> A  Worker  extends  haxe.remoting.Context,  and  addObject  is  provided  with  “this”  as     the  target,  thus  all  public  functions  can  be  workers.    </p><p> and  here’s  the  main  process  defined  in  the  same  source  file  as  the  Worker    </p><p><pre>
+class Test {
+   public static function main() {
+     Worker.run(Test);
+   }
+
+public function new() {
+   var worker = Worker.create(OtherProcess);
+   worker.OtherProcess.foo.call([1,4],function(result) {
+       trace(“woot:”+result);    
+   });
+}
+
+</pre></p><p></p><p> You  can  also  create  an  AyncProxy  for  typed  calls  …    </p><p><pre>
+
+
+class OtherProxy extends haxe.remoting.AsyncProxy&lt;OtherProcess&gt; { }
+
+…..
+
+var _proxy = new OtherProxy(worker.OtherProcess);
+_proxy.foo(2,5,function(res) {
+        trace(“proxy res:”+res);
+});
+
+</pre></p><p></p><p> you  do     So  how  does  it  work.  Let’s  say  you  compiled  your  app  into  test.js,  thus  to  run    </p><p> node  test.js    </p><p> on  the  first  invocation,  Worker.run(Test)  runs  your  main  class  as  the  default.    </p><p> However  Worker.create(OtherProcess)  calls  a  new  instance  of  node  as  a     childprocess  like  this    </p><p> node  test.js  OtherProcess-someID    </p><p> Worker.run,  is  called  on  the  new  instantiation  of  the  subprocess  and  knows  it     must  use  OtherProcess,  not  the  default  Test,  as  the  main  entry  point.  Thus  a  new     sub-process  is  started  from  the  very  same  compilation  unit.    </p><p> One  then  adds  the  ability  to  do  haXe  remoting  over  the  stdin/stdout  channels  of     the  sub-process  and  you  have  a  very  clean  way  of  doing  heavy  lifting  in  Node.js     in  an  non  threaded  async  manner.    </p><p></p><p></div>
+</body>
+
+    <script type="text/javascript" src="/jquery.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shCore.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushJScript.js"></script>
+    <script type="text/javascript" src="/syntax/scripts/shBrushAS3.js"></script>    
+
+    
+    <script type="text/javascript">
+      $(function() {
+      $("table").addClass("gridtable");
+      $("pre").addClass("brush: as3;");
+      SyntaxHighlighter.highlight();
+      });
+    </script>
+    
+</html>
