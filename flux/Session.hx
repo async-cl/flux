@@ -3,7 +3,7 @@ package flux;
 
 import flux.Core;
 
-#if CS_SERVER
+#if nodejs
 import flux.Http;
 #end
 
@@ -20,7 +20,7 @@ enum ESessionOp {
   Signup(pkt:Dynamic,cb:ESession->Void) ;
 }
 
-#if CS_SERVER
+#if nodejs
 
 interface SessionMgr implements Part<HttpServer,String,SessionMgr,ESessionOp> {
   function authorize(cb:ESessionOp->Void):Void->Void;
@@ -29,7 +29,7 @@ interface SessionMgr implements Part<HttpServer,String,SessionMgr,ESessionOp> {
   function http():HttpServer;
 }
 
-#elseif CS_BROWSER
+#end
 
 typedef SessionStart = {endPoint:String};
 
@@ -45,23 +45,22 @@ interface SessionClient implements Part<SessionStart,String,SessionClient,ESessi
   function endPoint():String;
 }
 
-#end
 
 class Session {
 
   
   public static var REMOTE = Core.CSROOT+"__r";
   
-  #if CS_SERVER
+  #if nodejs
   public static function
   manager():SessionMgr {
     return new flux.session.SessionMgrImpl();
   }
-  #elseif CS_BROWSER
+  #end
+  
   public static function
   client() {
     return new flux.session.SessionClientImpl();
   }
-  #end
 
 }

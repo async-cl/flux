@@ -24,8 +24,10 @@ class ChatClient {
     Session.client()
       .start({endPoint:"https://"+js.Lib.window.location.host})
       .outcome(function(sess) {
+          Core.info("got session client");
           _session = sess;
           sess.login({nick:nick}).outcome(function(sessID) {
+              Core.info("logged in ok");
               Channel.client()
                 .start(_session)
                 .outcome(function(client) {

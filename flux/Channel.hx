@@ -1,16 +1,12 @@
 
 /**
-   Author: Ritchie Turner, flux.cl 2012
+   Author: Ritchie Turner, async.cl 2012
    Licence: MIT
 **/
 
 package flux;
 
 import flux.Core;
-#if CS_SERVER
-import flux.Http;
-#end
-
 import flux.Session;
 
 typedef TMeta = {
@@ -48,7 +44,7 @@ interface ChannelProvider {
   function direct<T>(sessID:String):Outcome<String,Chan<T>>;
 }
 
-#if CS_SERVER
+#if nodejs
 
 enum ChannelEvent {
   EAuthorize(sessID:String,chan:Chan<Dynamic>,reply:Either<String,String>->Void);
@@ -68,8 +64,6 @@ interface ChannelServer
 
 #end
 
-#if CS_BROWSER
-
 enum ChannelClientEvent {
   
 }
@@ -88,23 +82,20 @@ interface ChannelClient
   function direct<T>(sessID:String):Outcome<String,Chan<T>>;
 }
 
-#end
 
 class Channel {
 
-  #if CS_SERVER
+  #if nodejs
   public static function
   server():ChannelServer {
     return new flux.channel.TChannelServer();
   }
   #end
   
-  #if CS_BROWSER
   public static function
   client():ChannelClient {
     return new flux.channel.TChannelClient();
   }
-  #end
 
   public static function
   chanID(pkt:Pkt<Dynamic>) {

@@ -1,8 +1,4 @@
 
-/**
-   hxc: -D CS_BROWSER
-
-*/
 package flux.channel;
 
 using flux.Core;
@@ -30,9 +26,9 @@ class TChannelClient implements ChannelClient,
       oc = Core.outcome();
 
     var sessID = session.sessID();
-    Flow.pushConduit().start({endPoint:session.endPoint(),sessID:sessID})
+    Flow.clientConduit().start({endPoint:session.endPoint(),sessID:sessID})
       .oflatMap(function(conduit) {
-          return Flow.sink().start(conduit);
+          return Flow.clientSink().start(conduit);
         })
       .outcome(function(sink) {
           _sink = sink;

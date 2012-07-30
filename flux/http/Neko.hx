@@ -1,10 +1,8 @@
 
 package flux.http;
 
+using flux.Core;
 import flux.Http;
-import flux.Core;
-using flux.Mixin;
-
 import js.Node;
 
 class Neko {

@@ -113,9 +113,8 @@ class JSGenerator {
 		if( e == null )
 			print("null");
 		else {
-			 if (p.indexOf("Async_") != -1) {
-			  var
-                gen = api.generateValue(e),
+      if (p.indexOf("Async_") != -1) {
+			  var gen = api.generateValue(e),
 				re = ~/,?([A-Za-z0-9]*)],null/;
 
 			  var n = re.replace(gen,"],$1");
@@ -149,7 +148,7 @@ class JSGenerator {
 		genPackage(c.pack);
 		api.setCurrentClass(c);
 		var p = getPath(c);
-		fprint("$p =  $$hxClasses['$p'] = ");
+		fprint("$p = $$hxClasses['$p'] = ");
 		if( c.constructor != null )
 			genExpr(c.constructor.get().expr());
 		else
@@ -243,14 +242,10 @@ class JSGenerator {
 	public function generate() {
 		print("var $_, $hxClasses = $hxClasses || {}, $estr = function() { return js.Boot.__string_rec(this,''); }");
 		newline();
+    print("function $bind(o,m) { var f = function(){ return f.method.apply(f.scope, arguments); }; f.scope = o; f.method = m; return f; };");
+    newline();
 		for( t in api.types )
 			genType(t);
-		print("$_ = {}");
-		newline();
-		print("js.Boot.__res = {}");
-		newline();
-		print("js.Boot.__init()");
-		newline();
 		for( e in inits ) {
 			print(api.generateStatement(e));
 			newline();
@@ -263,9 +258,7 @@ class JSGenerator {
 			genExpr(api.main);
 			newline();
 		}
-		var file = neko.io.File.write(api.outputFile, true);
-		file.writeString(buf.toString());
-		file.close();
+		sys.io.File.saveContent(api.outputFile, buf.toString());
 	}
 
 	#if macro

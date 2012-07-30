@@ -36,7 +36,7 @@ class Context {
 		objects.set(name,{ obj : obj, rec : recursive });
 	}
 
-	public function call( path : Array<String>, params : Array<Dynamic> ) :Void {
+	public function call( path : Array<String>, params : Array<Dynamic>) :Void {
 		if( path.length < 2 ) throw "Invalid path '"+path.join(".")+"'";
 		var inf = objects.get(path[0]);
 		if( inf == null )
@@ -45,14 +45,17 @@ class Context {
 		var m = Reflect.field(o,path[1]);
 		if( path.length > 2 ) {
 			if( !inf.rec ) throw "Can't access "+path.join(".");
+
 			for( i in 2...path.length ) {
 				o = m;
 				m = Reflect.field(o,path[i]);
+        
 			}
 		}
 		if( !Reflect.isFunction(m) )
 			throw "No such method "+path.join(".");
 
+   
 		Reflect.callMethod(o,m,params);
 	}
 

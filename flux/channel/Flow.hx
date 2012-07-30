@@ -36,18 +36,15 @@ enum ConduitEvent {
   ConduitNoConnection(sessID:String);
 }
 
-#if CS_SERVER
 interface Conduit implements Part<Dynamic,String,Conduit,ConduitEvent> {
-#elseif CS_BROWSER
-  interface Conduit implements Part<ConduitClientStart,String,Conduit,ConduitEvent> {
-#end
   function authorize(pipeID:String):Future<Either<String,String>>;
-    function leave(pipeID:String):Future<Either<String,String>>;
+  function leave(pipeID:String):Future<Either<String,String>>;
   function pump(sessID:String,pkt:Dynamic,chanID:String,meta:Dynamic):Void;
-  #if CS_SERVER
+  #if nodejs
   function subscriptions(sessID:String):Hash<Void->Void>;
   function session():SessionMgr;
   #end
+  
 }
 
 enum SinkEvent {
@@ -69,7 +66,7 @@ class Flow {
 
   public static var PUSH = Core.CSROOT+"p";
   
-  #if CS_SERVER
+  #if nodejs
  
   public static function
   sink():Sink {
@@ -83,20 +80,18 @@ class Flow {
     return pl;
   }
 
-  #elseif CS_BROWSER
+  #end
 
   public static function
-  pushConduit():Conduit {
+  clientConduit():Conduit {
     return new flux.channel.PushClientImpl();
   }
 
   public static function
-  sink():Sink {
+  clientSink():Sink {
     return new flux.channel.ClientSinkImpl();
   }
    
-  #end
-
 
 
 }

@@ -46,7 +46,7 @@ class HttpImpl implements HttpServer,implements Part<HostPort,String,HttpServer,
 
     _index = "/index.html";
     _root = null;
-    _serverName = "Async.cl Flux "+Core.VER;
+    _serverName = "Flux "+Core.VER;
     
     _getHandler = defaultGetHandler;
     _cache = new Hash();
@@ -191,8 +191,10 @@ class HttpImpl implements HttpServer,implements Part<HostPort,String,HttpServer,
 
   public function
   serve(path:String,req:NodeHttpServerReq,resp:NodeHttpServerResp,statusCode=200) {
+
     var fileToServe = if (_root != null ) _root+path else path;
-  trace("serving :"+path);
+
+    trace("serving: "+path);
 
     Node.fs.stat(fileToServe,function (e, stat:NodeStat) {
         if (e != null) {
@@ -200,30 +202,35 @@ class HttpImpl implements HttpServer,implements Part<HostPort,String,HttpServer,
           return;
         }
 
-        var
-          mtime = Date.fromString(new String(stat.mtime)),
-          fmtime = mtime.getTime(),
-          size = stat.size,
-          eTag = Node.stringify([stat.ino, size, mtime].join('-')),
-          //          since = Reflect.field(req.headers,"if-modified-since"),
-          modified = false;
-
-        /*
-        if (since != null) {
-          modified = (parse(since) < fmtime) ;
-          }*/
-
-        if (Reflect.field(req.headers,"if-none-match") == eTag ){
-          resp.statusCode = 304;
-          headers(resp,size,path,eTag,mtime);
-          resp.end();
-          return;
-        }
-
         if (stat.isFile()) {
+          trace("stat.mtime = "+stat.mtime.toDateString());
+          
+          var
+            mtimeObj = stat.mtime,
+            fmtime = mtimeObj.toDateString(),
+            size = stat.size,
+            eTag = Node.stringify([stat.ino, size, fmtime].join('-'));
+
+          
+            //          since = Reflect.field(req.headers,"if-modified-since"),
+            //            modified = false;
+          
+          /*
+            if (since != null) {
+            modified = (parse(since) < fmtime) ;
+            }*/
+          
+          if (Reflect.field(req.headers,"if-none-match") == eTag ){
+            resp.statusCode = 304;
+            headers(resp,size,path,eTag,mtimeObj);
+            resp.end();
+            return;
+          }
+
           resp.statusCode = statusCode;
-          headers(resp,size,path,eTag,mtime);
-          serveFromCache(resp,fileToServe,stat,fmtime);
+          headers(resp,size,path,eTag,mtimeObj);
+          serveFromCache(resp,fileToServe,stat,mtimeObj.getTime());
+          
         } else if (stat.isDirectory()) {
           do404(req,resp);
         } else {
@@ -242,7 +249,7 @@ class HttpImpl implements HttpServer,implements Part<HostPort,String,HttpServer,
         }
 
         var
-          mtime = Date.fromString(new String(stat.mtime)),
+          mtime = stat.mtime,
           size = stat.size;
 
           if (stat.isFile()) {
@@ -265,18 +272,19 @@ class HttpImpl implements HttpServer,implements Part<HostPort,String,HttpServer,
     //resp.end();
   }
 
-  function headers(resp:NodeHttpServerResp,size,path,etag,mtime:Date) {
+  function headers(resp:NodeHttpServerResp,size,path,etag,mtime:NodeJsDate) {
     resp.setHeader("Content-Length",size);
     resp.setHeader("Content-Type",Reflect.field(Mime.types,Node.path.extname(path).substr(1)));
-    resp.setHeader("Date",UTCString(Date.now()));
+    var d:NodeJsDate = untyped __js__("new Date(Date.now())");
+    resp.setHeader("Date",d.toUTCString());
     if (etag != null)
       resp.setHeader("ETag",etag);
-    resp.setHeader("Last-Modified", UTCString(mtime));
+    resp.setHeader("Last-Modified", mtime.toUTCString());
     resp.setHeader("Server",_serverName);
   }
 
   function
-  serveFromCache(resp:NodeHttpServerResp,path:String,stat:NodeStat,mtime:Float) {
+  serveFromCache(resp:NodeHttpServerResp,path:String,stat:NodeStat,mtime:Int) {
     var cached = _cache.get(path) ;
     if (cached == null) {
       pipeFile(resp,path,stat,mtime);
@@ -284,13 +292,14 @@ class HttpImpl implements HttpServer,implements Part<HostPort,String,HttpServer,
       if (cached.mtime < mtime) {
         pipeFile(resp,path,stat,mtime);
       } else {
-        resp.end(cached.buf.toString(NodeC.ASCII));
+        //        resp.end(cached.buf.toString(NodeC.ASCII));
+        resp.end(cached.buf.toString(NodeC.BINARY));
       }
     }    
   }
 
   function
-  pipeFile(resp:NodeHttpServerResp,path:String,stat:NodeStat,mtime:Float){
+  pipeFile(resp:NodeHttpServerResp,path:String,stat:NodeStat,mtime:Int){
     var
       buf = new NodeBuffer(stat.size),
       offset = 0;

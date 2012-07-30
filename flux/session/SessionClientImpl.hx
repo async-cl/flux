@@ -31,11 +31,13 @@ class SessionClientImpl implements Part<SessionStart,String,SessionClient,ESessi
     var cnx = haxe.remoting.HttpAsyncConnection.urlConnect(_endPoint + Session.REMOTE);
     cnx.setErrorHandler( function(err) trace("Error : "+Std.string(err)) );
     _proxy = new SessionProxy(cnx.Auth);
+    Core.info("doing sessionclientimpl");
     oc.resolve(Right(cast this));
     return oc;
   }
 
   function doLogin(p:Outcome<String,String>,e:ESession) {
+    Core.info("Called back into doLogin");
     switch(e) {
     case UserOk(sid):
       _sessID = sid;
@@ -50,6 +52,7 @@ class SessionClientImpl implements Part<SessionStart,String,SessionClient,ESessi
   public function
   login(pkt:Dynamic):Outcome<String,String> {
     var p = Core.future();
+    Core.info("doing proxy login");
     _proxy.login(pkt,callback(doLogin,p));
     return p;
   }

@@ -7,7 +7,7 @@ import flux.channel.Flow;
 import flux.Session;
 
 class PushClientImpl implements Conduit {
-  public var part_:Part_<ConduitClientStart,String,Conduit,ConduitEvent>;
+  public var part_:Part_<Dynamic,String,Conduit,ConduitEvent>;
 
   var _sessID:String;
   var _host:String;
@@ -19,7 +19,7 @@ class PushClientImpl implements Conduit {
     part_ = Core.part(this);
   }
 
-  public function start_(cs:ConduitClientStart,?oc:Outcome<String,Conduit>) {
+  public function start_(cs:Dynamic,?oc:Outcome<String,Conduit>) {
     if (oc == null)
       oc = Core.outcome();
 
@@ -146,4 +146,16 @@ class PushClientImpl implements Conduit {
     req.setParameter("z",pl);
     req.request(true);
   }
+
+  #if nodejs
+  public function
+  session() {
+    return null;
+  }
+
+  public function
+  subscriptions(sessID:String) {
+    return null;
+  }
+  #end
 }

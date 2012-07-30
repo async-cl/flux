@@ -24,6 +24,10 @@
  */
 package haxe;
 
+#if (js && nodejs)
+import js.Node;
+#end
+
 #if sys
 
 import sys.net.Host;
@@ -155,8 +159,8 @@ class Http {
 			onreadystatechange();
   #elseif nodejs
     var
-      pu = Node.url.parse(url),
-      client = Node.http.createClient(Std.parseInt(pu.port),pu.hostname),
+      pu = js.Node.url.parse(url),
+      client = js.Node.http.createClient(Std.parseInt(pu.port),pu.hostname),
       myheaders = {"host":pu.hostname},
       request;
 

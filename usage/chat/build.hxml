@@ -1,24 +1,27 @@
 
 --times
+--js-modern
+#--dead-code-elimination
 -js chatServer.js
 -cp .
 -cp ../../../hx-node
 --connect 6000
--D CS_SERVER
+-D nodejs
 -debug
 -cp ../../
---macro flux.core.JSGenerator.use()
 -main ChatServer
 -cmd echo "chat server built"
  
 --next
 
 --connect 6000
+#--dead-code-elimination
+--js-modern
 -cp .
 -cp ../../
 -js www/client.js
 -debug
--D CS_BROWSER
+# just add some test
 --macro flux.core.JSGenerator.use()
 -main ChatClient
 -cmd echo "chat client built"
