@@ -6,18 +6,17 @@ import flux.Channel;
 import flux.Session;
 import flux.channel.Flow;
 
-
-class TChannelClient implements ChannelClient,
-                     implements Part<SessionClient,ChannelClientError,ChannelClient,ESession> {
+class TChannelClient
+extends flux.core.ObservableImpl<ESession>,
+implements ChannelClient {
   
-  public var part_:Part_<SessionClient,ChannelClientError,ChannelClient,ESession>;
   var _sink:Sink;
   var _host:String;
   var _port:Int;
   
   public function
   new() {
-    part_ = Core.part(this);
+    super();
   }
 
   public function
@@ -32,21 +31,21 @@ class TChannelClient implements ChannelClient,
         })
       .outcome(function(sink) {
           _sink = sink;
-          stop_(function(d) {
-              var soc = Core.outcome();
-              _sink.stop().outcome(function(el) {
-                  _sink = null;
-                  soc.resolve(Right(""));
-                });
-              return soc;
-            });
-          
           oc.resolve(Right(cast this));
         });
     
     return oc;
   }
 
+  public function stop_(p:Dynamic,?oc:Outcome<Dynamic,Dynamic>) {
+    var soc = Core.outcome();
+    _sink.stop({}).outcome(function(el) {
+        _sink = null;
+        soc.resolve(Right(""));
+      });
+    return soc;
+  }
+  
   public function
   channel<T>(id:String):Outcome<String,Chan<T>> {
     return _sink.authorize(_sink.chan(id));

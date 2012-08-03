@@ -36,7 +36,11 @@ enum ConduitEvent {
   ConduitNoConnection(sessID:String);
 }
 
-interface Conduit implements Part<Dynamic,String,Conduit,ConduitEvent> {
+interface Conduit
+implements Startable<Dynamic,String,Conduit>,
+implements Stoppable<Dynamic,Dynamic,Dynamic>,
+implements Observable<ConduitEvent> {
+  
   function authorize(pipeID:String):Future<Either<String,String>>;
   function leave(pipeID:String):Future<Either<String,String>>;
   function pump(sessID:String,pkt:Dynamic,chanID:String,meta:Dynamic):Void;
@@ -53,7 +57,10 @@ enum SinkEvent {
   Outgoing(sessID:String,pkt:Dynamic,chan:String,meta:Dynamic);
 }
 
-interface Sink implements Part<Conduit,String,Sink,SinkEvent>  {
+interface Sink
+implements Startable<Conduit,String,Sink>,
+implements Stoppable<Dynamic,Dynamic,Dynamic>,
+implements Observable<SinkEvent>  {
   function chan<T>(chanID:String):Chan<T>;
   function addConduit(conduit:Conduit):Void ;  
   function chanFromId(chanID:String):Option<Chan<Dynamic>>;

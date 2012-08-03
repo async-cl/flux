@@ -8,15 +8,16 @@ import flux.core.ObservableImpl;
 
 using flux.Channel;
 
-class SinkImpl implements Sink {
-  public var part_:Part_<Conduit,String,Sink,SinkEvent>;
+class SinkImpl
+extends flux.core.ObservableImpl<SinkEvent>,
+implements Sink {
   
   var _chans:Hash<Chan<Dynamic>>;  
   var _conduit:Conduit;
   var _myfill:Dynamic->String->Dynamic->Void;
   
   public function new() {
-    part_ = Core.part(this);
+    super();
   }
 
   public function start_(c:Conduit,?oc:Outcome<String,Sink>) {
@@ -29,37 +30,36 @@ class SinkImpl implements Sink {
 
     addConduit(c);
     
-    stop_(function(d) {
-        var soc = Core.outcome();
-        _conduit.stop().outcome(function(c) {
-            _conduit = null;
-          _chans = null;
-          soc.resolve(Right(""));
-        });
-
-        return soc;
-      });
-    
-    oc.resolve(Right(untyped this));
+    oc.resolve(Right(this));
     return oc;
   }
 
+  public function stop_(p:Dynamic,?oc:Outcome<Dynamic,Dynamic>) {
+    var soc = Core.outcome();
+    _conduit.stop({}).outcome(function(c) {
+        _conduit = null;
+        _chans = null;
+        soc.resolve(Right(""));
+      });
+    
+    return soc;
+  }
+  
   public function addConduit(c:Conduit) {
 
     // the sink observes the conduit ...
-    
     var removeConduitOb = c.observe(function(f) {
         switch(f) {
         case Incoming(pkt,sessID,cb):
           var
-            pID = pkt.chanID(),
-            pip = _chans.get(pID),
-            op = pkt.operation();
-
+           pID = pkt.chanID(),
+           pip = _chans.get(pID),
+           op = pkt.operation();
+        
           if (pip == null)
-            pip = chan(pID);
+             pip = chan(pID);
 
-        switch(op) {
+          switch(op) {
           case "s": // subscribe
             reqSub(sessID,pip,cb);
           case "u": // unsubscribe
@@ -68,8 +68,9 @@ class SinkImpl implements Sink {
             reqMsg(pip,pkt);
             cb(Right(""));
           }
+        
         case ConduitNoConnection(sessID),ConduitSessionExpire(sessID):
-          notify(ConnectionClose(sessID));
+           notify(ConnectionClose(sessID));
         }
       });
 

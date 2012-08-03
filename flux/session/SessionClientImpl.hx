@@ -6,16 +6,16 @@ import flux.Session;
 
 private class SessionProxy extends haxe.remoting.AsyncProxy<flux.session.SessionMgrProxy> { }
 
-class SessionClientImpl implements Part<SessionStart,String,SessionClient,ESession>,implements SessionClient {
+class SessionClientImpl
+extends flux.core.ObservableImpl<ESession>,
+implements SessionClient {
   var _sessID:String;
   var _proxy:SessionProxy;
   var _stash:Hash<Dynamic>;
   var _endPoint:String;
   
-  public var part_:Part_<SessionStart,String,SessionClient,ESession>;
-
   public function new() {
-    part_ = Core.part(this);
+    super();
   }
 
   public function

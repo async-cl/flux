@@ -16,8 +16,13 @@ private typedef Cache = {
     var buf:NodeBuffer;
 }
 
-class HttpImpl implements HttpServer,implements Part<HostPort,String,HttpServer,HttpEvents> {
-  public var part_:Part_<HostPort,String,HttpServer,HttpEvents>;
+class HttpImpl
+extends flux.core.ObservableImpl<HttpEvents>,
+implements HttpServer
+  {
+//implements Part<HostPort,String,HttpServer,HttpEvents> {
+  
+//  public var part_:Part_<HostPort,String,HttpServer,HttpEvents>;
   
   var _cache:Hash<Cache>;
   var _getHandler:String->NodeHttpServerReq->NodeHttpServerResp->Int->Void;
@@ -42,6 +47,7 @@ class HttpImpl implements HttpServer,implements Part<HostPort,String,HttpServer,
   
   public function
   new() {
+    super();
     _routes = [];
 
     _index = "/index.html";
@@ -51,7 +57,7 @@ class HttpImpl implements HttpServer,implements Part<HostPort,String,HttpServer,
     _getHandler = defaultGetHandler;
     _cache = new Hash();
     
-    part_ = Core.part(this);
+    //part_ = Core.part(this);
 
   }
 
@@ -67,6 +73,7 @@ class HttpImpl implements HttpServer,implements Part<HostPort,String,HttpServer,
         Node.http.createServer(requestHandler);
 
     server.listen(d.port,d.host,function() {
+        /*
         stop_(function(d) {
             var p = Core.outcome();
             server.close();
@@ -75,7 +82,7 @@ class HttpImpl implements HttpServer,implements Part<HostPort,String,HttpServer,
             //  });
             return p;
           });
-
+        */
 
         if (_creds != null)
           Core.info("Listening on Https "+_serverName+" on "+d.host+":"+d.port);

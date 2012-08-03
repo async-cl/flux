@@ -18,20 +18,6 @@ enum Either<A, B> {
   Right(v: B);
 }
 
-enum EOperation {
-  Add(info:Option<Dynamic>);
-  Del(info:Option<Dynamic>);
-}
-
-interface Observable<T> {
-  var  preNotify:T->Dynamic;
-  function notify(o:T):Void;
-  function observe(cb:T->Void,?info:Dynamic):Void->Void;
-  function peers():Array<Dynamic>;
-  function removePeers():Void;
-  function peek(cb:EOperation->Void):Void;
-}
-
 interface Future<T> {
   function resolve(t: T): Future<T>;
   function deliver(f: T -> Void): Future<T>;
@@ -51,44 +37,27 @@ interface Future<T> {
 
 typedef Outcome<A,B> = Future<Either<A,B>>;
 
-enum EPartState<E> {
-  Started;
-  Stopped;
-  Event(event:E);
-  Error(msg:String);
-  Except(e:Dynamic);
+enum EOperation {
+  Add(info:Option<Dynamic>);
+  Del(info:Option<Dynamic>);
 }
 
-typedef PartInfo = {
-    var name:String;
-    var ver:String;
-    var auth:String;
+interface Startable<P,A,B>  {
+  function start_(p:P,?oc:Outcome<A,B>):Outcome<A,B>;
 }
 
-// (S) start param object, (B) bad return type, (G) good return type, (E) event enum
-interface Part_<S,B,G,E> {
-  var _events:Observable<EPartState<E>>;
-  var partID(default,null):String;
-  var state:EPartState<E>;
-  var _info:PartInfo;
-  var sstopper:Dynamic->Outcome<String,Dynamic>;
-  
-  function start(d:S,?oc:Outcome<B,G>):Outcome<B,G>;
-  function stop(d:Dynamic):Outcome<String,Dynamic>;
-  function observe(cb:E->Void,?info:Dynamic):Void->Void;
-  function notify(e:E):Void;
-  function observeState(cb:EPartState<E>->Void):Void;
-  function notifyState(s:EPartState<E>):Void;
-  function peer():Dynamic;
-  function setStop(cb:Dynamic->Outcome<String,Dynamic>):Void;
+interface Stoppable<P,A,B>  {
+  function stop_(p:P,?oc:Outcome<A,B>):Outcome<A,B>;
 }
 
-interface Part<S,B,G,E> {
-  var part_:Part_<S,B,G,E>;
-  function start_(p:S,?oc:Outcome<B,G>):Outcome<B,G>;
+interface Observable<T> {
+  //  var  preNotify:T->Dynamic;
+  function notify(o:T):Void;
+  function observe(cb:T->Void,?info:Dynamic):Void->Void;
+  function peers():Array<Dynamic>;
+  function removePeers():Void;
+  function peek(cb:EOperation->Void):Void;
 }
-
-typedef AnyPart = Part<Dynamic,Dynamic,Dynamic,Dynamic>;
 
 class Core {
 
@@ -119,11 +88,6 @@ class Core {
   public static inline function
   outcome<A,B>(?cancel:A->Void):Outcome<A,B> {
     return cast Core.future();
-  }
-
-  public static function
-  part<S,B,G,E>(parent:Dynamic,?info:PartInfo):Part_<S,B,G,E> {
-    return new flux.core.PartBaseImpl(parent,info);
   }
 
   public static function cancelledFuture() {
@@ -219,15 +183,6 @@ class Core {
   } 
 
   public static function
-  listParts() {
-    flux.core.PartBaseImpl.runningParts.foreach(function(p) {
-        if (p.info() != null) {
-          trace(p.info());
-        }
-      });    
-  }
-
-  public static function
   assert( cond : Bool, ?pos : haxe.PosInfos ) {
     if( !cond ) {
       Core.error("Assert failed in "+pos.className+"::"+pos.methodName,pos);
@@ -241,8 +196,19 @@ class Core {
 
 /* Extensions ... */
 
-class DynamicX {   
+class StartableX {
+  public static function start<P,A,B>(s:Startable<P,A,B>,p:P):Outcome<A,B> {
+    return s.start_(p);
+  }
+}
 
+class StoppableX {
+  public static function stop<P,A,B>(s:Stoppable<P,A,B>,p:P):Outcome<A,B> {
+    return s.stop_(p);
+  }
+}
+
+class DynamicX {   
   
   public static function into<A, B>(a: A, f: A -> B): B {
     return f(a);
@@ -859,49 +825,6 @@ class EitherX {
   }
 }
 
-class PartX {
-
-  public static function start<S,B,G,E>(part:Part<S,B,G,E>,data:S,?oc:Outcome<B,G>):Outcome<B,G> {
-    return part.part_.start(data,oc);
-  }
-
-  public static function stop<S,B,G,E>(part:Part<S,B,G,E>,?data:Dynamic):Outcome<String,Dynamic> {
-    return part.part_.stop(data);
-  }
-
-  public static function stop_<S,B,G,E>(part:Part<S,B,G,E>,cb:Dynamic->Outcome<String,Dynamic>) {
-    part.part_.setStop(cb);
-  }
-  
-  public static function observe<S,B,G,E>(part:Part<S,B,G,E>,cb:E->Void):Void->Void {
-    return part.part_.observe(cb);
-  }
-
-  public static function notify<S,B,G,E>(part:Part<S,B,G,E>,e:E) {
-    part.part_.notify(e);
-  }
-
-  public static function partID<S,B,G,E>(part:Part<S,B,G,E>):String {
-    return part.part_.partID;
-  }
-  
-  public static function observeState<S,B,G,E>(part:Part<S,B,G,E>,cb:EPartState<E>->Void):Void->Void {
-    return part.part_._events.observe(cb);
-  }
-
-  public static function
-  state<S,B,G,E>(part:Part<S,B,G,E>):EPartState<E> {
-    return part.part_.state;
-  }
-
-  public static function
-  info<S,B,G,E>(part:Part<S,B,G,E>) {
-    return part.part_._info;
-  }
-  
-  
-}
-
 class OutcomeX {
 
   public static function
@@ -962,3 +885,4 @@ class OutcomeX {
   }
   
 }
+

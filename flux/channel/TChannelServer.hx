@@ -7,8 +7,11 @@ import flux.Http;
 import flux.Session;
 import flux.channel.Flow;
 
-class TChannelServer implements ChannelServer,implements Part<SessionMgr,String,ChannelServer,ChannelEvent> {
-  public var part_:Part_<SessionMgr,String,ChannelServer,ChannelEvent>;
+class TChannelServer
+extends flux.core.ObservableImpl<ChannelEvent>,
+implements ChannelServer {
+  
+  //public var part_:Part_<SessionMgr,String,ChannelServer,ChannelEvent>;
   var _conduit:Conduit;
   var _sink:Sink;
   var _host:String;
@@ -17,11 +20,14 @@ class TChannelServer implements ChannelServer,implements Part<SessionMgr,String,
   
   public function
   new() {
+    super();
+    /*
     part_ = Core.part(this,{
         name:"Channel Server",
         ver:"0.1",
         auth:"Cloudshift"
     });
+    */
   }
 
   public function

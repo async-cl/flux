@@ -18,19 +18,21 @@ using StringTools;
 typedef Subscription<T> = T->Dynamic->Void;
 private typedef Callback<T> = {fn:Array<Dynamic>->Void};
 
-class PushListenerImpl implements Conduit {
+class PushListenerImpl
+extends flux.core.ObservableImpl<ConduitEvent>,
+implements Conduit {
+  
   static inline var SESSION_EXPIRE = 5*60*1000;
   static var _sessions = new Hash<ConduitSession>();
   
   public static inline var ERROR = 500;
   public static inline var OK = 200;
-  public var part_:Part_<Dynamic,String,Conduit,ConduitEvent>;
   
   var _callbacks:Hash<Array<Callback<Dynamic>>>;
   var _sessMgr:SessionMgr;
   
   public function new(sessionMgr:SessionMgr) {
-    part_ = Core.part(this);
+    super();
     _callbacks = new Hash();
     _sessMgr = sessionMgr;
 
@@ -63,6 +65,12 @@ class PushListenerImpl implements Conduit {
     return oc;
   }
 
+  public function stop_(d:Dynamic,?oc:Outcome<Dynamic,Dynamic>) {
+    var soc = Core.outcome();
+    return soc;
+  }
+
+  
   function removeSession(session) {
     if (session != null) {
       Core.info("removing session");
@@ -109,6 +117,7 @@ class PushListenerImpl implements Conduit {
               if (s != null) {
                 s.lastConnection = Date.now().getTime();
                 gatherCallbacks(req,res,sessID);
+
                 if (req.connection.listeners('close').length == 1){
                   req.connection.once('close',function() {
                       var cbs = _callbacks.get(sessID);
@@ -121,8 +130,10 @@ class PushListenerImpl implements Conduit {
                       notify(ConduitNoConnection(sessID));
                     });
                 }
+                trace("got callback");
               }
             case "c": // close
+              trace("got a remote close");
               close(sessID).deliver(function(o) {
                   write(res,OK,o);
                 });
@@ -187,6 +198,7 @@ class PushListenerImpl implements Conduit {
     flushCallbacks(sessID);
     var s = _sessions.get(sessID) ;
     if (s != null) {
+      trace("removing session from close");
       removeSession(s);
     }
     prm.resolve(Right(""));

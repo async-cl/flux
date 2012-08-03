@@ -22,7 +22,9 @@ enum ESessionOp {
 
 #if nodejs
 
-interface SessionMgr implements Part<HttpServer,String,SessionMgr,ESessionOp> {
+interface SessionMgr
+implements Startable<HttpServer,String,SessionMgr>,
+implements Observable<ESessionOp> {
   function authorize(cb:ESessionOp->Void):Void->Void;
   function exists(sessID:String,cb:Bool->Void):Void;
   function logout(sessID:String,cb:ESession->Void):Void;
@@ -33,7 +35,9 @@ interface SessionMgr implements Part<HttpServer,String,SessionMgr,ESessionOp> {
 
 typedef SessionStart = {endPoint:String};
 
-interface SessionClient implements Part<SessionStart,String,SessionClient,ESession> {
+interface SessionClient
+implements Startable<SessionStart,String,SessionClient>,
+implements Observable<ESession> {
   /**
      ErrMsg on Left
      SessionID on Right

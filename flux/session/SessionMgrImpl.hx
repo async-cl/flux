@@ -6,18 +6,18 @@ import flux.Session;
 import flux.Http;
 import flux.Remote;
 
-
 import flux.session.SessionMgrProxy;
 
-class SessionMgrImpl extends SessionMgrProxy,
-implements Part<HttpServer,String,SessionMgr,ESessionOp>, implements SessionMgr {
+class SessionMgrImpl
+extends SessionMgrProxy,
+implements SessionMgr {
 
   static var sessions = new Hash<Int>();
-  public var part_:Part_<HttpServer,String,SessionMgr,ESessionOp>;
   var _http:HttpServer;
+  var _ob:Observable<ESessionOp>;
 
   public function new() {
-    part_ = Core.part(this);
+    _ob = Core.event();
   }
   
   public function start_(http:HttpServer,?oc:Outcome<String,SessionMgr>) {
@@ -37,6 +37,29 @@ implements Part<HttpServer,String,SessionMgr,ESessionOp>, implements SessionMgr 
     return _http;
   }
 
+
+  // Observable Interface
+
+  public function notify(o:ESessionOp) {
+    _ob.notify(o);
+  }
+  
+  public function observe(cb:ESessionOp->Void,?info:Dynamic) {
+    return _ob.observe(cb,info);
+  }
+  
+  public function peers() {
+    return _ob.peers();
+  }
+  
+  public function removePeers() {
+    _ob.removePeers();
+  }
+  
+  public function peek(cb:EOperation->Void) {
+    _ob.peek(cb);
+  }
+  
   // proxy interface ......
   
   override public function

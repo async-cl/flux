@@ -68,7 +68,7 @@ class ChatClient {
 
 
   function logout() {
-    _chanClient.stop().outcome(function(el) {
+    _chanClient.stop({}).outcome(function(el) {
       trace("stopped channelclient");
       _session.logout().outcome(function(el) {
         trace("invalidate session on server");

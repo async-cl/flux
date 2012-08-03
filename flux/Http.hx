@@ -1,7 +1,7 @@
 
 package flux;
 
-import flux.Core;
+using flux.Core;
 import js.Node;
 
 typedef TUploadFile = {
@@ -28,7 +28,11 @@ enum HttpEvents {
   Close;
 }
 
-interface HttpServer implements Part<HostPort,String,HttpServer,HttpEvents> {
+interface HttpServer //implements Part<HostPort,String,HttpServer,HttpEvents> {
+implements Startable<HostPort,String,HttpServer>,
+implements Observable<HttpEvents>
+ 
+{
   function fields(req:js.Node.NodeHttpServerReq,cb:TFields,?uploadDir:String):Void;
   function serve(path:String,req:NodeHttpServerReq,resp:NodeHttpServerResp,?statusCode:Int):Void;
   function serveNoCache(path:String,req:NodeHttpServerReq,resp:NodeHttpServerResp,?statusCode:Int):Void;
@@ -37,7 +41,7 @@ interface HttpServer implements Part<HostPort,String,HttpServer,HttpEvents> {
   function index(indexFile:String):HttpServer;
   function serverName(serverName:String):HttpServer;
   function credentials(key:String,cert:String,?ca:Array<String>):HttpServer;
-  function root(rootDir:String):HttpServer;  
+  function root(rootDir:String):HttpServer;
 }
 
 class Http {

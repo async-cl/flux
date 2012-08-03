@@ -6,8 +6,9 @@ import flux.Channel;
 import flux.channel.Flow;
 import flux.Session;
 
-class PushClientImpl implements Conduit {
-  public var part_:Part_<Dynamic,String,Conduit,ConduitEvent>;
+class PushClientImpl
+extends flux.core.ObservableImpl<ConduitEvent>,
+implements Conduit {
 
   var _sessID:String;
   var _host:String;
@@ -16,7 +17,7 @@ class PushClientImpl implements Conduit {
   var _parted:Bool;
   
   public function new() {
-    part_ = Core.part(this);
+    super();
   }
 
   public function start_(cs:Dynamic,?oc:Outcome<String,Conduit>) {
@@ -28,22 +29,23 @@ class PushClientImpl implements Conduit {
     _parted = false;
     
     remoteInit(function(ignore) {
-        stop_(function(d) {
-            var soc = Core.outcome();
-            remoteClose(function(o) {
-                _sessID = null;
-                _parted = true;
-                soc.resolve(o);
-              });
-            return soc;
-          });
-
         oc.resolve(Right(cast(this,Conduit)));
         poll();
       });
     return oc;
   }
-  
+
+  public function stop_(d:Dynamic,?oc:Outcome<Dynamic,Dynamic>) {
+    var soc = Core.outcome();
+    trace("doing client stop");
+    remoteClose(function(o) {
+        _sessID = null;
+        _parted = true;
+        soc.resolve(o);
+      });
+    return soc;
+  }
+
   public function
   authorize(pipeID:String):Future<Either<String,String>> {
     var p = Core.future();

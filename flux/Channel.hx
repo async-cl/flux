@@ -55,7 +55,8 @@ enum ChannelEvent {
 
 interface ChannelServer
            implements ChannelProvider,
-           implements Part<SessionMgr,String,ChannelServer,ChannelEvent> {
+           implements Startable<SessionMgr,String,ChannelServer>,
+           implements Observable<ChannelEvent> {
   
   function addChannelAuth(cb:String->Chan<Dynamic>->(Either<String,String>->Void)->Void):ChannelServer;
   function channel<T>(chanID:String):Outcome<String,Chan<T>>;
@@ -74,8 +75,10 @@ enum ChannelClientError {
 }
 
 interface ChannelClient
-      implements ChannelProvider,
-      implements Part<SessionClient,ChannelClientError,ChannelClient,ESession> {
+    implements ChannelProvider,
+    implements Startable<SessionClient,ChannelClientError,ChannelClient>,
+    implements Stoppable<Dynamic,Dynamic,Dynamic>,
+    implements Observable<ESession> {
 
   //  function unsub(chan:Chan<Dynamic>):Void;
   function channel<T>(id:String):Outcome<String,Chan<T>>;
