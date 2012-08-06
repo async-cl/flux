@@ -2,28 +2,26 @@
 package flux.channel;
 
 using flux.Core;
-import flux.Channel;
-import flux.channel.Flow;
+using flux.Channel;
+using flux.channel.Flow;
 import flux.Session;
 
 class PushClientImpl
-extends flux.core.ObservableImpl<ConduitEvent>,
 implements Conduit {
 
+  var _ob:Observable<ConduitEvent>;
   var _sessID:String;
   var _host:String;
   var _port:Int;
   var _url:String;
   var _parted:Bool;
+  var _sink:Sink;
   
   public function new() {
-    super();
+    _ob = Core.observable();
   }
 
-  public function start_(cs:Dynamic,?oc:Outcome<String,Conduit>) {
-    if (oc == null)
-      oc = Core.outcome();
-
+  public function start_(cs:Dynamic,oc:Outcome<String,Conduit>) {
     _url = cs.endPoint;
     _sessID = cs.sessID;
     _parted = false;
@@ -35,17 +33,23 @@ implements Conduit {
     return oc;
   }
 
-  public function stop_(d:Dynamic,?oc:Outcome<Dynamic,Dynamic>) {
-    var soc = Core.outcome();
-    trace("doing client stop");
+  public function stop_(d:Dynamic,oc:Outcome<Dynamic,Dynamic>) {
     remoteClose(function(o) {
         _sessID = null;
         _parted = true;
-        soc.resolve(o);
+        oc.resolve(o);
       });
-    return soc;
+    return oc;
   }
 
+  public function observable_() {
+    return _ob;
+  }
+
+  public function addSink(s:Sink) {
+    _sink = s;
+  }
+  
   public function
   authorize(pipeID:String):Future<Either<String,String>> {
     var p = Core.future();
@@ -64,8 +68,11 @@ implements Conduit {
     return prm;
   }
 
+  /*
+    dummySessID is known within this class
+  */
   public function
-  pump(dummy:String,userData:Dynamic,chanID:String,meta:Dynamic) {
+  pump(dummySessID:String,userData:Dynamic,chanID:String,meta:Dynamic) {
     var
       ud = Channel.createPkt(userData,_sessID,chanID,"m",meta),
       pl = haxe.Serializer.run(ud),
@@ -101,9 +108,11 @@ implements Conduit {
 
   function
   handlePoll(pkts:Array<Pkt<Dynamic>>) {
-    for (p in pkts) {
-      notify(Incoming(p,_sessID,function(e) { }));
+    for (pkt in pkts) {
+        var id = pkt.chanID();
+        _sink.message(_sink.chan(id),pkt);
     }
+   
     poll();
   }
 

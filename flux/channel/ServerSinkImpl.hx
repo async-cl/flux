@@ -16,7 +16,7 @@ class ServerSinkImpl extends SinkImpl {
   }
     
   override function
-  reqSub(sessID:String,chan:Chan<Dynamic>,cb:Either<String,String>->Void) {
+  subscribe(sessID:String,chan:Chan<Dynamic>,cb:Either<String,String>->Void) {
     var pID = chan.pid();
     notify(Authorize(sessID,chan,function(e:Either<String,String>) {
           switch(e) {
@@ -36,7 +36,7 @@ class ServerSinkImpl extends SinkImpl {
   }
 
   override function
-  reqUnsub(sessID:String,chan:Chan<Dynamic>,cb:Either<String,String>->Void) {
+  unsubscribe(sessID:String,chan:Chan<Dynamic>,cb:Either<String,String>->Void) {
     switch(_conduit.subscriptions(sessID).getOption(chan.pid())) {
       case Some(f):
         trace("remove function for "+chan.pid());

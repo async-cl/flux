@@ -16,20 +16,20 @@ class ClientSinkImpl extends SinkImpl {
 
   function
   myfill(pkt:Pkt<Dynamic>,chan:String,?meta:Dynamic) {
+    // dummy is a placeholder for the sessID which is known within the conduit client implementation
     _conduit.pump("dummy",pkt,chan,meta);
-    //notify(Outgoing("dummy",pkt,chan,meta));
   }
 
   override function
   removeChan<T>(pipe:Chan<T>) {
     super.removeChan(pipe);
-    reqUnsub("dummy",pipe,function(cb) {
+    unsubscribe("dummy",pipe,function(cb) {
         Core.info("ok unsubbed:"+pipe.pid());
       });
   }
 
   override function
-  reqUnsub(sessId,pipe:Chan<Dynamic>,cb:Either<String,String>->Void) {
+  unsubscribe(sessId,pipe:Chan<Dynamic>,cb:Either<String,String>->Void) {
     _conduit.leave(pipe.pid()).deliver(cb);
   }
 }

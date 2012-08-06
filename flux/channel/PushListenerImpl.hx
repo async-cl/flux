@@ -19,7 +19,6 @@ typedef Subscription<T> = T->Dynamic->Void;
 private typedef Callback<T> = {fn:Array<Dynamic>->Void};
 
 class PushListenerImpl
-extends flux.core.ObservableImpl<ConduitEvent>,
 implements Conduit {
   
   static inline var SESSION_EXPIRE = 5*60*1000;
@@ -27,12 +26,14 @@ implements Conduit {
   
   public static inline var ERROR = 500;
   public static inline var OK = 200;
-  
+
+  var _ob:Observable<ConduitEvent>;
   var _callbacks:Hash<Array<Callback<Dynamic>>>;
   var _sessMgr:SessionMgr;
+  var _sink:Sink;
   
   public function new(sessionMgr:SessionMgr) {
-    super();
+    _ob = Core.observable();
     _callbacks = new Hash();
     _sessMgr = sessionMgr;
 
@@ -57,19 +58,22 @@ implements Conduit {
       },SESSION_EXPIRE,null);
   }
 
-  public function start_(d:Dynamic,?oc:Outcome<String,Conduit>) {
-     if (oc == null)
-      oc = Core.outcome();
-     
+  public function start_(d:Dynamic,oc:Outcome<String,Conduit>) {
      oc.resolve(Right(cast this));
     return oc;
   }
 
-  public function stop_(d:Dynamic,?oc:Outcome<Dynamic,Dynamic>) {
-    var soc = Core.outcome();
-    return soc;
+  public function stop_(d:Dynamic,oc:Outcome<Dynamic,Dynamic>) {
+    return oc;
   }
 
+  public function observable_() {
+    return _ob;
+  }
+
+  public function addSink(s:Sink) {
+    _sink = s;
+  }
   
   function removeSession(session) {
     if (session != null) {
@@ -130,18 +134,29 @@ implements Conduit {
                       notify(ConduitNoConnection(sessID));
                     });
                 }
-                trace("got callback");
               }
             case "c": // close
-              trace("got a remote close");
               close(sessID).deliver(function(o) {
                   write(res,OK,o);
                 });
               
             default:
-              notify(Incoming(pkt,sessID,function(sr:Either<String,String>) {
+              var
+                pID = pkt.chanID(),
+                pip = _sink.chan(pID),
+                cb = function(sr:Either<String,String>) {
                     write(res,OK,sr);
-                  }));          
+                 };
+              
+              switch(op) {
+              case "s": 
+                _sink.subscribe(sessID,pip,cb);
+              case "u": 
+                _sink.unsubscribe(sessID,pip,cb);
+              case "m": 
+                _sink.message(pip,pkt);
+                cb(Right(""));
+              }
             }
           });
       });

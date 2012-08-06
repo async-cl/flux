@@ -20,7 +20,15 @@ class ChatServer {
   
   public function new() {
     Core.init();
-
+    
+    Core.life.observe(function(info) {
+        switch(info) {
+        case Started(i):
+          trace("I'm atarted :"+i.id);
+        case Stopped(i):
+        }
+      });
+    
     Http.server()
       .root("www")
       .credentials("privatekey.pem","certificate.pem")

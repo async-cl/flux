@@ -31,7 +31,6 @@ typedef ConduitClientStart = {
 }
 
 enum ConduitEvent {
-  Incoming(pkt:Pkt<Dynamic>,sessID:String,cb:Either<String,String>->Void);
   ConduitSessionExpire(sessID:String);
   ConduitNoConnection(sessID:String);
 }
@@ -39,8 +38,9 @@ enum ConduitEvent {
 interface Conduit
 implements Startable<Dynamic,String,Conduit>,
 implements Stoppable<Dynamic,Dynamic,Dynamic>,
-implements Observable<ConduitEvent> {
-  
+implements ObservableDelegate<ConduitEvent> {
+
+  function addSink(s:Sink):Void;
   function authorize(pipeID:String):Future<Either<String,String>>;
   function leave(pipeID:String):Future<Either<String,String>>;
   function pump(sessID:String,pkt:Dynamic,chanID:String,meta:Dynamic):Void;
@@ -60,13 +60,20 @@ enum SinkEvent {
 interface Sink
 implements Startable<Conduit,String,Sink>,
 implements Stoppable<Dynamic,Dynamic,Dynamic>,
-implements Observable<SinkEvent>  {
+implements ObservableDelegate<SinkEvent>,
+implements Infoable {
+
   function chan<T>(chanID:String):Chan<T>;
-  function addConduit(conduit:Conduit):Void ;  
+  function direct<T>(sessID:String):Chan<T>;
   function chanFromId(chanID:String):Option<Chan<Dynamic>>;
   function authorize<T>(chan:Chan<T>):Outcome<String,Chan<T>>;
   function removeChan<T>(p:Chan<T>):Void;
-  function direct<T>(sessID:String):Chan<T>;
+
+  function message(chan:Chan<Dynamic>,pkt:Pkt<Dynamic>):Void;  
+  #if nodejs
+  function subscribe(sessID:String,chan:Chan<Dynamic>,cb:Either<String,String>->Void):Void;
+  function unsubscribe(sessID:String,chan:Chan<Dynamic>,cb:Either<String,String>->Void):Void;
+  #end
 }
 
 class Flow {

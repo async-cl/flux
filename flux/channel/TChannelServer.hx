@@ -8,10 +8,9 @@ import flux.Session;
 import flux.channel.Flow;
 
 class TChannelServer
-extends flux.core.ObservableImpl<ChannelEvent>,
 implements ChannelServer {
-  
-  //public var part_:Part_<SessionMgr,String,ChannelServer,ChannelEvent>;
+
+  var _ob:Observable<ChannelEvent>;
   var _conduit:Conduit;
   var _sink:Sink;
   var _host:String;
@@ -20,21 +19,11 @@ implements ChannelServer {
   
   public function
   new() {
-    super();
-    /*
-    part_ = Core.part(this,{
-        name:"Channel Server",
-        ver:"0.1",
-        auth:"Cloudshift"
-    });
-    */
+    _ob = Core.observable();
   }
 
   public function
-  start_(sessMgr:SessionMgr,?oc:Outcome<String,ChannelServer>) {
-    if (oc == null)
-      oc = Core.outcome();
-    
+  start_(sessMgr:SessionMgr,oc:Outcome<String,ChannelServer>) {
     Flow.pushConduit(sessMgr).start({})
       .oflatMap(function(push) {
           _conduit = push;
@@ -42,6 +31,7 @@ implements ChannelServer {
         })
       .outcome(function(sink) {
           _sink = sink;
+          _conduit.addSink(_sink);
           if (_channelAuth != null) {
             _sink.observe(function(dd:SinkEvent) {
                 switch(dd) {
@@ -55,13 +45,16 @@ implements ChannelServer {
                 }
               });
           }
-          oc.resolve(Right(cast this));
+          oc.resolve(Right(this));
         });
     return oc;
   }
 
-  public function
-  channel<T>(chanID:String):Outcome<String,Chan<T>> {
+  public function observable_() {
+    return _ob;
+  }
+  
+  public function channel<T>(chanID:String):Outcome<String,Chan<T>> {
     var oc = Core.outcome();
     // on server getting a pipe is sync
     oc.resolve(Right(_sink.chan(chanID)));

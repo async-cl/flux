@@ -13,6 +13,7 @@ class ChatClient {
   var _chanClient:ChannelClient;
   
   public static function main() {
+    Core.init();
     new ChatClient();
   }
   

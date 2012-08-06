@@ -1,5 +1,3 @@
-
-
 package flux;
 
 using flux.Core;
@@ -43,11 +41,22 @@ enum EOperation {
 }
 
 interface Startable<P,A,B>  {
-  function start_(p:P,?oc:Outcome<A,B>):Outcome<A,B>;
+  function start_(p:P,oc:Outcome<A,B>):Outcome<A,B>;
 }
 
 interface Stoppable<P,A,B>  {
-  function stop_(p:P,?oc:Outcome<A,B>):Outcome<A,B>;
+  function stop_(p:P,oc:Outcome<A,B>):Outcome<A,B>;
+}
+
+typedef Info = {id:String};
+
+interface Infoable {
+  function info_():Info;
+}
+
+enum Life {
+  Started(q:Info);
+  Stopped(q:Info);
 }
 
 interface Observable<T> {
@@ -59,13 +68,38 @@ interface Observable<T> {
   function peek(cb:EOperation->Void):Void;
 }
 
+interface ObservableDelegate<T> {
+  function observable_():Observable<T>;
+}
+
+class ObservableDelegateX<T>  {
+  public static function notify<T>(od:ObservableDelegate<T>,o:T) {
+    od.observable_().notify(o);
+  }
+  public static function observe<T>(od:ObservableDelegate<T>,cb:T->Void,?info:Dynamic) {
+    return od.observable_().observe(cb,info);
+  }
+  public static function peers<T>(od:ObservableDelegate<T>) {
+    return od.observable_().peers();
+  }  
+  public static function removePeers<T>(od:ObservableDelegate<T>) {
+    od.observable_().removePeers();
+  }
+  public static function peek<T>(od:ObservableDelegate<T>,cb:EOperation->Void) {
+    od.observable_().peek(cb);
+  }
+}
+
 class Core {
 
   public static var VER = "0.5";
   public static var CSROOT = "/__cs/";
 
+  public static var life:Observable<Life>;
+  
   public static function
   init() {
+    life = Core.observable();
     logInit();
     #if nodejs
     Sys.events().observe(function(e) {
@@ -95,7 +129,7 @@ class Core {
   }
   
   public static inline function
-  event<T>():Observable<T> {
+  observable<T>():Observable<T> {
     return new flux.core.ObservableImpl();
   }
   
@@ -197,14 +231,27 @@ class Core {
 /* Extensions ... */
 
 class StartableX {
-  public static function start<P,A,B>(s:Startable<P,A,B>,p:P):Outcome<A,B> {
-    return s.start_(p);
+  public static function start<P,A,B>(s:Startable<P,A,B>,p:P,?foc:Outcome<A,B>):Outcome<A,B> {
+    if (foc == null) foc = Core.outcome();
+    var oc = Core.outcome();
+    oc.deliver(function(o) {
+        o.right().foreach(function(e:Dynamic) {
+            if (Std.is(e,Infoable)) {
+              var i:Infoable = e;
+              Core.life.notify(Started(i.info_()));
+            }
+          });
+        foc.resolve(o);
+      });
+    s.start_(p,oc);
+    return foc;
   }
 }
 
 class StoppableX {
-  public static function stop<P,A,B>(s:Stoppable<P,A,B>,p:P):Outcome<A,B> {
-    return s.stop_(p);
+  public static function stop<P,A,B>(s:Stoppable<P,A,B>,p:P,?oc:Outcome<A,B>):Outcome<A,B> {
+    if (oc == null) oc = Core.outcome();
+    return s.stop_(p,oc);
   }
 }
 
@@ -826,7 +873,6 @@ class EitherX {
 }
 
 class OutcomeX {
-
   public static function
   outcome<A,B>(oc:Outcome<A,B>,cb:B->Void,?err:A->Void) {
     oc.deliver(function(either:Either<A,B>) {

@@ -7,23 +7,20 @@ import flux.Session;
 import flux.channel.Flow;
 
 class TChannelClient
-extends flux.core.ObservableImpl<ESession>,
 implements ChannelClient {
   
+  var _ob:Observable<ESession>;
   var _sink:Sink;
   var _host:String;
   var _port:Int;
   
   public function
   new() {
-    super();
+    _ob = Core.observable();
   }
 
   public function
-  start_(session:SessionClient,?oc:Outcome<ChannelClientError,ChannelClient>) {
-    if (oc == null)
-      oc = Core.outcome();
-
+  start_(session:SessionClient,oc:Outcome<ChannelClientError,ChannelClient>) {
     var sessID = session.sessID();
     Flow.clientConduit().start({endPoint:session.endPoint(),sessID:sessID})
       .oflatMap(function(conduit) {
@@ -31,19 +28,22 @@ implements ChannelClient {
         })
       .outcome(function(sink) {
           _sink = sink;
-          oc.resolve(Right(cast this));
+          oc.resolve(Right(this));
         });
     
     return oc;
   }
 
-  public function stop_(p:Dynamic,?oc:Outcome<Dynamic,Dynamic>) {
-    var soc = Core.outcome();
+  public function stop_(p:Dynamic,oc:Outcome<Dynamic,Dynamic>) {
     _sink.stop({}).outcome(function(el) {
         _sink = null;
-        soc.resolve(Right(""));
+        oc.resolve(Right(""));
       });
-    return soc;
+    return oc;
+  }
+
+  public function observable_() {
+    return _ob;
   }
   
   public function

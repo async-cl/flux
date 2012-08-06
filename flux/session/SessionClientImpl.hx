@@ -7,21 +7,21 @@ import flux.Session;
 private class SessionProxy extends haxe.remoting.AsyncProxy<flux.session.SessionMgrProxy> { }
 
 class SessionClientImpl
-extends flux.core.ObservableImpl<ESession>,
+implements ObservableDelegate<ESession>,
 implements SessionClient {
+
+  var _od:Observable<ESession>;
   var _sessID:String;
   var _proxy:SessionProxy;
   var _stash:Hash<Dynamic>;
   var _endPoint:String;
   
   public function new() {
-    super();
+    _od = Core.observable();
   }
 
   public function
-  start_(d:SessionStart,?oc:Outcome<String,SessionClient>) {
-    if (oc == null)
-      oc = Core.outcome();
+  start_(d:SessionStart,oc:Outcome<String,SessionClient>) {
 
     if (d.endPoint == null)
       Core.error("Session must be started with an endPoint (url)");
@@ -57,6 +57,10 @@ implements SessionClient {
     return p;
   }
 
+  public inline function observable_() {
+    return _od;
+  }
+  
   public function
   signup(pkt):Outcome<String,String> {
     var p = Core.future();

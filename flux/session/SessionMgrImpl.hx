@@ -17,13 +17,10 @@ implements SessionMgr {
   var _ob:Observable<ESessionOp>;
 
   public function new() {
-    _ob = Core.event();
+    _ob = Core.observable();
   }
   
-  public function start_(http:HttpServer,?oc:Outcome<String,SessionMgr>) {
-    if (oc == null) 
-      oc = Core.outcome();
-
+  public function start_(http:HttpServer,oc:Outcome<String,SessionMgr>) {
     _http = http;
     var remote = Remote.provider("Auth",this);
     
@@ -37,27 +34,8 @@ implements SessionMgr {
     return _http;
   }
 
-
-  // Observable Interface
-
-  public function notify(o:ESessionOp) {
-    _ob.notify(o);
-  }
-  
-  public function observe(cb:ESessionOp->Void,?info:Dynamic) {
-    return _ob.observe(cb,info);
-  }
-  
-  public function peers() {
-    return _ob.peers();
-  }
-  
-  public function removePeers() {
-    _ob.removePeers();
-  }
-  
-  public function peek(cb:EOperation->Void) {
-    _ob.peek(cb);
+  public function observable_() {
+    return _ob;
   }
   
   // proxy interface ......

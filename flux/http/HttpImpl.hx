@@ -62,10 +62,7 @@ implements HttpServer
   }
 
   public function
-  start_(d:HostPort,?oc:Outcome<String,HttpServer>) {
-    if (oc == null)
-      oc = Core.outcome();
-
+  start_(d:HostPort,oc:Outcome<String,HttpServer>) {
     var server =
       if (_creds != null) 
         Node.https.createServer(_creds,requestHandler);

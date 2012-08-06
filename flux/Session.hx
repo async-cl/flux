@@ -24,7 +24,7 @@ enum ESessionOp {
 
 interface SessionMgr
 implements Startable<HttpServer,String,SessionMgr>,
-implements Observable<ESessionOp> {
+implements ObservableDelegate<ESessionOp> {
   function authorize(cb:ESessionOp->Void):Void->Void;
   function exists(sessID:String,cb:Bool->Void):Void;
   function logout(sessID:String,cb:ESession->Void):Void;
@@ -37,7 +37,7 @@ typedef SessionStart = {endPoint:String};
 
 interface SessionClient
 implements Startable<SessionStart,String,SessionClient>,
-implements Observable<ESession> {
+implements ObservableDelegate<ESession> {
   /**
      ErrMsg on Left
      SessionID on Right
