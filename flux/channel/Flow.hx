@@ -46,12 +46,14 @@ implements Startable<ConduitClientStart,String,Conduit>,
 #end
 implements Stoppable<Dynamic,Dynamic,Dynamic>,
 implements ObservableDelegate<ConduitEvent> {
-
-  
+  // a sink to whom incoming packets are sent
   function addSink(s:Sink):Void;
+
+  // send a packet out over the conduit
+  function outgoing(sessID:String,pkt:Dynamic,chanID:String,meta:Dynamic):Void;
+
   function authorize(pipeID:String):Future<Either<String,String>>;
   function leave(pipeID:String):Future<Either<String,String>>;
-  function pump(sessID:String,pkt:Dynamic,chanID:String,meta:Dynamic):Void;
   #if nodejs
   function subscriptions(sessID:String):Hash<Void->Void>;
   function session():SessionMgr;

@@ -5,6 +5,13 @@ using flux.Core;
 import flux.channel.Flow;
 using flux.Channel;
 
+/*
+  A sink provides a collection of channels, and allows each channel in that collection to have
+  it's outgoing message stream to be plugged by a subclass, e.g. a server or client sink.
+
+  A Sink is abstract it requires to be extended.
+*/
+
 class SinkImpl
 implements Sink {
 
@@ -37,10 +44,6 @@ implements Sink {
 
   public function observable_() {
     return _ob;
-  }
-  
-  public function info_() {
-    return {id:"Sink"};
   }
   
   public function

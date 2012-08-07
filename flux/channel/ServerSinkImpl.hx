@@ -7,7 +7,6 @@ import flux.Channel;
 import flux.channel.Flow;
 import flux.Http;
 
-
 class ServerSinkImpl extends SinkImpl {
 
   public function new() {
@@ -22,7 +21,7 @@ class ServerSinkImpl extends SinkImpl {
           switch(e) {
           case Right(_):
             var unsub = chan.sub(function(payload:Dynamic) {
-                  _conduit.pump(sessID,payload,pID,null);
+                  _conduit.outgoing(sessID,payload,pID,null);
               });
 
             trace("added sub "+pID+" for "+sessID);

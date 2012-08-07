@@ -17,7 +17,7 @@ class ClientSinkImpl extends SinkImpl {
   function
   outgoing(pkt:Pkt<Dynamic>,chan:String,?meta:Dynamic) {
     // dummy is a placeholder for the sessID which is known within the conduit client implementation
-    _conduit.pump("dummy",pkt,chan,meta);
+    _conduit.outgoing("dummy",pkt,chan,meta);
   }
 
   override function

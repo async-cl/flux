@@ -72,7 +72,7 @@ implements Conduit {
     dummySessID is known within this class
   */
   public function
-  pump(dummySessID:String,userData:Dynamic,chanID:String,meta:Dynamic) {
+  outgoing(dummySessID:String,userData:Dynamic,chanID:String,meta:Dynamic) {
     var
       ud = Channel.createPkt(userData,_sessID,chanID,"m",meta),
       pl = haxe.Serializer.run(ud),

@@ -169,7 +169,7 @@ implements Conduit {
   }
   
   public function
-  pump(sessID:String,payload:Dynamic,chanID:String,meta:Dynamic) {
+  outgoing(sessID:String,payload:Dynamic,chanID:String,meta:Dynamic) {
     _sessions.get(sessID).append(Channel.createPkt(payload,sessID,chanID,meta));
   }
 
