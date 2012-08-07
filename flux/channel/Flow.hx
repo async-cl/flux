@@ -6,8 +6,8 @@ import flux.Session;
 import flux.Channel;
 
 #if nodejs
+
 import flux.Http;
-#end
 
 interface MessageQ {
   function append(pkt:Dynamic):Void;
@@ -25,6 +25,8 @@ interface ConduitSession {
   var sessID(default,default):String;
 }
 
+#end
+
 typedef ConduitClientStart = {
     var endPoint:String;
     var sessID:String;
@@ -35,11 +37,17 @@ enum ConduitEvent {
   ConduitNoConnection(sessID:String);
 }
 
+
 interface Conduit
+#if nodejs
 implements Startable<Dynamic,String,Conduit>,
+#else
+implements Startable<ConduitClientStart,String,Conduit>,
+#end
 implements Stoppable<Dynamic,Dynamic,Dynamic>,
 implements ObservableDelegate<ConduitEvent> {
 
+  
   function addSink(s:Sink):Void;
   function authorize(pipeID:String):Future<Either<String,String>>;
   function leave(pipeID:String):Future<Either<String,String>>;
@@ -54,14 +62,12 @@ implements ObservableDelegate<ConduitEvent> {
 enum SinkEvent {
   Authorize(sessID:String,chan:Chan<Dynamic>,cb:Either<String,String>->Void);
   ConnectionClose(sessID:String);
-  Outgoing(sessID:String,pkt:Dynamic,chan:String,meta:Dynamic);
 }
 
 interface Sink
 implements Startable<Conduit,String,Sink>,
 implements Stoppable<Dynamic,Dynamic,Dynamic>,
-implements ObservableDelegate<SinkEvent>,
-implements Infoable {
+implements ObservableDelegate<SinkEvent> {
 
   function chan<T>(chanID:String):Chan<T>;
   function direct<T>(sessID:String):Chan<T>;
@@ -69,8 +75,10 @@ implements Infoable {
   function authorize<T>(chan:Chan<T>):Outcome<String,Chan<T>>;
   function removeChan<T>(p:Chan<T>):Void;
 
-  function message(chan:Chan<Dynamic>,pkt:Pkt<Dynamic>):Void;  
-  #if nodejs
+  /* incoming message from conduit */
+  function incoming(chan:Chan<Dynamic>,pkt:Pkt<Dynamic>):Void;  
+
+#if nodejs
   function subscribe(sessID:String,chan:Chan<Dynamic>,cb:Either<String,String>->Void):Void;
   function unsubscribe(sessID:String,chan:Chan<Dynamic>,cb:Either<String,String>->Void):Void;
   #end

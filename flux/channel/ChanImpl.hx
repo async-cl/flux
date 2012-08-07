@@ -17,14 +17,14 @@ class ChanImpl<T> implements Chan<T> {
   var _filters:Array<{filt:Dynamic->Dynamic}>;
   var _unfilters:Int;
   
-  public var _fill:Dynamic->String->Dynamic->Void;
+  public var _outgoing:Dynamic->String->Dynamic->Void;
   
   public function
   new(pid:String,?opts:Dynamic) {
     event_ = new flux.core.ObservableImpl();
     _unfilters = 0;
     _pID = pid;
-    _fill = _defaultFill;
+    _outgoing = _defaultOutgoing;
   }
 
   function preNotify(o:Pkt<T>) {
@@ -63,13 +63,13 @@ class ChanImpl<T> implements Chan<T> {
   }
   
   public function
-  _defaultFill<T>(o:Dynamic,chanID:String,meta:Dynamic) {
+  _defaultOutgoing<T>(o:Dynamic,chanID:String,meta:Dynamic) {
     event_.notify(o);
   }
   
   public function
   pub(msg:T,?meta:Dynamic):Void {
-    _fill(msg,_pID,meta);
+    _outgoing(msg,_pID,meta);
   }
  
   function

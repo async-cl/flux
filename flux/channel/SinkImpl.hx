@@ -2,7 +2,6 @@
 package flux.channel;
 
 using flux.Core;
-import flux.Channel;
 import flux.channel.Flow;
 using flux.Channel;
 
@@ -12,7 +11,7 @@ implements Sink {
   var _ob:Observable<SinkEvent>;
   var _chans:Hash<Chan<Dynamic>>;  
   var _conduit:Conduit;
-  var _myfill:Dynamic->String->Dynamic->Void;
+  var _outgoing:Dynamic->String->Dynamic->Void;
   
   public function new() {
     _ob = Core.observable();
@@ -51,8 +50,8 @@ implements Sink {
       trace("Creating new channel:"+pID);
       ch = new ChanImpl<T>(pID);
       _chans.set(pID,ch);
-      if (_myfill != null) {
-        ch._fill = _myfill;
+      if (_outgoing != null) {
+        ch._outgoing = _outgoing;
       }
     }
     return cast ch;
@@ -68,14 +67,15 @@ implements Sink {
     return _chans.getOption(pID);
   }
 
-  public function message(chan:Chan<Dynamic>,pkt:Pkt<Dynamic>) {
-    chan._defaultFill(pkt,"",null);
+  public function incoming(chan:Chan<Dynamic>,pkt:Pkt<Dynamic>) {
+    chan._defaultOutgoing(pkt,"",null);
   }
 
   public function direct<T>(sessID:String):Chan<T> {
     return chan(Core.CSROOT+"direct/"+sessID);
   }
 
+  #if nodejs
   public function subscribe(sessID:String,chan:Chan<Dynamic>,cb:Either<String,String>->Void) {
     throw "SinkImp:reqSub, should be overridden";
   }
@@ -83,6 +83,7 @@ implements Sink {
   public function unsubscribe(sessID,chan:Chan<Dynamic>,cb:Either<String,String>->Void) {
     throw "SinkImp:reqUnsub, should be overridden";
   }
+  #end
 
   function removeAllSubs(sessID:String) {
     throw "SinkImp:removeAllSubs, should be overridden";

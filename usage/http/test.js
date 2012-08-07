@@ -1,15 +1,40 @@
 var $_, $hxClasses = $hxClasses || {}, $estr = function() { return js.Boot.__string_rec(this,''); };
-EReg =  $hxClasses['EReg'] = function(r,opt) {
+function $bind(o,m) { var f = function(){ return f.method.apply(f.scope, arguments); }; f.scope = o; f.method = m; return f; };;
+EReg = $hxClasses['EReg'] = function(r,opt) {
 	opt = opt.split("u").join("");
 	this.r = new RegExp(r,opt);
 };
 EReg.__name__ = ["EReg"];
-EReg.prototype.r = null;
-EReg.prototype.match = function(s) {
-	if(this.r.global) this.r.lastIndex = 0;
-	this.r.m = this.r.exec(s);
-	this.r.s = s;
-	return this.r.m != null;
+EReg.prototype.customReplace = function(s,f) {
+	var buf = new StringBuf();
+	while(true) {
+		if(!this.match(s)) break;
+		buf.b += Std.string(this.matchedLeft());
+		buf.b += Std.string(f(this));
+		s = this.matchedRight();
+	}
+	buf.b += Std.string(s);
+	return buf.b;
+};
+EReg.prototype.replace = function(s,by) {
+	return s.replace(this.r,by);
+};
+EReg.prototype.split = function(s) {
+	var d = "#__delim__#";
+	return s.replace(this.r,d).split(d);
+};
+EReg.prototype.matchedPos = function() {
+	if(this.r.m == null) throw "No string matched";
+	return { pos : this.r.m.index, len : this.r.m[0].length};
+};
+EReg.prototype.matchedRight = function() {
+	if(this.r.m == null) throw "No string matched";
+	var sz = this.r.m.index + this.r.m[0].length;
+	return this.r.s.substr(sz,this.r.s.length - sz);
+};
+EReg.prototype.matchedLeft = function() {
+	if(this.r.m == null) throw "No string matched";
+	return this.r.s.substr(0,this.r.m.index);
 };
 EReg.prototype.matched = function(n) {
 	return this.r.m != null && n >= 0 && n < this.r.m.length?this.r.m[n]:(function($this) {
@@ -18,64 +43,31 @@ EReg.prototype.matched = function(n) {
 		return $r;
 	}(this));
 };
-EReg.prototype.matchedLeft = function() {
-	if(this.r.m == null) throw "No string matched";
-	return this.r.s.substr(0,this.r.m.index);
+EReg.prototype.match = function(s) {
+	if(this.r.global) this.r.lastIndex = 0;
+	this.r.m = this.r.exec(s);
+	this.r.s = s;
+	return this.r.m != null;
 };
-EReg.prototype.matchedRight = function() {
-	if(this.r.m == null) throw "No string matched";
-	var sz = this.r.m.index + this.r.m[0].length;
-	return this.r.s.substr(sz,this.r.s.length - sz);
-};
-EReg.prototype.matchedPos = function() {
-	if(this.r.m == null) throw "No string matched";
-	return { pos : this.r.m.index, len : this.r.m[0].length};
-};
-EReg.prototype.split = function(s) {
-	var d = "#__delim__#";
-	return s.replace(this.r,d).split(d);
-};
-EReg.prototype.replace = function(s,by) {
-	return s.replace(this.r,by);
-};
-EReg.prototype.customReplace = function(s,f) {
-	var buf = new StringBuf();
-	while(true) {
-		if(!this.match(s)) break;
-		buf.add(this.matchedLeft());
-		buf.add(f(this));
-		s = this.matchedRight();
-	}
-	buf.b[buf.b.length] = s == null?"null":s;
-	return buf.b.join("");
-};
+EReg.prototype.r = null;
 EReg.prototype.__class__ = EReg;
-Hash =  $hxClasses['Hash'] = function() {
+Hash = $hxClasses['Hash'] = function() {
 	this.h = { };
 };
 Hash.__name__ = ["Hash"];
-Hash.prototype.h = null;
-Hash.prototype.set = function(key,value) {
-	this.h["$" + key] = value;
-};
-Hash.prototype.get = function(key) {
-	return this.h["$" + key];
-};
-Hash.prototype.exists = function(key) {
-	return this.h.hasOwnProperty("$" + key);
-};
-Hash.prototype.remove = function(key) {
-	key = "$" + key;
-	if(!this.h.hasOwnProperty(key)) return false;
-	delete(this.h[key]);
-	return true;
-};
-Hash.prototype.keys = function() {
-	var a = [];
-	for( var key in this.h ) {
-	if(this.h.hasOwnProperty(key)) a.push(key.substr(1));
+Hash.prototype.toString = function() {
+	var s = new StringBuf();
+	s.b += Std.string("{");
+	var it = this.keys();
+	while( it.hasNext() ) {
+		var i = it.next();
+		s.b += Std.string(i);
+		s.b += Std.string(" => ");
+		s.b += Std.string(Std.string(this.get(i)));
+		if(it.hasNext()) s.b += Std.string(", ");
 	}
-	return HxOverrides.iter(a);
+	s.b += Std.string("}");
+	return s.b;
 };
 Hash.prototype.iterator = function() {
 	return { ref : this.h, it : this.keys(), hasNext : function() {
@@ -85,30 +77,39 @@ Hash.prototype.iterator = function() {
 		return this.ref["$" + i];
 	}};
 };
-Hash.prototype.toString = function() {
-	var s = new StringBuf();
-	s.b[s.b.length] = "{";
-	var it = this.keys();
-	while( it.hasNext() ) {
-		var i = it.next();
-		s.b[s.b.length] = i == null?"null":i;
-		s.b[s.b.length] = " => ";
-		s.add(Std.string(this.get(i)));
-		if(it.hasNext()) s.b[s.b.length] = ", ";
+Hash.prototype.keys = function() {
+	var a = [];
+	for( var key in this.h ) {
+	if(this.h.hasOwnProperty(key)) a.push(key.substr(1));
 	}
-	s.b[s.b.length] = "}";
-	return s.b.join("");
+	return HxOverrides.iter(a);
 };
+Hash.prototype.remove = function(key) {
+	key = "$" + key;
+	if(!this.h.hasOwnProperty(key)) return false;
+	delete(this.h[key]);
+	return true;
+};
+Hash.prototype.exists = function(key) {
+	return this.h.hasOwnProperty("$" + key);
+};
+Hash.prototype.get = function(key) {
+	return this.h["$" + key];
+};
+Hash.prototype.set = function(key,value) {
+	this.h["$" + key] = value;
+};
+Hash.prototype.h = null;
 Hash.prototype.__class__ = Hash;
-HttpTest =  $hxClasses['HttpTest'] = function() { };
+HttpTest = $hxClasses['HttpTest'] = function() { };
 HttpTest.__name__ = ["HttpTest"];
 HttpTest.main = function() {
 	flux.Core.init();
-	flux.OutcomeX.outcome(flux.PartX.start(flux.Http.server().root("www").credentials("privatekey.pem","certificate.pem"),{ host : "localhost", port : 8000}),function(http) {
+	flux.OutcomeX.outcome(flux.StartableX.start(flux.Http.server().root("www").credentials("privatekey.pem","certificate.pem"),{ host : "localhost", port : 8000}),function(http) {
 	});
 };
 HttpTest.prototype.__class__ = HttpTest;
-HxOverrides =  $hxClasses['HxOverrides'] = function() { };
+HxOverrides = $hxClasses['HxOverrides'] = function() { };
 HxOverrides.__name__ = ["HxOverrides"];
 HxOverrides.dateStr = function(date) {
 	var m = date.getMonth() + 1;
@@ -174,21 +175,21 @@ HxOverrides.iter = function(a) {
 	}};
 };
 HxOverrides.prototype.__class__ = HxOverrides;
-IntIter =  $hxClasses['IntIter'] = function(min,max) {
+IntIter = $hxClasses['IntIter'] = function(min,max) {
 	this.min = min;
 	this.max = max;
 };
 IntIter.__name__ = ["IntIter"];
-IntIter.prototype.min = null;
-IntIter.prototype.max = null;
-IntIter.prototype.hasNext = function() {
-	return this.min < this.max;
-};
 IntIter.prototype.next = function() {
 	return this.min++;
 };
+IntIter.prototype.hasNext = function() {
+	return this.min < this.max;
+};
+IntIter.prototype.max = null;
+IntIter.prototype.min = null;
 IntIter.prototype.__class__ = IntIter;
-Reflect =  $hxClasses['Reflect'] = function() { };
+Reflect = $hxClasses['Reflect'] = function() { };
 Reflect.__name__ = ["Reflect"];
 Reflect.hasField = function(o,field) {
 	return Object.prototype.hasOwnProperty.call(o,field);
@@ -226,7 +227,7 @@ Reflect.fields = function(o) {
 	return a;
 };
 Reflect.isFunction = function(f) {
-	return typeof(f) == "function" && !(js.Boot.isClass(f) || js.Boot.isEnum(f));
+	return typeof(f) == "function" && !(f.__name__ || f.__ename__);
 };
 Reflect.compare = function(a,b) {
 	return a == b?0:a > b?1:-1;
@@ -239,7 +240,7 @@ Reflect.compareMethods = function(f1,f2) {
 Reflect.isObject = function(v) {
 	if(v == null) return false;
 	var t = typeof(v);
-	return t == "string" || t == "object" && !v.__enum__ || t == "function" && (js.Boot.isClass(v) || js.Boot.isEnum(v));
+	return t == "string" || t == "object" && !v.__enum__ || t == "function" && (v.__name__ || v.__ename__);
 };
 Reflect.deleteField = function(o,f) {
 	if(!Reflect.hasField(o,f)) return false;
@@ -263,7 +264,7 @@ Reflect.makeVarArgs = function(f) {
 	};
 };
 Reflect.prototype.__class__ = Reflect;
-Std =  $hxClasses['Std'] = function() { };
+Std = $hxClasses['Std'] = function() { };
 Std.__name__ = ["Std"];
 Std["is"] = function(v,t) {
 	return js.Boot.__instanceof(v,t);
@@ -276,7 +277,7 @@ Std["int"] = function(x) {
 };
 Std.parseInt = function(x) {
 	var v = parseInt(x,10);
-	if(v == 0 && HxOverrides.cca(x,1) == 120) v = parseInt(x);
+	if(v == 0 && (HxOverrides.cca(x,1) == 120 || HxOverrides.cca(x,1) == 88)) v = parseInt(x);
 	if(isNaN(v)) return null;
 	return v;
 };
@@ -287,25 +288,25 @@ Std.random = function(x) {
 	return Math.floor(Math.random() * x);
 };
 Std.prototype.__class__ = Std;
-StringBuf =  $hxClasses['StringBuf'] = function() {
-	this.b = new Array();
+StringBuf = $hxClasses['StringBuf'] = function() {
+	this.b = "";
 };
 StringBuf.__name__ = ["StringBuf"];
-StringBuf.prototype.add = function(x) {
-	this.b[this.b.length] = x == null?"null":x;
+StringBuf.prototype.toString = function() {
+	return this.b;
 };
 StringBuf.prototype.addSub = function(s,pos,len) {
-	this.b[this.b.length] = HxOverrides.substr(s,pos,len);
+	this.b += HxOverrides.substr(s,pos,len);
 };
 StringBuf.prototype.addChar = function(c) {
-	this.b[this.b.length] = String.fromCharCode(c);
+	this.b += String.fromCharCode(c);
 };
-StringBuf.prototype.toString = function() {
-	return this.b.join("");
+StringBuf.prototype.add = function(x) {
+	this.b += Std.string(x);
 };
 StringBuf.prototype.b = null;
 StringBuf.prototype.__class__ = StringBuf;
-StringTools =  $hxClasses['StringTools'] = function() { };
+StringTools = $hxClasses['StringTools'] = function() { };
 StringTools.__name__ = ["StringTools"];
 StringTools.urlEncode = function(s) {
 	return encodeURIComponent(s);
@@ -416,11 +417,11 @@ ValueType.TBool.__enum__ = ValueType;
 ValueType.TObject = ["TObject",4];
 ValueType.TObject.toString = $estr;
 ValueType.TObject.__enum__ = ValueType;
-Type =  $hxClasses['Type'] = function() { };
+Type = $hxClasses['Type'] = function() { };
 Type.__name__ = ["Type"];
 Type.getClass = function(o) {
 	if(o == null) return null;
-	return js.Boot.getClass(o);
+	return o.__class__;
 };
 Type.getEnum = function(o) {
 	if(o == null) return null;
@@ -439,12 +440,12 @@ Type.getEnumName = function(e) {
 };
 Type.resolveClass = function(name) {
 	var cl = $hxClasses[name];
-	if(cl == null || !js.Boot.isClass(cl)) return null;
+	if(cl == null || !cl.__name__) return null;
 	return cl;
 };
 Type.resolveEnum = function(name) {
 	var e = $hxClasses[name];
-	if(e == null || !js.Boot.isEnum(e)) return null;
+	if(e == null || !e.__ename__) return null;
 	return e;
 };
 Type.createInstance = function(cl,args) {
@@ -524,11 +525,11 @@ Type["typeof"] = function(v) {
 		if(v == null) return ValueType.TNull;
 		var e = v.__enum__;
 		if(e != null) return ValueType.TEnum(e);
-		var c = js.Boot.getClass(v);
+		var c = v.__class__;
 		if(c != null) return ValueType.TClass(c);
 		return ValueType.TObject;
 	case "function":
-		if(js.Boot.isClass(v) || js.Boot.isEnum(v)) return ValueType.TObject;
+		if(v.__name__ || v.__ename__) return ValueType.TObject;
 		return ValueType.TFunction;
 	case "undefined":
 		return ValueType.TNull;
@@ -583,71 +584,43 @@ flux.Option.Some = function(v) { var $x = ["Some",1,v]; $x.__enum__ = flux.Optio
 flux.Either = $hxClasses['flux.Either'] = { __ename__ : ["flux","Either"], __constructs__ : ["Left","Right"] };
 flux.Either.Left = function(v) { var $x = ["Left",0,v]; $x.__enum__ = flux.Either; $x.toString = $estr; return $x; };
 flux.Either.Right = function(v) { var $x = ["Right",1,v]; $x.__enum__ = flux.Either; $x.toString = $estr; return $x; };
-flux.ELogLevel = $hxClasses['flux.ELogLevel'] = { __ename__ : ["flux","ELogLevel"], __constructs__ : ["I","W","E"] };
-flux.ELogLevel.I = function(s) { var $x = ["I",0,s]; $x.__enum__ = flux.ELogLevel; $x.toString = $estr; return $x; };
-flux.ELogLevel.E = function(s) { var $x = ["E",2,s]; $x.__enum__ = flux.ELogLevel; $x.toString = $estr; return $x; };
-flux.ELogLevel.W = function(s) { var $x = ["W",1,s]; $x.__enum__ = flux.ELogLevel; $x.toString = $estr; return $x; };
+flux.Future = $hxClasses['flux.Future'] = function() { };
+flux.Future.__name__ = ["flux","Future"];
+flux.Future.prototype.toArray = null;
+flux.Future.prototype.toOption = null;
+flux.Future.prototype.value = null;
+flux.Future.prototype.filter = null;
+flux.Future.prototype.flatMap = null;
+flux.Future.prototype.map = null;
+flux.Future.prototype.isDelivered = null;
+flux.Future.prototype.isDone = null;
+flux.Future.prototype.cancel = null;
+flux.Future.prototype.allowCancelOnlyIf = null;
+flux.Future.prototype.ifCanceled = null;
+flux.Future.prototype.isCanceled = null;
+flux.Future.prototype.deliver = null;
+flux.Future.prototype.resolve = null;
+flux.Future.prototype.__class__ = flux.Future;
 flux.EOperation = $hxClasses['flux.EOperation'] = { __ename__ : ["flux","EOperation"], __constructs__ : ["Add","Del"] };
 flux.EOperation.Add = function(info) { var $x = ["Add",0,info]; $x.__enum__ = flux.EOperation; $x.toString = $estr; return $x; };
 flux.EOperation.Del = function(info) { var $x = ["Del",1,info]; $x.__enum__ = flux.EOperation; $x.toString = $estr; return $x; };
-flux.Observable =  $hxClasses['flux.Observable'] = function() { };
+flux.Startable = $hxClasses['flux.Startable'] = function() { };
+flux.Startable.__name__ = ["flux","Startable"];
+flux.Startable.prototype.start_ = null;
+flux.Startable.prototype.__class__ = flux.Startable;
+flux.Stoppable = $hxClasses['flux.Stoppable'] = function() { };
+flux.Stoppable.__name__ = ["flux","Stoppable"];
+flux.Stoppable.prototype.stop_ = null;
+flux.Stoppable.prototype.__class__ = flux.Stoppable;
+flux.Observable = $hxClasses['flux.Observable'] = function() { };
 flux.Observable.__name__ = ["flux","Observable"];
-flux.Observable.prototype.preNotify = null;
-flux.Observable.prototype.notify = null;
-flux.Observable.prototype.observe = null;
-flux.Observable.prototype.peers = null;
-flux.Observable.prototype.removePeers = null;
 flux.Observable.prototype.peek = null;
+flux.Observable.prototype.removePeers = null;
+flux.Observable.prototype.peers = null;
+flux.Observable.prototype.observe = null;
+flux.Observable.prototype.notify = null;
 flux.Observable.prototype.__class__ = flux.Observable;
-flux.Future =  $hxClasses['flux.Future'] = function() { };
-flux.Future.__name__ = ["flux","Future"];
-flux.Future.prototype.resolve = null;
-flux.Future.prototype.deliver = null;
-flux.Future.prototype.isCanceled = null;
-flux.Future.prototype.ifCanceled = null;
-flux.Future.prototype.allowCancelOnlyIf = null;
-flux.Future.prototype.cancel = null;
-flux.Future.prototype.isDone = null;
-flux.Future.prototype.isDelivered = null;
-flux.Future.prototype.map = null;
-flux.Future.prototype.flatMap = null;
-flux.Future.prototype.filter = null;
-flux.Future.prototype.value = null;
-flux.Future.prototype.toOption = null;
-flux.Future.prototype.toArray = null;
-flux.Future.prototype.__class__ = flux.Future;
-flux.EPartState = $hxClasses['flux.EPartState'] = { __ename__ : ["flux","EPartState"], __constructs__ : ["Started","Stopped","Event","Error","Except"] };
-flux.EPartState.Except = function(e) { var $x = ["Except",4,e]; $x.__enum__ = flux.EPartState; $x.toString = $estr; return $x; };
-flux.EPartState.Event = function(event) { var $x = ["Event",2,event]; $x.__enum__ = flux.EPartState; $x.toString = $estr; return $x; };
-flux.EPartState.Started = ["Started",0];
-flux.EPartState.Started.toString = $estr;
-flux.EPartState.Started.__enum__ = flux.EPartState;
-flux.EPartState.Error = function(msg) { var $x = ["Error",3,msg]; $x.__enum__ = flux.EPartState; $x.toString = $estr; return $x; };
-flux.EPartState.Stopped = ["Stopped",1];
-flux.EPartState.Stopped.toString = $estr;
-flux.EPartState.Stopped.__enum__ = flux.EPartState;
-flux.Part_ =  $hxClasses['flux.Part_'] = function() { };
-flux.Part_.__name__ = ["flux","Part_"];
-flux.Part_.prototype._events = null;
-flux.Part_.prototype.partID = null;
-flux.Part_.prototype.state = null;
-flux.Part_.prototype._info = null;
-flux.Part_.prototype.sstopper = null;
-flux.Part_.prototype.start = null;
-flux.Part_.prototype.stop = null;
-flux.Part_.prototype.observe = null;
-flux.Part_.prototype.notify = null;
-flux.Part_.prototype.observeState = null;
-flux.Part_.prototype.notifyState = null;
-flux.Part_.prototype.peer = null;
-flux.Part_.prototype.setStop = null;
-flux.Part_.prototype.__class__ = flux.Part_;
-flux.Part =  $hxClasses['flux.Part'] = function() { };
-flux.Part.__name__ = ["flux","Part"];
-flux.Part.prototype.part_ = null;
-flux.Part.prototype.start_ = null;
-flux.Part.prototype.__class__ = flux.Part;
-flux.Core =  $hxClasses['flux.Core'] = function() { };
+flux.Core = $hxClasses['flux.Core'] = function() { };
 flux.Core.__name__ = ["flux","Core"];
 flux.Core.init = function() {
 	flux.core.LogImpl.init(null);
@@ -656,7 +629,7 @@ flux.Core.init = function() {
 		switch( $e[1] ) {
 		case 1:
 			var exc = $e[2];
-			flux.core.LogImpl.error("Uncaught exception: " + Std.string(exc),"",{ fileName : "Core.hx", lineNumber : 109, className : "flux.Core", methodName : "init"});
+			flux.core.LogImpl.error("Uncaught exception: " + Std.string(exc),"",{ fileName : "Core.hx", lineNumber : 72, className : "flux.Core", methodName : "init"});
 			break;
 		case 0:
 			break;
@@ -672,13 +645,10 @@ flux.Core.future = function() {
 flux.Core.outcome = function(cancel) {
 	return new flux.core.FutureImpl();
 };
-flux.Core.part = function(parent,info) {
-	return new flux.core.PartBaseImpl(parent,info);
-};
 flux.Core.cancelledFuture = function() {
 	return flux.core.FutureImpl.dead();
 };
-flux.Core.event = function() {
+flux.Core.observable = function() {
 	return new flux.core.ObservableImpl();
 };
 flux.Core.toOption = function(t) {
@@ -686,24 +656,6 @@ flux.Core.toOption = function(t) {
 };
 flux.Core.logInit = function(fileName) {
 	flux.core.LogImpl.init(fileName);
-};
-flux.Core.log = function(l,category,inf) {
-	if(category == null) category = "";
-	var $e = (l);
-	switch( $e[1] ) {
-	case 0:
-		var m = $e[2];
-		flux.core.LogImpl.info(m,category,inf);
-		break;
-	case 1:
-		var m = $e[2];
-		flux.core.LogImpl.warn(m,category,inf);
-		break;
-	case 2:
-		var m = $e[2];
-		flux.core.LogImpl.error(m,category,inf);
-		break;
-	}
 };
 flux.Core.info = function(msg,category,inf) {
 	if(category == null) category = "";
@@ -753,11 +705,6 @@ flux.Core.waitFut = function(toJoin) {
 	});
 	return fut;
 };
-flux.Core.listParts = function() {
-	flux.ArrayX.foreach(flux.core.PartBaseImpl.runningParts,function(p) {
-		if(flux.PartX.info(p) != null) console.log(flux.PartX.info(p));
-	});
-};
 flux.Core.assert = function(cond,pos) {
 	if(!cond) {
 		flux.core.LogImpl.error("Assert failed in " + pos.className + "::" + pos.methodName,"",pos);
@@ -765,7 +712,21 @@ flux.Core.assert = function(cond,pos) {
 	}
 };
 flux.Core.prototype.__class__ = flux.Core;
-flux.DynamicX =  $hxClasses['flux.DynamicX'] = function() { };
+flux.StartableX = $hxClasses['flux.StartableX'] = function() { };
+flux.StartableX.__name__ = ["flux","StartableX"];
+flux.StartableX.start = function(s,p,oc) {
+	if(oc == null) oc = new flux.core.FutureImpl();
+	return s.start_(p,oc);
+};
+flux.StartableX.prototype.__class__ = flux.StartableX;
+flux.StoppableX = $hxClasses['flux.StoppableX'] = function() { };
+flux.StoppableX.__name__ = ["flux","StoppableX"];
+flux.StoppableX.stop = function(s,p,oc) {
+	if(oc == null) oc = new flux.core.FutureImpl();
+	return s.stop_(p,oc);
+};
+flux.StoppableX.prototype.__class__ = flux.StoppableX;
+flux.DynamicX = $hxClasses['flux.DynamicX'] = function() { };
 flux.DynamicX.__name__ = ["flux","DynamicX"];
 flux.DynamicX.into = function(a,f) {
 	return f(a);
@@ -782,7 +743,7 @@ flux.DynamicX.stringify = function(o) {
 	return JSON.stringify(o);
 };
 flux.DynamicX.prototype.__class__ = flux.DynamicX;
-flux.BoolX =  $hxClasses['flux.BoolX'] = function() { };
+flux.BoolX = $hxClasses['flux.BoolX'] = function() { };
 flux.BoolX.__name__ = ["flux","BoolX"];
 flux.BoolX.toInt = function(v) {
 	return v?1:0;
@@ -809,7 +770,7 @@ flux.BoolX.toString = function(v) {
 	return v?"true":"false";
 };
 flux.BoolX.prototype.__class__ = flux.BoolX;
-flux.IntX =  $hxClasses['flux.IntX'] = function() { };
+flux.IntX = $hxClasses['flux.IntX'] = function() { };
 flux.IntX.__name__ = ["flux","IntX"];
 flux.IntX.max = function(v1,v2) {
 	return v2 > v1?v2:v1;
@@ -851,7 +812,7 @@ flux.IntX.hashCode = function(v) {
 	return v * 196613;
 };
 flux.IntX.prototype.__class__ = flux.IntX;
-flux.FloatX =  $hxClasses['flux.FloatX'] = function() { };
+flux.FloatX = $hxClasses['flux.FloatX'] = function() { };
 flux.FloatX.__name__ = ["flux","FloatX"];
 flux.FloatX.round = function(v) {
 	return Math.round(v);
@@ -884,7 +845,7 @@ flux.FloatX.hashCode = function(v) {
 	return v * 98317 | 0;
 };
 flux.FloatX.prototype.__class__ = flux.FloatX;
-flux.StringX =  $hxClasses['flux.StringX'] = function() { };
+flux.StringX = $hxClasses['flux.StringX'] = function() { };
 flux.StringX.__name__ = ["flux","StringX"];
 flux.StringX.toBool = function(v,d) {
 	if(v == null) return d;
@@ -955,7 +916,7 @@ flux.StringX.error = function(msg,inf) {
 	flux.core.LogImpl.error(msg,null,inf);
 };
 flux.StringX.prototype.__class__ = flux.StringX;
-flux.DateX =  $hxClasses['flux.DateX'] = function() { };
+flux.DateX = $hxClasses['flux.DateX'] = function() { };
 flux.DateX.__name__ = ["flux","DateX"];
 flux.DateX.compare = function(v1,v2) {
 	var diff = v1.getTime() - v2.getTime();
@@ -971,7 +932,7 @@ flux.DateX.UTCString = function(d) {
 	return d.toUTCString();
 };
 flux.DateX.prototype.__class__ = flux.DateX;
-flux.ArrayX =  $hxClasses['flux.ArrayX'] = function() { };
+flux.ArrayX = $hxClasses['flux.ArrayX'] = function() { };
 flux.ArrayX.__name__ = ["flux","ArrayX"];
 flux.ArrayX.stringify = function(a) {
 	return JSON.stringify(o);
@@ -1121,7 +1082,7 @@ flux.ArrayX.dropWhile = function(a,p) {
 	return r;
 };
 flux.ArrayX.prototype.__class__ = flux.ArrayX;
-flux.HashX =  $hxClasses['flux.HashX'] = function() { };
+flux.HashX = $hxClasses['flux.HashX'] = function() { };
 flux.HashX.__name__ = ["flux","HashX"];
 flux.HashX.getOption = function(h,key) {
 	var v = h.get(key);
@@ -1146,7 +1107,7 @@ flux.HashX.keyArray = function(h) {
 	return a;
 };
 flux.HashX.prototype.__class__ = flux.HashX;
-flux.OptionX =  $hxClasses['flux.OptionX'] = function() { };
+flux.OptionX = $hxClasses['flux.OptionX'] = function() { };
 flux.OptionX.__name__ = ["flux","OptionX"];
 flux.OptionX.toOption = function(t) {
 	return t == null?flux.Option.None:flux.Option.Some(t);
@@ -1326,7 +1287,7 @@ flux.OptionX.isEmpty = function(o) {
 	}(this));
 };
 flux.OptionX.prototype.__class__ = flux.OptionX;
-flux.EitherX =  $hxClasses['flux.EitherX'] = function() { };
+flux.EitherX = $hxClasses['flux.EitherX'] = function() { };
 flux.EitherX.__name__ = ["flux","EitherX"];
 flux.EitherX.toLeft = function(v) {
 	return flux.Either.Left(v);
@@ -1585,41 +1546,11 @@ flux.EitherX.composeRight = function(e1,e2,ac,bc) {
 	}(this));
 };
 flux.EitherX.prototype.__class__ = flux.EitherX;
-flux.PartX =  $hxClasses['flux.PartX'] = function() { };
-flux.PartX.__name__ = ["flux","PartX"];
-flux.PartX.start = function(part,data,oc) {
-	return part.part_.start(data,oc);
-};
-flux.PartX.stop = function(part,data) {
-	return part.part_.stop(data);
-};
-flux.PartX.stop_ = function(part,cb) {
-	part.part_.setStop(cb);
-};
-flux.PartX.observe = function(part,cb) {
-	return part.part_.observe(cb);
-};
-flux.PartX.notify = function(part,e) {
-	part.part_.notify(e);
-};
-flux.PartX.partID = function(part) {
-	return part.part_.partID;
-};
-flux.PartX.observeState = function(part,cb) {
-	return part.part_._events.observe(cb);
-};
-flux.PartX.state = function(part) {
-	return part.part_.state;
-};
-flux.PartX.info = function(part) {
-	return part.part_._info;
-};
-flux.PartX.prototype.__class__ = flux.PartX;
-flux.OutcomeX =  $hxClasses['flux.OutcomeX'] = function() { };
+flux.OutcomeX = $hxClasses['flux.OutcomeX'] = function() { };
 flux.OutcomeX.__name__ = ["flux","OutcomeX"];
 flux.OutcomeX.outcome = function(oc,cb,err) {
 	oc.deliver(function(either) {
-		if(flux.EitherX.isRight(either)) cb(flux.OptionX.get(flux.EitherX.right(either))); else if(err != null) err(flux.OptionX.get(flux.EitherX.left(either))); else flux.core.LogImpl.error(Std.string(flux.OptionX.get(flux.EitherX.left(either))),"",{ fileName : "Core.hx", lineNumber : 936, className : "flux.OutcomeX", methodName : "outcome"});
+		if(flux.EitherX.isRight(either)) cb(flux.OptionX.get(flux.EitherX.right(either))); else if(err != null) err(flux.OptionX.get(flux.EitherX.left(either))); else flux.core.LogImpl.error(Std.string(flux.OptionX.get(flux.EitherX.left(either))),"",{ fileName : "Core.hx", lineNumber : 838, className : "flux.OutcomeX", methodName : "outcome"});
 	});
 };
 flux.OutcomeX.oflatMap = function(oc,cb,err) {
@@ -1627,14 +1558,14 @@ flux.OutcomeX.oflatMap = function(oc,cb,err) {
 	oc.deliver(function(either) {
 		if(flux.EitherX.isRight(either)) flux.OutcomeX.outcome(cb(flux.OptionX.get(flux.EitherX.right(either))),function(val) {
 			roc.resolve(flux.Either.Right(val));
-		},err); else flux.core.LogImpl.error(Std.string(flux.OptionX.get(flux.EitherX.left(either))),"",{ fileName : "Core.hx", lineNumber : 955, className : "flux.OutcomeX", methodName : "oflatMap"});
+		},err); else flux.core.LogImpl.error(Std.string(flux.OptionX.get(flux.EitherX.left(either))),"",{ fileName : "Core.hx", lineNumber : 857, className : "flux.OutcomeX", methodName : "oflatMap"});
 	});
 	return roc;
 };
 flux.OutcomeX.omap = function(oc,cb,err) {
 	var roc = new flux.core.FutureImpl();
 	oc.deliver(function(either) {
-		if(flux.EitherX.isRight(either)) roc.resolve(flux.Either.Right(cb(flux.OptionX.get(flux.EitherX.right(either))))); else if(err != null) err(flux.OptionX.get(flux.EitherX.left(either))); else flux.core.LogImpl.error(Std.string(flux.OptionX.get(flux.EitherX.left(either))),"",{ fileName : "Core.hx", lineNumber : 974, className : "flux.OutcomeX", methodName : "omap"});
+		if(flux.EitherX.isRight(either)) roc.resolve(flux.Either.Right(cb(flux.OptionX.get(flux.EitherX.right(either))))); else if(err != null) err(flux.OptionX.get(flux.EitherX.left(either))); else flux.core.LogImpl.error(Std.string(flux.OptionX.get(flux.EitherX.left(either))),"",{ fileName : "Core.hx", lineNumber : 876, className : "flux.OutcomeX", methodName : "omap"});
 	});
 	return roc;
 };
@@ -1655,20 +1586,20 @@ flux.HttpEvents.Upgrade.__enum__ = flux.HttpEvents;
 flux.HttpEvents.ClientError = ["ClientError",3];
 flux.HttpEvents.ClientError.toString = $estr;
 flux.HttpEvents.ClientError.__enum__ = flux.HttpEvents;
-flux.HttpServer =  $hxClasses['flux.HttpServer'] = function() { };
+flux.HttpServer = $hxClasses['flux.HttpServer'] = function() { };
 flux.HttpServer.__name__ = ["flux","HttpServer"];
-flux.HttpServer.prototype.fields = null;
-flux.HttpServer.prototype.serve = null;
-flux.HttpServer.prototype.serveNoCache = null;
-flux.HttpServer.prototype.handler = null;
-flux.HttpServer.prototype.notFound = null;
-flux.HttpServer.prototype.index = null;
-flux.HttpServer.prototype.serverName = null;
-flux.HttpServer.prototype.credentials = null;
 flux.HttpServer.prototype.root = null;
+flux.HttpServer.prototype.credentials = null;
+flux.HttpServer.prototype.serverName = null;
+flux.HttpServer.prototype.index = null;
+flux.HttpServer.prototype.notFound = null;
+flux.HttpServer.prototype.handler = null;
+flux.HttpServer.prototype.serveNoCache = null;
+flux.HttpServer.prototype.serve = null;
+flux.HttpServer.prototype.fields = null;
 flux.HttpServer.prototype.__class__ = flux.HttpServer;
-flux.HttpServer.__interfaces__ = [flux.Part];
-flux.Http =  $hxClasses['flux.Http'] = function() { };
+flux.HttpServer.__interfaces__ = [flux.Observable,flux.Startable];
+flux.Http = $hxClasses['flux.Http'] = function() { };
 flux.Http.__name__ = ["flux","Http"];
 flux.Http.server = function() {
 	return new flux.http.HttpImpl();
@@ -1687,10 +1618,10 @@ flux.Http.get = function(url,params,headers) {
 	request.addListener("response",function(response) {
 		var resp = new StringBuf();
 		response.on("data",function(chunk) {
-			resp.b[resp.b.length] = chunk == null?"null":chunk;
+			resp.b += Std.string(chunk);
 		});
 		response.on("end",function() {
-			oc.resolve(flux.Either.Right(resp.b.join("")));
+			oc.resolve(flux.Either.Right(resp.b));
 		});
 	});
 	if(params != null) request.end(js.Node.queryString.stringify(params)); else request.end();
@@ -1712,10 +1643,10 @@ flux.Http.post = function(url,payload,urlEncoded,headers) {
 	request.addListener("response",function(response) {
 		var resp = new StringBuf();
 		response.on("data",function(chunk) {
-			resp.b[resp.b.length] = chunk == null?"null":chunk;
+			resp.b += Std.string(chunk);
 		});
 		response.on("end",function() {
-			oc.resolve(flux.Either.Right(resp.b.join("")));
+			oc.resolve(flux.Either.Right(resp.b));
 		});
 	});
 	if(urlEncoded) request.end(js.Node.queryString.stringify(payload)); else request.end(payload);
@@ -1764,37 +1695,37 @@ flux.SysReadStreamEvents.End.__enum__ = flux.SysReadStreamEvents;
 flux.SysReadStreamEvents.Error = function(e) { var $x = ["Error",1,e]; $x.__enum__ = flux.SysReadStreamEvents; $x.toString = $estr; return $x; };
 flux.SysChildProcessEvents = $hxClasses['flux.SysChildProcessEvents'] = { __ename__ : ["flux","SysChildProcessEvents"], __constructs__ : ["Exit"] };
 flux.SysChildProcessEvents.Exit = function(code,signal) { var $x = ["Exit",0,code,signal]; $x.__enum__ = flux.SysChildProcessEvents; $x.toString = $estr; return $x; };
-flux.SysChildProcess =  $hxClasses['flux.SysChildProcess'] = function() { };
+flux.SysChildProcess = $hxClasses['flux.SysChildProcess'] = function() { };
 flux.SysChildProcess.__name__ = ["flux","SysChildProcess"];
-flux.SysChildProcess.prototype.stdin = null;
-flux.SysChildProcess.prototype.stdout = null;
-flux.SysChildProcess.prototype.stderr = null;
-flux.SysChildProcess.prototype.pid = null;
 flux.SysChildProcess.prototype.kill = null;
+flux.SysChildProcess.prototype.pid = null;
+flux.SysChildProcess.prototype.stderr = null;
+flux.SysChildProcess.prototype.stdout = null;
+flux.SysChildProcess.prototype.stdin = null;
 flux.SysChildProcess.prototype.__class__ = flux.SysChildProcess;
 flux.SysChildProcess.__interfaces__ = [flux.Observable];
-flux.SysWriteStream =  $hxClasses['flux.SysWriteStream'] = function() { };
+flux.SysWriteStream = $hxClasses['flux.SysWriteStream'] = function() { };
 flux.SysWriteStream.__name__ = ["flux","SysWriteStream"];
-flux.SysWriteStream.prototype.writeable = null;
-flux.SysWriteStream.prototype.write = null;
-flux.SysWriteStream.prototype.end = null;
 flux.SysWriteStream.prototype.getNodeWriteStream = null;
+flux.SysWriteStream.prototype.end = null;
+flux.SysWriteStream.prototype.write = null;
+flux.SysWriteStream.prototype.writeable = null;
 flux.SysWriteStream.prototype.__class__ = flux.SysWriteStream;
 flux.SysWriteStream.__interfaces__ = [flux.Observable];
-flux.SysReadStream =  $hxClasses['flux.SysReadStream'] = function() { };
+flux.SysReadStream = $hxClasses['flux.SysReadStream'] = function() { };
 flux.SysReadStream.__name__ = ["flux","SysReadStream"];
-flux.SysReadStream.prototype.readable = null;
-flux.SysReadStream.prototype.pause = null;
-flux.SysReadStream.prototype.resume = null;
-flux.SysReadStream.prototype.destroy = null;
-flux.SysReadStream.prototype.destroySoon = null;
-flux.SysReadStream.prototype.setEncoding = null;
-flux.SysReadStream.prototype.pipe = null;
 flux.SysReadStream.prototype.getNodeReadStream = null;
+flux.SysReadStream.prototype.pipe = null;
+flux.SysReadStream.prototype.setEncoding = null;
+flux.SysReadStream.prototype.destroySoon = null;
+flux.SysReadStream.prototype.destroy = null;
+flux.SysReadStream.prototype.resume = null;
+flux.SysReadStream.prototype.pause = null;
+flux.SysReadStream.prototype.readable = null;
 flux.SysReadStream.prototype.__class__ = flux.SysReadStream;
 flux.SysReadStream.__interfaces__ = [flux.Observable];
 if(typeof js=='undefined') js = {};
-js.Node =  $hxClasses['js.Node'] = function() { };
+js.Node = $hxClasses['js.Node'] = function() { };
 js.Node.__name__ = ["js","Node"];
 js.Node.require = null;
 js.Node.querystring = null;
@@ -1834,15 +1765,51 @@ js.Node.newSocket = function(options) {
 };
 js.Node.prototype.__class__ = js.Node;
 if(!flux.core) flux.core = {};
-flux.core.ObservableImpl =  $hxClasses['flux.core.ObservableImpl'] = function() {
+flux.core.ObservableImpl = $hxClasses['flux.core.ObservableImpl'] = function() {
 	this._observers = [];
 	this._unsubscribes = 0;
 };
 flux.core.ObservableImpl.__name__ = ["flux","core","ObservableImpl"];
-flux.core.ObservableImpl.prototype.preNotify = null;
-flux.core.ObservableImpl.prototype._unsubscribes = null;
-flux.core.ObservableImpl.prototype._observers = null;
-flux.core.ObservableImpl.prototype._event = null;
+flux.core.ObservableImpl.prototype.removePeers = function() {
+	flux.ArrayX.foreach(this._observers,function(s) {
+		s.handler = null;
+		s.info = null;
+	});
+	this._observers = [];
+};
+flux.core.ObservableImpl.prototype.peek = function(cb) {
+	if(this._event == null) this._event = new flux.core.ObservableImpl();
+	this._event.observe(cb);
+};
+flux.core.ObservableImpl.prototype.peers = function() {
+	return flux.ArrayX.map(flux.ArrayX.filter(this._observers,function(el) {
+		return el.handler != null;
+	}),function(el) {
+		return el.info;
+	});
+};
+flux.core.ObservableImpl.prototype.cleanup = function() {
+	console.log("cleaning up");
+	this._unsubscribes = 0;
+	this._observers = flux.ArrayX.filter(this._observers,function(s) {
+		if(s.handler == null) console.log("filtering " + Std.string(s.info));
+		return s.handler != null;
+	});
+};
+flux.core.ObservableImpl.prototype.observe = function(cb,info) {
+	var _g = this;
+	var h = { handler : cb, info : flux.Core.toOption(info)};
+	this._observers.push(h);
+	if(this._event != null) this._event.notify(flux.EOperation.Add(info));
+	return function() {
+		if(h.handler != null) {
+			h.handler = null;
+			_g._unsubscribes++;
+			if(_g._unsubscribes >= flux.core.ObservableImpl.CLEANUP) _g.cleanup();
+			if(_g._event != null) _g._event.notify(flux.EOperation.Del(info));
+		}
+	};
+};
 flux.core.ObservableImpl.prototype.notify = function(v) {
 	if(this.preNotify != null) {
 		v = this.preNotify(v);
@@ -1855,64 +1822,28 @@ flux.core.ObservableImpl.prototype.notify = function(v) {
 		if(ob.handler != null) ob.handler(v);
 	}
 };
-flux.core.ObservableImpl.prototype.observe = function(cb,info) {
-	var me = this;
-	var h = { handler : cb, info : flux.Core.toOption(info)};
-	this._observers.push(h);
-	if(this._event != null) this._event.notify(flux.EOperation.Add(info));
-	return function() {
-		if(h.handler != null) {
-			h.handler = null;
-			me._unsubscribes++;
-			if(me._unsubscribes >= flux.core.ObservableImpl.CLEANUP) me.cleanup();
-			if(me._event != null) me._event.notify(flux.EOperation.Del(info));
-		}
-	};
-};
-flux.core.ObservableImpl.prototype.cleanup = function() {
-	console.log("cleaning up");
-	this._unsubscribes = 0;
-	this._observers = flux.ArrayX.filter(this._observers,function(s) {
-		if(s.handler == null) console.log("filtering " + Std.string(s.info));
-		return s.handler != null;
-	});
-};
-flux.core.ObservableImpl.prototype.peers = function() {
-	return flux.ArrayX.map(flux.ArrayX.filter(this._observers,function(el) {
-		return el.handler != null;
-	}),function(el) {
-		return el.info;
-	});
-};
-flux.core.ObservableImpl.prototype.peek = function(cb) {
-	if(this._event == null) this._event = new flux.core.ObservableImpl();
-	this._event.observe(cb);
-};
-flux.core.ObservableImpl.prototype.removePeers = function() {
-	flux.ArrayX.foreach(this._observers,function(s) {
-		s.handler = null;
-		s.info = null;
-	});
-	this._observers = [];
-};
+flux.core.ObservableImpl.prototype._event = null;
+flux.core.ObservableImpl.prototype._observers = null;
+flux.core.ObservableImpl.prototype._unsubscribes = null;
+flux.core.ObservableImpl.prototype.preNotify = null;
 flux.core.ObservableImpl.prototype.__class__ = flux.core.ObservableImpl;
 flux.core.ObservableImpl.__interfaces__ = [flux.Observable];
 if(!flux.sys) flux.sys = {};
-flux.sys.Events =  $hxClasses['flux.sys.Events'] = function() {
-	var me = this;
+flux.sys.Events = $hxClasses['flux.sys.Events'] = function() {
+	var _g = this;
 	flux.core.ObservableImpl.call(this);
 	js.Node.process.addListener("exit",function() {
-		me.notify(flux.SysEvents.ProcessExit);
+		_g.notify(flux.SysEvents.ProcessExit);
 	});
 	js.Node.process.addListener("uncaughtException",function(ex) {
-		me.notify(flux.SysEvents.ProcessUncaughtException(ex));
+		_g.notify(flux.SysEvents.ProcessUncaughtException(ex));
 	});
 };
 flux.sys.Events.__name__ = ["flux","sys","Events"];
 flux.sys.Events.__super__ = flux.core.ObservableImpl;
 for(var k in flux.core.ObservableImpl.prototype ) flux.sys.Events.prototype[k] = flux.core.ObservableImpl.prototype[k];
 flux.sys.Events.prototype.__class__ = flux.sys.Events;
-flux.Sys =  $hxClasses['flux.Sys'] = function() { };
+flux.Sys = $hxClasses['flux.Sys'] = function() { };
 flux.Sys.__name__ = ["flux","Sys"];
 flux.Sys.events = function() {
 	return flux.Sys._events;
@@ -2272,7 +2203,7 @@ flux.Sys.nodeWriteStream = function(path,options) {
 	return prm;
 };
 flux.Sys.prototype.__class__ = flux.Sys;
-flux.core.FutureImpl =  $hxClasses['flux.core.FutureImpl'] = function() {
+flux.core.FutureImpl = $hxClasses['flux.core.FutureImpl'] = function() {
 	this._listeners = [];
 	this._result = null;
 	this._isSet = false;
@@ -2290,13 +2221,102 @@ flux.core.FutureImpl.dead = function() {
 flux.core.FutureImpl.create = function() {
 	return new flux.core.FutureImpl();
 };
-flux.core.FutureImpl.prototype._listeners = null;
-flux.core.FutureImpl.prototype._result = null;
-flux.core.FutureImpl.prototype._isSet = null;
-flux.core.FutureImpl.prototype._isCanceled = null;
-flux.core.FutureImpl.prototype._cancelers = null;
-flux.core.FutureImpl.prototype._canceled = null;
-flux.core.FutureImpl.prototype._combined = null;
+flux.core.FutureImpl.prototype.forceCancel = function() {
+	if(!this._isCanceled) {
+		this._isCanceled = true;
+		var _g = 0, _g1 = this._canceled;
+		while(_g < _g1.length) {
+			var canceled = _g1[_g];
+			++_g;
+			canceled();
+		}
+	}
+	return this;
+};
+flux.core.FutureImpl.prototype.toArray = function() {
+	return flux.OptionX.toArray(this.value());
+};
+flux.core.FutureImpl.prototype.toOption = function() {
+	return this.value();
+};
+flux.core.FutureImpl.prototype.value = function() {
+	return this._isSet?flux.Option.Some(this._result):flux.Option.None;
+};
+flux.core.FutureImpl.prototype.filter = function(f) {
+	var fut = new flux.core.FutureImpl();
+	this.deliver(function(t) {
+		if(f(t)) fut.resolve(t); else fut.forceCancel();
+	});
+	this.ifCanceled(function() {
+		fut.forceCancel();
+	});
+	return fut;
+};
+flux.core.FutureImpl.prototype.flatMap = function(f) {
+	var fut = new flux.core.FutureImpl();
+	this.deliver(function(t) {
+		f(t).deliver(function(s) {
+			fut.resolve(s);
+		}).ifCanceled(function() {
+			fut.forceCancel();
+		});
+	});
+	this.ifCanceled(function() {
+		fut.forceCancel();
+	});
+	return fut;
+};
+flux.core.FutureImpl.prototype.then = function(f) {
+	return f;
+};
+flux.core.FutureImpl.prototype.map = function(f) {
+	var fut = new flux.core.FutureImpl();
+	this.deliver(function(t) {
+		fut.resolve(f(t));
+	});
+	this.ifCanceled(function() {
+		fut.forceCancel();
+	});
+	return fut;
+};
+flux.core.FutureImpl.prototype.deliver = function(f) {
+	if(this.isCanceled()) return this; else if(this.isDelivered()) f(this._result); else this._listeners.push(f);
+	return this;
+};
+flux.core.FutureImpl.prototype.isCanceled = function() {
+	return this._isCanceled;
+};
+flux.core.FutureImpl.prototype.isDelivered = function() {
+	return this._isSet;
+};
+flux.core.FutureImpl.prototype.isDone = function() {
+	return this.isDelivered() || this.isCanceled();
+};
+flux.core.FutureImpl.prototype.cancel = function() {
+	return this.isDone()?false:this.isCanceled()?true:(function($this) {
+		var $r;
+		var r = true;
+		{
+			var _g = 0, _g1 = $this._cancelers;
+			while(_g < _g1.length) {
+				var canceller = _g1[_g];
+				++_g;
+				r = r && canceller();
+			}
+		}
+		if(r) $this.forceCancel();
+		$r = r;
+		return $r;
+	}(this));
+};
+flux.core.FutureImpl.prototype.ifCanceled = function(f) {
+	if(this.isCanceled()) f(); else if(!this.isDone()) this._canceled.push(f);
+	return this;
+};
+flux.core.FutureImpl.prototype.allowCancelOnlyIf = function(f) {
+	if(!this.isDone()) this._cancelers.push(f);
+	return this;
+};
 flux.core.FutureImpl.prototype.resolve = function(t) {
 	return this._isCanceled?this:this._isSet?(function($this) {
 		var $r;
@@ -2319,105 +2339,16 @@ flux.core.FutureImpl.prototype.resolve = function(t) {
 		return $r;
 	}(this));
 };
-flux.core.FutureImpl.prototype.allowCancelOnlyIf = function(f) {
-	if(!this.isDone()) this._cancelers.push(f);
-	return this;
-};
-flux.core.FutureImpl.prototype.ifCanceled = function(f) {
-	if(this.isCanceled()) f(); else if(!this.isDone()) this._canceled.push(f);
-	return this;
-};
-flux.core.FutureImpl.prototype.cancel = function() {
-	return this.isDone()?false:this.isCanceled()?true:(function($this) {
-		var $r;
-		var r = true;
-		{
-			var _g = 0, _g1 = $this._cancelers;
-			while(_g < _g1.length) {
-				var canceller = _g1[_g];
-				++_g;
-				r = r && canceller();
-			}
-		}
-		if(r) $this.forceCancel();
-		$r = r;
-		return $r;
-	}(this));
-};
-flux.core.FutureImpl.prototype.isDone = function() {
-	return this.isDelivered() || this.isCanceled();
-};
-flux.core.FutureImpl.prototype.isDelivered = function() {
-	return this._isSet;
-};
-flux.core.FutureImpl.prototype.isCanceled = function() {
-	return this._isCanceled;
-};
-flux.core.FutureImpl.prototype.deliver = function(f) {
-	if(this.isCanceled()) return this; else if(this.isDelivered()) f(this._result); else this._listeners.push(f);
-	return this;
-};
-flux.core.FutureImpl.prototype.map = function(f) {
-	var fut = new flux.core.FutureImpl();
-	this.deliver(function(t) {
-		fut.resolve(f(t));
-	});
-	this.ifCanceled(function() {
-		fut.forceCancel();
-	});
-	return fut;
-};
-flux.core.FutureImpl.prototype.then = function(f) {
-	return f;
-};
-flux.core.FutureImpl.prototype.flatMap = function(f) {
-	var fut = new flux.core.FutureImpl();
-	this.deliver(function(t) {
-		f(t).deliver(function(s) {
-			fut.resolve(s);
-		}).ifCanceled(function() {
-			fut.forceCancel();
-		});
-	});
-	this.ifCanceled(function() {
-		fut.forceCancel();
-	});
-	return fut;
-};
-flux.core.FutureImpl.prototype.filter = function(f) {
-	var fut = new flux.core.FutureImpl();
-	this.deliver(function(t) {
-		if(f(t)) fut.resolve(t); else fut.forceCancel();
-	});
-	this.ifCanceled(function() {
-		fut.forceCancel();
-	});
-	return fut;
-};
-flux.core.FutureImpl.prototype.value = function() {
-	return this._isSet?flux.Option.Some(this._result):flux.Option.None;
-};
-flux.core.FutureImpl.prototype.toOption = function() {
-	return this.value();
-};
-flux.core.FutureImpl.prototype.toArray = function() {
-	return flux.OptionX.toArray(this.value());
-};
-flux.core.FutureImpl.prototype.forceCancel = function() {
-	if(!this._isCanceled) {
-		this._isCanceled = true;
-		var _g = 0, _g1 = this._canceled;
-		while(_g < _g1.length) {
-			var canceled = _g1[_g];
-			++_g;
-			canceled();
-		}
-	}
-	return this;
-};
+flux.core.FutureImpl.prototype._combined = null;
+flux.core.FutureImpl.prototype._canceled = null;
+flux.core.FutureImpl.prototype._cancelers = null;
+flux.core.FutureImpl.prototype._isCanceled = null;
+flux.core.FutureImpl.prototype._isSet = null;
+flux.core.FutureImpl.prototype._result = null;
+flux.core.FutureImpl.prototype._listeners = null;
 flux.core.FutureImpl.prototype.__class__ = flux.core.FutureImpl;
 flux.core.FutureImpl.__interfaces__ = [flux.Future];
-flux.core.LogImpl =  $hxClasses['flux.core.LogImpl'] = function() { };
+flux.core.LogImpl = $hxClasses['flux.core.LogImpl'] = function() { };
 flux.core.LogImpl.__name__ = ["flux","core","LogImpl"];
 flux.core.LogImpl.format = function(type,msg,cat,inf) {
 	var pos = "";
@@ -2470,108 +2401,21 @@ flux.core.LogImpl.debug = function(msg,category,inf) {
 	flux.core.LogImpl.doTrace("debug",category,msg,inf);
 };
 flux.core.LogImpl.prototype.__class__ = flux.core.LogImpl;
-flux.core.PartBaseImpl =  $hxClasses['flux.core.PartBaseImpl'] = function(parent,info) {
-	var me = this;
-	this._parent = parent;
-	this._info = info;
-	this._ID = flux.core.PartBaseImpl._nextID++;
-	this._observers = [];
-	this.partID = Type.getClassName(Type.getClass(this._parent)) + Std.string(this._ID);
-	this._events = new flux.core.ObservableImpl();
-	this.sstopper = function(d) {
-		throw "Default stop function called for :" + me.partID + ". Add a stop function with stop_(stopFunction)";
-		return null;
-	};
-};
-flux.core.PartBaseImpl.__name__ = ["flux","core","PartBaseImpl"];
-flux.core.PartBaseImpl.prototype.partID = null;
-flux.core.PartBaseImpl.prototype._events = null;
-flux.core.PartBaseImpl.prototype.state = null;
-flux.core.PartBaseImpl.prototype._info = null;
-flux.core.PartBaseImpl.prototype.sstopper = null;
-flux.core.PartBaseImpl.prototype._observers = null;
-flux.core.PartBaseImpl.prototype._ID = null;
-flux.core.PartBaseImpl.prototype._parent = null;
-flux.core.PartBaseImpl.prototype.peer = function() {
-	return this._parent;
-};
-flux.core.PartBaseImpl.prototype.notify = function(e) {
-	this._events.notify(flux.EPartState.Event(e));
-};
-flux.core.PartBaseImpl.prototype.notifyState = function(s) {
-	this._events.notify(s);
-};
-flux.core.PartBaseImpl.prototype.observe = function(cb,info) {
-	var unsub = this._events.observe(function(s) {
-		var $e = (s);
-		switch( $e[1] ) {
-		case 2:
-			var s1 = $e[2];
-			cb(s1);
-			break;
-		default:
-		}
-	},this.partID);
-	this._observers.push(unsub);
-	return unsub;
-};
-flux.core.PartBaseImpl.prototype.observeState = function(cb) {
-	this._events.observe(cb);
-};
-flux.core.PartBaseImpl.prototype.start = function(d,oc) {
-	var me = this;
-	var p = this._parent.start_(d,oc);
-	this.checkErr("start",p);
-	flux.OutcomeX.outcome(p,function(outcome) {
-		me.partInfo("started");
-		me.state = flux.EPartState.Started;
-		me._events.notify(flux.EPartState.Started);
-	},function(msg) {
-		return me._events.notify(flux.EPartState.Error(Std.string(msg)));
-	});
-	return p;
-};
-flux.core.PartBaseImpl.prototype.stop = function(d) {
-	var me = this;
-	var p = this.sstopper(d);
-	this.checkErr("stop",p);
-	flux.OutcomeX.outcome(p,function(outcome) {
-		me.state = flux.EPartState.Stopped;
-		me.partInfo("stopped");
-		me._events.notify(flux.EPartState.Stopped);
-		flux.ArrayX.foreach(me._observers,function(observerRemove) {
-			observerRemove();
-		});
-	},function(msg) {
-		me._events.notify(flux.EPartState.Error(msg));
-	});
-	return p;
-};
-flux.core.PartBaseImpl.prototype.setStop = function(cb) {
-	this.partInfo("with user stop_()");
-	this.sstopper = cb;
-};
-flux.core.PartBaseImpl.prototype.partInfo = function(info) {
-};
-flux.core.PartBaseImpl.prototype.checkErr = function(type,outcome) {
-	if(outcome == null) throw this.partID + " should not return null for " + type + " function";
-	return outcome;
-};
-flux.core.PartBaseImpl.prototype.__class__ = flux.core.PartBaseImpl;
-flux.core.PartBaseImpl.__interfaces__ = [flux.Part_];
 if(!flux.http) flux.http = {};
-flux.http.HttpImpl =  $hxClasses['flux.http.HttpImpl'] = function() {
-	this._index = "/index.html";
+flux.http.HttpImpl = $hxClasses['flux.http.HttpImpl'] = function() {
 	this._root = null;
+	this._index = "/index.html";
+	flux.core.ObservableImpl.call(this);
 	this._routes = [];
 	this._index = "/index.html";
 	this._root = null;
-	this._serverName = "Cloudshift 0.2.3";
+	this._serverName = "Flux " + flux.Core.VER;
 	this._getHandler = $bind(this,this.defaultGetHandler);
 	this._cache = new Hash();
-	this.part_ = flux.Core.part(this);
 };
 flux.http.HttpImpl.__name__ = ["flux","http","HttpImpl"];
+flux.http.HttpImpl.__super__ = flux.core.ObservableImpl;
+for(var k in flux.core.ObservableImpl.prototype ) flux.http.HttpImpl.prototype[k] = flux.core.ObservableImpl.prototype[k];
 flux.http.HttpImpl._formidable = null;
 flux.http.HttpImpl.parseFields = function(req,cb,uploadDir) {
 	var form = new flux.http.HttpImpl._formidable.IncomingForm(), fields = new Hash(), files = null;
@@ -2592,30 +2436,109 @@ flux.http.HttpImpl.UTCString = function(d) {
 flux.http.HttpImpl.parse = function(d) {
 	return Date.parse(d);
 };
-flux.http.HttpImpl.prototype.part_ = null;
-flux.http.HttpImpl.prototype._cache = null;
-flux.http.HttpImpl.prototype._getHandler = null;
-flux.http.HttpImpl.prototype._routes = null;
-flux.http.HttpImpl.prototype._notFound = null;
-flux.http.HttpImpl.prototype._creds = null;
-flux.http.HttpImpl.prototype._index = null;
-flux.http.HttpImpl.prototype._root = null;
-flux.http.HttpImpl.prototype._serverName = null;
-flux.http.HttpImpl.prototype.start_ = function(d,oc) {
-	var me = this;
-	if(oc == null) oc = new flux.core.FutureImpl();
-	var server = this._creds != null?js.Node.https.createServer(this._creds,$bind(this,this.requestHandler)):js.Node.http.createServer($bind(this,this.requestHandler));
-	server.listen(d.port,d.host,function() {
-		flux.PartX.stop_(me,function(d1) {
-			var p = new flux.core.FutureImpl();
-			server.close();
-			p.resolve(flux.Either.Right(me));
-			return p;
-		});
-		if(me._creds != null) flux.Core.log(flux.ELogLevel.I("Listening on Https " + me._serverName + " on " + d.host + ":" + d.port),null,{ fileName : "HttpImpl.hx", lineNumber : 81, className : "flux.http.HttpImpl", methodName : "start_"}); else flux.Core.log(flux.ELogLevel.I("Listening on Http " + me._serverName + " on " + d.host + ":" + d.port),null,{ fileName : "HttpImpl.hx", lineNumber : 83, className : "flux.http.HttpImpl", methodName : "start_"});
-		oc.resolve(flux.Either.Right(js.Boot.__cast(me , flux.HttpServer)));
+flux.http.HttpImpl.prototype.pipeFile = function(resp,path,stat,mtime) {
+	var buf = new Buffer(stat.size), offset = 0;
+	this._cache.set(path,{ mtime : mtime, buf : buf});
+	js.Node.fs.createReadStream(path,flux.http.HttpImpl.readStreamOpt).on("error",function(err) {
+		js.Node.console.error(err);
+	}).on("data",function(chunk) {
+		chunk.copy(buf,offset);
+		offset += chunk.length;
+	}).on("close",function() {
+	}).pipe(resp);
+};
+flux.http.HttpImpl.prototype.serveFromCache = function(resp,path,stat,mtime) {
+	var cached = this._cache.get(path);
+	if(cached == null) this.pipeFile(resp,path,stat,mtime); else if(cached.mtime < mtime) this.pipeFile(resp,path,stat,mtime); else resp.end(cached.buf.toString("binary"));
+};
+flux.http.HttpImpl.prototype.headers = function(resp,size,path,etag,mtime) {
+	resp.setHeader("Content-Length",size);
+	resp.setHeader("Content-Type",Reflect.field(flux.http.Mime.types,HxOverrides.substr(js.Node.path.extname(path),1,null)));
+	var d = new Date(Date.now());
+	resp.setHeader("Date",d.toUTCString());
+	if(etag != null) resp.setHeader("ETag",etag);
+	resp.setHeader("Last-Modified",mtime.toUTCString());
+	resp.setHeader("Server",this._serverName);
+};
+flux.http.HttpImpl.prototype.do404 = function(req,resp) {
+	if(this._notFound != null) this._notFound(req,resp);
+};
+flux.http.HttpImpl.prototype.serveNoCache = function(path,req,resp,statusCode) {
+	if(statusCode == null) statusCode = 200;
+	var _g = this;
+	var fileToServe = this._root != null?this._root + path:path;
+	js.Node.fs.stat(fileToServe,function(e,stat) {
+		if(e != null) {
+			_g.do404(req,resp);
+			return;
+		}
+		var mtime = stat.mtime, size = stat.size;
+		if(stat.isFile()) {
+			resp.statusCode = statusCode;
+			_g.headers(resp,size,path,null,mtime);
+			resp.setHeader("cache-control","no-cache");
+			js.Node.fs.createReadStream(path,flux.http.HttpImpl.readStreamOpt).pipe(resp);
+		} else if(stat.isDirectory()) _g.do404(req,resp); else _g.do404(req,resp);
 	});
-	return oc;
+};
+flux.http.HttpImpl.prototype.serve = function(path,req,resp,statusCode) {
+	if(statusCode == null) statusCode = 200;
+	var _g = this;
+	var fileToServe = this._root != null?this._root + path:path;
+	console.log("serving: " + path);
+	js.Node.fs.stat(fileToServe,function(e,stat) {
+		if(e != null) {
+			_g.do404(req,resp);
+			return;
+		}
+		if(stat.isFile()) {
+			console.log("stat.mtime = " + stat.mtime.toDateString());
+			var mtimeObj = stat.mtime, fmtime = mtimeObj.toDateString(), size = stat.size, eTag = js.Node.stringify([stat.ino,size,fmtime].join("-"));
+			if(Reflect.field(req.headers,"if-none-match") == eTag) {
+				resp.statusCode = 304;
+				_g.headers(resp,size,path,eTag,mtimeObj);
+				resp.end();
+				return;
+			}
+			resp.statusCode = statusCode;
+			_g.headers(resp,size,path,eTag,mtimeObj);
+			_g.serveFromCache(resp,fileToServe,stat,mtimeObj.getTime());
+		} else if(stat.isDirectory()) _g.do404(req,resp); else _g.do404(req,resp);
+	});
+};
+flux.http.HttpImpl.prototype.fields = function(req,cb,uploadDir) {
+	if(uploadDir == null) uploadDir = "/tmp";
+	flux.http.HttpImpl.parseFields(req,cb,uploadDir);
+};
+flux.http.HttpImpl.prototype.defaultGetHandler = function(path,req,resp,statusCode) {
+	this.do404(req,resp);
+};
+flux.http.HttpImpl.prototype.credentials = function(key,cert,ca) {
+	var k = js.Node.fs.readFileSync(key);
+	var c = js.Node.fs.readFileSync(cert);
+	this._creds = { key : k, cert : c, ca : ca};
+	return this;
+};
+flux.http.HttpImpl.prototype.root = function(rootDir) {
+	this._root = !flux.StringX.endsWith(rootDir,"/")?rootDir:HxOverrides.substr(rootDir,0,-1);
+	this._getHandler = $bind(this,this.serve);
+	return this;
+};
+flux.http.HttpImpl.prototype.serverName = function(serverName) {
+	this._serverName = serverName;
+	return this;
+};
+flux.http.HttpImpl.prototype.index = function(indexFile) {
+	this._index = indexFile;
+	return this;
+};
+flux.http.HttpImpl.prototype.notFound = function(nf) {
+	this._notFound = nf;
+	return this;
+};
+flux.http.HttpImpl.prototype.handler = function(r,handler) {
+	this._routes.push({ re : r, handler : handler});
+	return this;
 };
 flux.http.HttpImpl.prototype.requestHandler = function(req,resp) {
 	var url = req.url, match = false;
@@ -2629,7 +2552,7 @@ flux.http.HttpImpl.prototype.requestHandler = function(req,resp) {
 				try {
 					r.handler(r.re,req,resp);
 				} catch( ex ) {
-					flux.Core.log(flux.ELogLevel.E("handler exp:" + Std.string(ex)),null,{ fileName : "HttpImpl.hx", lineNumber : 104, className : "flux.http.HttpImpl", methodName : "requestHandler"});
+					flux.core.LogImpl.error("handler exp:" + Std.string(ex),"",{ fileName : "HttpImpl.hx", lineNumber : 108, className : "flux.http.HttpImpl", methodName : "requestHandler"});
 				}
 				break;
 			}
@@ -2642,122 +2565,37 @@ flux.http.HttpImpl.prototype.requestHandler = function(req,resp) {
 		}
 	}
 };
-flux.http.HttpImpl.prototype.handler = function(r,handler) {
-	this._routes.push({ re : r, handler : handler});
-	return this;
-};
-flux.http.HttpImpl.prototype.notFound = function(nf) {
-	this._notFound = nf;
-	return this;
-};
-flux.http.HttpImpl.prototype.index = function(indexFile) {
-	this._index = indexFile;
-	return this;
-};
-flux.http.HttpImpl.prototype.serverName = function(serverName) {
-	this._serverName = serverName;
-	return this;
-};
-flux.http.HttpImpl.prototype.root = function(rootDir) {
-	this._root = !flux.StringX.endsWith(rootDir,"/")?rootDir:HxOverrides.substr(rootDir,0,-1);
-	this._getHandler = $bind(this,this.serve);
-	return this;
-};
-flux.http.HttpImpl.prototype.credentials = function(key,cert,ca) {
-	var k = js.Node.fs.readFileSync(key);
-	var c = js.Node.fs.readFileSync(cert);
-	this._creds = { key : k, cert : c, ca : ca};
-	return this;
-};
-flux.http.HttpImpl.prototype.defaultGetHandler = function(path,req,resp,statusCode) {
-	this.do404(req,resp);
-};
-flux.http.HttpImpl.prototype.fields = function(req,cb,uploadDir) {
-	if(uploadDir == null) uploadDir = "/tmp";
-	flux.http.HttpImpl.parseFields(req,cb,uploadDir);
-};
-flux.http.HttpImpl.prototype.serve = function(path,req,resp,statusCode) {
-	if(statusCode == null) statusCode = 200;
-	var me = this;
-	var fileToServe = this._root != null?this._root + path:path;
-	console.log("serving :" + path);
-	js.Node.fs.stat(fileToServe,function(e,stat) {
-		if(e != null) {
-			me.do404(req,resp);
-			return;
-		}
-		var mtime = HxOverrides.strDate(new String(stat.mtime)), fmtime = mtime.getTime(), size = stat.size, eTag = js.Node.stringify([stat.ino,size,mtime].join("-")), modified = false;
-		if(Reflect.field(req.headers,"if-none-match") == eTag) {
-			resp.statusCode = 304;
-			me.headers(resp,size,path,eTag,mtime);
-			resp.end();
-			return;
-		}
-		if(stat.isFile()) {
-			resp.statusCode = statusCode;
-			me.headers(resp,size,path,eTag,mtime);
-			me.serveFromCache(resp,fileToServe,stat,fmtime);
-		} else if(stat.isDirectory()) me.do404(req,resp); else me.do404(req,resp);
+flux.http.HttpImpl.prototype.start_ = function(d,oc) {
+	var _g = this;
+	var server = this._creds != null?js.Node.https.createServer(this._creds,$bind(this,this.requestHandler)):js.Node.http.createServer($bind(this,this.requestHandler));
+	server.listen(d.port,d.host,function() {
+		if(_g._creds != null) flux.core.LogImpl.info("Listening on Https " + _g._serverName + " on " + d.host + ":" + d.port,"",{ fileName : "HttpImpl.hx", lineNumber : 85, className : "flux.http.HttpImpl", methodName : "start_"}); else flux.core.LogImpl.info("Listening on Http " + _g._serverName + " on " + d.host + ":" + d.port,"",{ fileName : "HttpImpl.hx", lineNumber : 87, className : "flux.http.HttpImpl", methodName : "start_"});
+		oc.resolve(flux.Either.Right(js.Boot.__cast(_g , flux.HttpServer)));
 	});
+	return oc;
 };
-flux.http.HttpImpl.prototype.serveNoCache = function(path,req,resp,statusCode) {
-	if(statusCode == null) statusCode = 200;
-	var me = this;
-	var fileToServe = this._root != null?this._root + path:path;
-	js.Node.fs.stat(fileToServe,function(e,stat) {
-		if(e != null) {
-			me.do404(req,resp);
-			return;
-		}
-		var mtime = HxOverrides.strDate(new String(stat.mtime)), size = stat.size;
-		if(stat.isFile()) {
-			resp.statusCode = statusCode;
-			me.headers(resp,size,path,null,mtime);
-			resp.setHeader("cache-control","no-cache");
-			js.Node.fs.createReadStream(path,flux.http.HttpImpl.readStreamOpt).pipe(resp);
-		} else if(stat.isDirectory()) me.do404(req,resp); else me.do404(req,resp);
-	});
-};
-flux.http.HttpImpl.prototype.do404 = function(req,resp) {
-	if(this._notFound != null) this._notFound(req,resp);
-};
-flux.http.HttpImpl.prototype.headers = function(resp,size,path,etag,mtime) {
-	resp.setHeader("Content-Length",size);
-	resp.setHeader("Content-Type",Reflect.field(flux.http.Mime.types,HxOverrides.substr(js.Node.path.extname(path),1,null)));
-	resp.setHeader("Date",flux.http.HttpImpl.UTCString(new Date()));
-	if(etag != null) resp.setHeader("ETag",etag);
-	resp.setHeader("Last-Modified",flux.http.HttpImpl.UTCString(mtime));
-	resp.setHeader("Server",this._serverName);
-};
-flux.http.HttpImpl.prototype.serveFromCache = function(resp,path,stat,mtime) {
-	var cached = this._cache.get(path);
-	if(cached == null) this.pipeFile(resp,path,stat,mtime); else if(cached.mtime < mtime) this.pipeFile(resp,path,stat,mtime); else resp.end(cached.buf.toString("ascii"));
-};
-flux.http.HttpImpl.prototype.pipeFile = function(resp,path,stat,mtime) {
-	var buf = new Buffer(stat.size), offset = 0;
-	this._cache.set(path,{ mtime : mtime, buf : buf});
-	js.Node.fs.createReadStream(path,flux.http.HttpImpl.readStreamOpt).on("error",function(err) {
-		js.Node.console.error(err);
-	}).on("data",function(chunk) {
-		chunk.copy(buf,offset);
-		offset += chunk.length;
-	}).on("close",function() {
-	}).pipe(resp);
-};
+flux.http.HttpImpl.prototype._serverName = null;
+flux.http.HttpImpl.prototype._root = null;
+flux.http.HttpImpl.prototype._index = null;
+flux.http.HttpImpl.prototype._creds = null;
+flux.http.HttpImpl.prototype._notFound = null;
+flux.http.HttpImpl.prototype._routes = null;
+flux.http.HttpImpl.prototype._getHandler = null;
+flux.http.HttpImpl.prototype._cache = null;
 flux.http.HttpImpl.prototype.__class__ = flux.http.HttpImpl;
-flux.http.HttpImpl.__interfaces__ = [flux.Part,flux.HttpServer];
-flux.http.Mime =  $hxClasses['flux.http.Mime'] = function() { };
+flux.http.HttpImpl.__interfaces__ = [flux.HttpServer];
+flux.http.Mime = $hxClasses['flux.http.Mime'] = function() { };
 flux.http.Mime.__name__ = ["flux","http","Mime"];
 flux.http.Mime.prototype.__class__ = flux.http.Mime;
-flux.sys.ChildProcessImpl =  $hxClasses['flux.sys.ChildProcessImpl'] = function(cp) {
-	var me = this;
+flux.sys.ChildProcessImpl = $hxClasses['flux.sys.ChildProcessImpl'] = function(cp) {
+	var _g = this;
 	flux.core.ObservableImpl.call(this);
 	this._childProc = cp;
 	this._stdin = new flux.sys.WriteStreamImpl(cp.stdin);
 	this._stdout = new flux.sys.ReadStreamImpl(cp.stdout);
 	this._stderr = new flux.sys.ReadStreamImpl(cp.stderr);
 	this._childProc.addListener("exit",function(code,sig) {
-		me.notify(flux.SysChildProcessEvents.Exit(code,sig));
+		_g.notify(flux.SysChildProcessEvents.Exit(code,sig));
 	});
 };
 flux.sys.ChildProcessImpl.__name__ = ["flux","sys","ChildProcessImpl"];
@@ -2783,93 +2621,93 @@ flux.sys.ChildProcessImpl.execFile = function(command,options,cb) {
 	if(cb != null) cb(new flux.sys.ChildProcessImpl(child));
 	return oc;
 };
-flux.sys.ChildProcessImpl.prototype.stdin = null;
-flux.sys.ChildProcessImpl.prototype.stdout = null;
-flux.sys.ChildProcessImpl.prototype.stderr = null;
-flux.sys.ChildProcessImpl.prototype.pid = null;
-flux.sys.ChildProcessImpl.prototype._childProc = null;
-flux.sys.ChildProcessImpl.prototype._stdin = null;
-flux.sys.ChildProcessImpl.prototype._stdout = null;
-flux.sys.ChildProcessImpl.prototype._stderr = null;
-flux.sys.ChildProcessImpl.prototype.getStdIn = function() {
-	return this._stdin;
-};
-flux.sys.ChildProcessImpl.prototype.getStdOut = function() {
-	return this._stdout;
-};
-flux.sys.ChildProcessImpl.prototype.getStdErr = function() {
-	return this._stderr;
+flux.sys.ChildProcessImpl.prototype.kill = function(signal) {
 };
 flux.sys.ChildProcessImpl.prototype.getPid = function() {
 	return this._childProc.pid;
 };
-flux.sys.ChildProcessImpl.prototype.kill = function(signal) {
+flux.sys.ChildProcessImpl.prototype.getStdErr = function() {
+	return this._stderr;
 };
+flux.sys.ChildProcessImpl.prototype.getStdOut = function() {
+	return this._stdout;
+};
+flux.sys.ChildProcessImpl.prototype.getStdIn = function() {
+	return this._stdin;
+};
+flux.sys.ChildProcessImpl.prototype._stderr = null;
+flux.sys.ChildProcessImpl.prototype._stdout = null;
+flux.sys.ChildProcessImpl.prototype._stdin = null;
+flux.sys.ChildProcessImpl.prototype._childProc = null;
+flux.sys.ChildProcessImpl.prototype.pid = null;
+flux.sys.ChildProcessImpl.prototype.stderr = null;
+flux.sys.ChildProcessImpl.prototype.stdout = null;
+flux.sys.ChildProcessImpl.prototype.stdin = null;
 flux.sys.ChildProcessImpl.prototype.__class__ = flux.sys.ChildProcessImpl;
 flux.sys.ChildProcessImpl.__interfaces__ = [flux.SysChildProcess];
-flux.sys.ReadStreamImpl =  $hxClasses['flux.sys.ReadStreamImpl'] = function(rs) {
-	var me = this;
+flux.sys.ReadStreamImpl = $hxClasses['flux.sys.ReadStreamImpl'] = function(rs) {
+	var _g = this;
 	flux.core.ObservableImpl.call(this);
 	this._readStream = rs;
 	this._readStream.addListener("data",function(d) {
-		me.notify(flux.SysReadStreamEvents.Data(new String(d)));
+		_g.notify(flux.SysReadStreamEvents.Data(new String(d)));
 	});
 	this._readStream.addListener("end",function() {
-		me.notify(flux.SysReadStreamEvents.End);
+		_g.notify(flux.SysReadStreamEvents.End);
 	});
 	this._readStream.addListener("error",function(exception) {
-		me.notify(flux.SysReadStreamEvents.Error(new String(exception)));
+		_g.notify(flux.SysReadStreamEvents.Error(new String(exception)));
 	});
 	this._readStream.addListener("close",function() {
-		me.notify(flux.SysReadStreamEvents.Close);
+		_g.notify(flux.SysReadStreamEvents.Close);
 	});
 };
 flux.sys.ReadStreamImpl.__name__ = ["flux","sys","ReadStreamImpl"];
 flux.sys.ReadStreamImpl.__super__ = flux.core.ObservableImpl;
 for(var k in flux.core.ObservableImpl.prototype ) flux.sys.ReadStreamImpl.prototype[k] = flux.core.ObservableImpl.prototype[k];
-flux.sys.ReadStreamImpl.prototype._readStream = null;
-flux.sys.ReadStreamImpl.prototype.readable = null;
-flux.sys.ReadStreamImpl.prototype.getReadable = function() {
-	return this._readStream.readable;
-};
-flux.sys.ReadStreamImpl.prototype.pause = function() {
-	this._readStream.pause();
-};
-flux.sys.ReadStreamImpl.prototype.resume = function() {
-	this._readStream.resume();
-};
-flux.sys.ReadStreamImpl.prototype.destroy = function() {
-	this._readStream.destroy();
-};
-flux.sys.ReadStreamImpl.prototype.destroySoon = function() {
-	this._readStream.destroySoon();
-};
-flux.sys.ReadStreamImpl.prototype.setEncoding = function(enc) {
-	this._readStream.setEncoding(enc);
+flux.sys.ReadStreamImpl.prototype.getNodeReadStream = function() {
+	return this._readStream;
 };
 flux.sys.ReadStreamImpl.prototype.pipe = function(dest,opts) {
 	this._readStream.pipe(dest.getNodeWriteStream(),opts);
 };
-flux.sys.ReadStreamImpl.prototype.getNodeReadStream = function() {
-	return this._readStream;
+flux.sys.ReadStreamImpl.prototype.setEncoding = function(enc) {
+	this._readStream.setEncoding(enc);
 };
+flux.sys.ReadStreamImpl.prototype.destroySoon = function() {
+	this._readStream.destroySoon();
+};
+flux.sys.ReadStreamImpl.prototype.destroy = function() {
+	this._readStream.destroy();
+};
+flux.sys.ReadStreamImpl.prototype.resume = function() {
+	this._readStream.resume();
+};
+flux.sys.ReadStreamImpl.prototype.pause = function() {
+	this._readStream.pause();
+};
+flux.sys.ReadStreamImpl.prototype.getReadable = function() {
+	return this._readStream.readable;
+};
+flux.sys.ReadStreamImpl.prototype.readable = null;
+flux.sys.ReadStreamImpl.prototype._readStream = null;
 flux.sys.ReadStreamImpl.prototype.__class__ = flux.sys.ReadStreamImpl;
 flux.sys.ReadStreamImpl.__interfaces__ = [flux.SysReadStream];
-flux.sys.WriteStreamImpl =  $hxClasses['flux.sys.WriteStreamImpl'] = function(s) {
-	var me = this;
+flux.sys.WriteStreamImpl = $hxClasses['flux.sys.WriteStreamImpl'] = function(s) {
+	var _g = this;
 	flux.core.ObservableImpl.call(this);
 	this._writeStream = s;
 	this._writeStream.addListener("drain",function() {
-		me.notify(flux.SysWriteStreamEvents.Drain);
+		_g.notify(flux.SysWriteStreamEvents.Drain);
 	});
 	this._writeStream.addListener("error",function(ex) {
-		me.notify(flux.SysWriteStreamEvents.Error(new String(ex)));
+		_g.notify(flux.SysWriteStreamEvents.Error(new String(ex)));
 	});
 	this._writeStream.addListener("close",function() {
-		me.notify(flux.SysWriteStreamEvents.Close);
+		_g.notify(flux.SysWriteStreamEvents.Close);
 	});
 	this._writeStream.addListener("pipe",function(src) {
-		me.notify(flux.SysWriteStreamEvents.Pipe(new flux.sys.ReadStreamImpl(src)));
+		_g.notify(flux.SysWriteStreamEvents.Pipe(new flux.sys.ReadStreamImpl(src)));
 	});
 };
 flux.sys.WriteStreamImpl.__name__ = ["flux","sys","WriteStreamImpl"];
@@ -2878,24 +2716,24 @@ for(var k in flux.core.ObservableImpl.prototype ) flux.sys.WriteStreamImpl.proto
 flux.sys.WriteStreamImpl.createWriteStream = function(path,options) {
 	return new flux.sys.WriteStreamImpl(js.Node.fs.createWriteStream(path,options));
 };
-flux.sys.WriteStreamImpl.prototype._writeStream = null;
-flux.sys.WriteStreamImpl.prototype.writeable = null;
-flux.sys.WriteStreamImpl.prototype.getWriteable = function() {
-	return this._writeStream.writeable;
-};
-flux.sys.WriteStreamImpl.prototype.write = function(d,enc,fd) {
-	return this._writeStream.write(d,enc,fd);
+flux.sys.WriteStreamImpl.prototype.getNodeWriteStream = function() {
+	return this._writeStream;
 };
 flux.sys.WriteStreamImpl.prototype.end = function(s,enc) {
 	this._writeStream.end(s,enc);
 };
-flux.sys.WriteStreamImpl.prototype.getNodeWriteStream = function() {
-	return this._writeStream;
+flux.sys.WriteStreamImpl.prototype.write = function(d,enc,fd) {
+	return this._writeStream.write(d,enc,fd);
 };
+flux.sys.WriteStreamImpl.prototype.getWriteable = function() {
+	return this._writeStream.writeable;
+};
+flux.sys.WriteStreamImpl.prototype.writeable = null;
+flux.sys.WriteStreamImpl.prototype._writeStream = null;
 flux.sys.WriteStreamImpl.prototype.__class__ = flux.sys.WriteStreamImpl;
 flux.sys.WriteStreamImpl.__interfaces__ = [flux.SysWriteStream];
 if(typeof haxe=='undefined') haxe = {};
-haxe.Json =  $hxClasses['haxe.Json'] = function() {
+haxe.Json = $hxClasses['haxe.Json'] = function() {
 };
 haxe.Json.__name__ = ["haxe","Json"];
 haxe.Json.parse = function(text) {
@@ -2904,134 +2742,47 @@ haxe.Json.parse = function(text) {
 haxe.Json.stringify = function(value) {
 	return new haxe.Json().toString(value);
 };
-haxe.Json.prototype.buf = null;
-haxe.Json.prototype.str = null;
-haxe.Json.prototype.pos = null;
-haxe.Json.prototype.reg_float = null;
-haxe.Json.prototype.toString = function(v) {
-	this.buf = new StringBuf();
-	this.toStringRec(v);
-	return this.buf.b.join("");
-};
-haxe.Json.prototype.fieldsString = function(v,fields) {
-	var first = true;
-	this.buf.add("{");
-	var _g = 0;
-	while(_g < fields.length) {
-		var f = fields[_g];
-		++_g;
-		var value = Reflect.field(v,f);
-		if(Reflect.isFunction(value)) continue;
-		if(first) first = false; else this.buf.add(",");
-		this.quote(f);
-		this.buf.add(":");
-		this.toStringRec(value);
-	}
-	this.buf.add("}");
-};
-haxe.Json.prototype.objString = function(v) {
-	this.fieldsString(v,Reflect.fields(v));
-};
-haxe.Json.prototype.toStringRec = function(v) {
-	var $e = (Type["typeof"](v));
-	switch( $e[1] ) {
-	case 8:
-		this.buf.add("\"???\"");
-		break;
-	case 4:
-		this.objString(v);
-		break;
-	case 1:
-	case 2:
-		this.buf.add(v);
-		break;
-	case 5:
-		this.buf.add("\"<fun>\"");
-		break;
-	case 6:
-		var c = $e[2];
-		if(c == String) this.quote(v); else if(c == Array) {
-			var v1 = v;
-			this.buf.add("[");
-			var len = v1.length;
-			if(len > 0) {
-				this.toStringRec(v1[0]);
-				var i = 1;
-				while(i < len) {
-					this.buf.add(",");
-					this.toStringRec(v1[i++]);
-				}
-			}
-			this.buf.add("]");
-		} else if(c == Hash) {
-			var v1 = v;
-			var o = { };
-			var $it0 = v1.keys();
-			while( $it0.hasNext() ) {
-				var k = $it0.next();
-				o[k] = v1.get(k);
-			}
-			this.objString(o);
-		} else this.objString(v);
-		break;
-	case 7:
-		var e = $e[2];
-		this.buf.add(v[1]);
-		break;
-	case 3:
-		this.buf.add(v?"true":"false");
-		break;
-	case 0:
-		this.buf.add("null");
-		break;
-	}
-};
-haxe.Json.prototype.quote = function(s) {
-	this.buf.add("\"");
-	var i = 0;
+haxe.Json.prototype.parseString = function() {
+	var start = this.pos;
+	var buf = new StringBuf();
 	while(true) {
-		var c = s.charCodeAt(i++);
-		if(c != c) break;
-		switch(c) {
-		case 34:
-			this.buf.add("\\\"");
-			break;
-		case 92:
-			this.buf.add("\\\\");
-			break;
-		case 10:
-			this.buf.add("\\n");
-			break;
-		case 13:
-			this.buf.add("\\r");
-			break;
-		case 9:
-			this.buf.add("\\t");
-			break;
-		case 8:
-			this.buf.add("\\b");
-			break;
-		case 12:
-			this.buf.add("\\f");
-			break;
-		default:
-			this.buf.addChar(c);
-		}
+		var c = this.str.charCodeAt(this.pos++);
+		if(c == 34) break;
+		if(c == 92) {
+			buf.b += HxOverrides.substr(this.str,start,this.pos - start - 1);
+			c = this.str.charCodeAt(this.pos++);
+			switch(c) {
+			case 114:
+				buf.b += String.fromCharCode(13);
+				break;
+			case 110:
+				buf.b += String.fromCharCode(10);
+				break;
+			case 116:
+				buf.b += String.fromCharCode(9);
+				break;
+			case 98:
+				buf.b += String.fromCharCode(8);
+				break;
+			case 102:
+				buf.b += String.fromCharCode(12);
+				break;
+			case 47:case 92:case 34:
+				buf.b += String.fromCharCode(c);
+				break;
+			case 117:
+				var uc = Std.parseInt("0x" + HxOverrides.substr(this.str,this.pos,4));
+				this.pos += 4;
+				buf.b += String.fromCharCode(uc);
+				break;
+			default:
+				throw "Invalid escape sequence \\" + String.fromCharCode(c) + " at position " + (this.pos - 1);
+			}
+			start = this.pos;
+		} else if(c != c) throw "Unclosed string";
 	}
-	this.buf.add("\"");
-};
-haxe.Json.prototype.doParse = function(str) {
-	this.reg_float = new EReg("^-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?","");
-	this.str = str;
-	this.pos = 0;
-	return this.parseRec();
-};
-haxe.Json.prototype.invalidChar = function() {
-	this.pos--;
-	throw "Invalid char " + this.str.charCodeAt(this.pos) + " at position " + this.pos;
-};
-haxe.Json.prototype.nextChar = function() {
-	return this.str.charCodeAt(this.pos++);
+	buf.b += HxOverrides.substr(this.str,start,this.pos - start - 1);
+	return buf.b;
 };
 haxe.Json.prototype.parseRec = function() {
 	while(true) {
@@ -3124,48 +2875,135 @@ haxe.Json.prototype.parseRec = function() {
 		}
 	}
 };
-haxe.Json.prototype.parseString = function() {
-	var start = this.pos;
-	var buf = new StringBuf();
-	while(true) {
-		var c = this.str.charCodeAt(this.pos++);
-		if(c == 34) break;
-		if(c == 92) {
-			buf.b[buf.b.length] = HxOverrides.substr(this.str,start,this.pos - start - 1);
-			c = this.str.charCodeAt(this.pos++);
-			switch(c) {
-			case 114:
-				buf.b[buf.b.length] = String.fromCharCode(13);
-				break;
-			case 110:
-				buf.b[buf.b.length] = String.fromCharCode(10);
-				break;
-			case 116:
-				buf.b[buf.b.length] = String.fromCharCode(9);
-				break;
-			case 98:
-				buf.b[buf.b.length] = String.fromCharCode(8);
-				break;
-			case 102:
-				buf.b[buf.b.length] = String.fromCharCode(12);
-				break;
-			case 47:case 92:case 34:
-				buf.b[buf.b.length] = String.fromCharCode(c);
-				break;
-			case 117:
-				var uc = Std.parseInt("0x" + HxOverrides.substr(this.str,this.pos,4));
-				this.pos += 4;
-				buf.b[buf.b.length] = String.fromCharCode(uc);
-				break;
-			default:
-				throw "Invalid escape sequence \\" + String.fromCharCode(c) + " at position " + (this.pos - 1);
-			}
-			start = this.pos;
-		} else if(c != c) throw "Unclosed string";
-	}
-	buf.b[buf.b.length] = HxOverrides.substr(this.str,start,this.pos - start - 1);
-	return buf.b.join("");
+haxe.Json.prototype.nextChar = function() {
+	return this.str.charCodeAt(this.pos++);
 };
+haxe.Json.prototype.invalidChar = function() {
+	this.pos--;
+	throw "Invalid char " + this.str.charCodeAt(this.pos) + " at position " + this.pos;
+};
+haxe.Json.prototype.doParse = function(str) {
+	this.reg_float = new EReg("^-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?","");
+	this.str = str;
+	this.pos = 0;
+	return this.parseRec();
+};
+haxe.Json.prototype.quote = function(s) {
+	this.buf.b += Std.string("\"");
+	var i = 0;
+	while(true) {
+		var c = s.charCodeAt(i++);
+		if(c != c) break;
+		switch(c) {
+		case 34:
+			this.buf.b += Std.string("\\\"");
+			break;
+		case 92:
+			this.buf.b += Std.string("\\\\");
+			break;
+		case 10:
+			this.buf.b += Std.string("\\n");
+			break;
+		case 13:
+			this.buf.b += Std.string("\\r");
+			break;
+		case 9:
+			this.buf.b += Std.string("\\t");
+			break;
+		case 8:
+			this.buf.b += Std.string("\\b");
+			break;
+		case 12:
+			this.buf.b += Std.string("\\f");
+			break;
+		default:
+			this.buf.b += String.fromCharCode(c);
+		}
+	}
+	this.buf.b += Std.string("\"");
+};
+haxe.Json.prototype.toStringRec = function(v) {
+	var $e = (Type["typeof"](v));
+	switch( $e[1] ) {
+	case 8:
+		this.buf.b += Std.string("\"???\"");
+		break;
+	case 4:
+		this.objString(v);
+		break;
+	case 1:
+	case 2:
+		this.buf.b += Std.string(v);
+		break;
+	case 5:
+		this.buf.b += Std.string("\"<fun>\"");
+		break;
+	case 6:
+		var c = $e[2];
+		if(c == String) this.quote(v); else if(c == Array) {
+			var v1 = v;
+			this.buf.b += Std.string("[");
+			var len = v1.length;
+			if(len > 0) {
+				this.toStringRec(v1[0]);
+				var i = 1;
+				while(i < len) {
+					this.buf.b += Std.string(",");
+					this.toStringRec(v1[i++]);
+				}
+			}
+			this.buf.b += Std.string("]");
+		} else if(c == Hash) {
+			var v1 = v;
+			var o = { };
+			var $it0 = v1.keys();
+			while( $it0.hasNext() ) {
+				var k = $it0.next();
+				o[k] = v1.get(k);
+			}
+			this.objString(o);
+		} else this.objString(v);
+		break;
+	case 7:
+		var e = $e[2];
+		this.buf.b += Std.string(v[1]);
+		break;
+	case 3:
+		this.buf.b += Std.string(v?"true":"false");
+		break;
+	case 0:
+		this.buf.b += Std.string("null");
+		break;
+	}
+};
+haxe.Json.prototype.objString = function(v) {
+	this.fieldsString(v,Reflect.fields(v));
+};
+haxe.Json.prototype.fieldsString = function(v,fields) {
+	var first = true;
+	this.buf.b += Std.string("{");
+	var _g = 0;
+	while(_g < fields.length) {
+		var f = fields[_g];
+		++_g;
+		var value = Reflect.field(v,f);
+		if(Reflect.isFunction(value)) continue;
+		if(first) first = false; else this.buf.b += Std.string(",");
+		this.quote(f);
+		this.buf.b += Std.string(":");
+		this.toStringRec(value);
+	}
+	this.buf.b += Std.string("}");
+};
+haxe.Json.prototype.toString = function(v) {
+	this.buf = new StringBuf();
+	this.toStringRec(v);
+	return this.buf.b;
+};
+haxe.Json.prototype.reg_float = null;
+haxe.Json.prototype.pos = null;
+haxe.Json.prototype.str = null;
+haxe.Json.prototype.buf = null;
 haxe.Json.prototype.__class__ = haxe.Json;
 haxe.StackItem = $hxClasses['haxe.StackItem'] = { __ename__ : ["haxe","StackItem"], __constructs__ : ["CFunction","Module","FilePos","Method","Lambda"] };
 haxe.StackItem.Module = function(m) { var $x = ["Module",1,m]; $x.__enum__ = haxe.StackItem; $x.toString = $estr; return $x; };
@@ -3175,10 +3013,34 @@ haxe.StackItem.CFunction = ["CFunction",0];
 haxe.StackItem.CFunction.toString = $estr;
 haxe.StackItem.CFunction.__enum__ = haxe.StackItem;
 haxe.StackItem.Method = function(classname,method) { var $x = ["Method",3,classname,method]; $x.__enum__ = haxe.StackItem; $x.toString = $estr; return $x; };
-haxe.Stack =  $hxClasses['haxe.Stack'] = function() { };
+haxe.Stack = $hxClasses['haxe.Stack'] = function() { };
 haxe.Stack.__name__ = ["haxe","Stack"];
 haxe.Stack.callStack = function() {
-	return [];
+	var oldValue = Error.prepareStackTrace;
+	Error.prepareStackTrace = function(error,callsites) {
+		var stack = [];
+		var _g = 0;
+		while(_g < callsites.length) {
+			var site = callsites[_g];
+			++_g;
+			var method = null;
+			var fullName = site.getFunctionName();
+			if(fullName != null) {
+				var idx = fullName.lastIndexOf(".");
+				if(idx >= 0) {
+					var className = HxOverrides.substr(fullName,0,idx);
+					var methodName = HxOverrides.substr(fullName,idx + 1,null);
+					method = haxe.StackItem.Method(className,methodName);
+				}
+			}
+			stack.push(haxe.StackItem.FilePos(method,site.getFileName(),site.getLineNumber()));
+		}
+		return stack;
+	};
+	var a = haxe.Stack.makeStack(new Error().stack);
+	a.shift();
+	Error.prepareStackTrace = oldValue;
+	return a;
 };
 haxe.Stack.exceptionStack = function() {
 	return [];
@@ -3189,52 +3051,62 @@ haxe.Stack.toString = function(stack) {
 	while(_g < stack.length) {
 		var s = stack[_g];
 		++_g;
-		b.b[b.b.length] = "\nCalled from ";
+		b.b += Std.string("\nCalled from ");
 		haxe.Stack.itemToString(b,s);
 	}
-	return b.b.join("");
+	return b.b;
 };
 haxe.Stack.itemToString = function(b,s) {
 	var $e = (s);
 	switch( $e[1] ) {
 	case 0:
-		b.b[b.b.length] = "a C function";
+		b.b += Std.string("a C function");
 		break;
 	case 1:
 		var m = $e[2];
-		b.b[b.b.length] = "module ";
-		b.b[b.b.length] = m == null?"null":m;
+		b.b += Std.string("module ");
+		b.b += Std.string(m);
 		break;
 	case 2:
 		var line = $e[4], file = $e[3], s1 = $e[2];
 		if(s1 != null) {
 			haxe.Stack.itemToString(b,s1);
-			b.b[b.b.length] = " (";
+			b.b += Std.string(" (");
 		}
-		b.b[b.b.length] = file == null?"null":file;
-		b.b[b.b.length] = " line ";
-		b.b[b.b.length] = line == null?"null":line;
-		if(s1 != null) b.b[b.b.length] = ")";
+		b.b += Std.string(file);
+		b.b += Std.string(" line ");
+		b.b += Std.string(line);
+		if(s1 != null) b.b += Std.string(")");
 		break;
 	case 3:
 		var meth = $e[3], cname = $e[2];
-		b.b[b.b.length] = cname == null?"null":cname;
-		b.b[b.b.length] = ".";
-		b.b[b.b.length] = meth == null?"null":meth;
+		b.b += Std.string(cname);
+		b.b += Std.string(".");
+		b.b += Std.string(meth);
 		break;
 	case 4:
 		var n = $e[2];
-		b.b[b.b.length] = "local function #";
-		b.b[b.b.length] = n == null?"null":n;
+		b.b += Std.string("local function #");
+		b.b += Std.string(n);
 		break;
 	}
 };
 haxe.Stack.makeStack = function(s) {
-	return null;
+	if(typeof(s) == "string") {
+		var stack = s.split("\n");
+		var m = [];
+		var _g = 0;
+		while(_g < stack.length) {
+			var line = stack[_g];
+			++_g;
+			m.push(haxe.StackItem.Module(line));
+		}
+		return m;
+	} else return s;
 };
 haxe.Stack.prototype.__class__ = haxe.Stack;
 if(!haxe.io) haxe.io = {};
-haxe.io.Bytes =  $hxClasses['haxe.io.Bytes'] = function(length,b) {
+haxe.io.Bytes = $hxClasses['haxe.io.Bytes'] = function(length,b) {
 	this.length = length;
 	this.b = b;
 };
@@ -3273,46 +3145,29 @@ haxe.io.Bytes.ofString = function(s) {
 haxe.io.Bytes.ofData = function(b) {
 	return new haxe.io.Bytes(b.length,b);
 };
-haxe.io.Bytes.prototype.length = null;
-haxe.io.Bytes.prototype.b = null;
-haxe.io.Bytes.prototype.get = function(pos) {
-	return this.b[pos];
+haxe.io.Bytes.prototype.getData = function() {
+	return this.b;
 };
-haxe.io.Bytes.prototype.set = function(pos,v) {
-	this.b[pos] = v & 255;
-};
-haxe.io.Bytes.prototype.blit = function(pos,src,srcpos,len) {
-	if(pos < 0 || srcpos < 0 || len < 0 || pos + len > this.length || srcpos + len > src.length) throw haxe.io.Error.OutsideBounds;
-	var b1 = this.b;
-	var b2 = src.b;
-	if(b1 == b2 && pos > srcpos) {
-		var i = len;
-		while(i > 0) {
-			i--;
-			b1[i + pos] = b2[i + srcpos];
-		}
-		return;
+haxe.io.Bytes.prototype.toHex = function() {
+	var s = new StringBuf();
+	var chars = [];
+	var str = "0123456789abcdef";
+	var _g1 = 0, _g = str.length;
+	while(_g1 < _g) {
+		var i = _g1++;
+		chars.push(HxOverrides.cca(str,i));
 	}
-	var _g = 0;
-	while(_g < len) {
-		var i = _g++;
-		b1[i + pos] = b2[i + srcpos];
+	var _g1 = 0, _g = this.length;
+	while(_g1 < _g) {
+		var i = _g1++;
+		var c = this.b[i];
+		s.b += String.fromCharCode(chars[c >> 4]);
+		s.b += String.fromCharCode(chars[c & 15]);
 	}
+	return s.b;
 };
-haxe.io.Bytes.prototype.sub = function(pos,len) {
-	if(pos < 0 || len < 0 || pos + len > this.length) throw haxe.io.Error.OutsideBounds;
-	return new haxe.io.Bytes(len,this.b.slice(pos,pos + len));
-};
-haxe.io.Bytes.prototype.compare = function(other) {
-	var b1 = this.b;
-	var b2 = other.b;
-	var len = this.length < other.length?this.length:other.length;
-	var _g = 0;
-	while(_g < len) {
-		var i = _g++;
-		if(b1[i] != b2[i]) return b1[i] - b2[i];
-	}
-	return this.length - other.length;
+haxe.io.Bytes.prototype.toString = function() {
+	return this.readString(0,this.length);
 };
 haxe.io.Bytes.prototype.readString = function(pos,len) {
 	if(pos < 0 || len < 0 || pos + len > this.length) throw haxe.io.Error.OutsideBounds;
@@ -3337,30 +3192,47 @@ haxe.io.Bytes.prototype.readString = function(pos,len) {
 	}
 	return s;
 };
-haxe.io.Bytes.prototype.toString = function() {
-	return this.readString(0,this.length);
-};
-haxe.io.Bytes.prototype.toHex = function() {
-	var s = new StringBuf();
-	var chars = [];
-	var str = "0123456789abcdef";
-	var _g1 = 0, _g = str.length;
-	while(_g1 < _g) {
-		var i = _g1++;
-		chars.push(HxOverrides.cca(str,i));
+haxe.io.Bytes.prototype.compare = function(other) {
+	var b1 = this.b;
+	var b2 = other.b;
+	var len = this.length < other.length?this.length:other.length;
+	var _g = 0;
+	while(_g < len) {
+		var i = _g++;
+		if(b1[i] != b2[i]) return b1[i] - b2[i];
 	}
-	var _g1 = 0, _g = this.length;
-	while(_g1 < _g) {
-		var i = _g1++;
-		var c = this.b[i];
-		s.b[s.b.length] = String.fromCharCode(chars[c >> 4]);
-		s.b[s.b.length] = String.fromCharCode(chars[c & 15]);
+	return this.length - other.length;
+};
+haxe.io.Bytes.prototype.sub = function(pos,len) {
+	if(pos < 0 || len < 0 || pos + len > this.length) throw haxe.io.Error.OutsideBounds;
+	return new haxe.io.Bytes(len,this.b.slice(pos,pos + len));
+};
+haxe.io.Bytes.prototype.blit = function(pos,src,srcpos,len) {
+	if(pos < 0 || srcpos < 0 || len < 0 || pos + len > this.length || srcpos + len > src.length) throw haxe.io.Error.OutsideBounds;
+	var b1 = this.b;
+	var b2 = src.b;
+	if(b1 == b2 && pos > srcpos) {
+		var i = len;
+		while(i > 0) {
+			i--;
+			b1[i + pos] = b2[i + srcpos];
+		}
+		return;
 	}
-	return s.b.join("");
+	var _g = 0;
+	while(_g < len) {
+		var i = _g++;
+		b1[i + pos] = b2[i + srcpos];
+	}
 };
-haxe.io.Bytes.prototype.getData = function() {
-	return this.b;
+haxe.io.Bytes.prototype.set = function(pos,v) {
+	this.b[pos] = v & 255;
 };
+haxe.io.Bytes.prototype.get = function(pos) {
+	return this.b[pos];
+};
+haxe.io.Bytes.prototype.b = null;
+haxe.io.Bytes.prototype.length = null;
 haxe.io.Bytes.prototype.__class__ = haxe.io.Bytes;
 haxe.io.Error = $hxClasses['haxe.io.Error'] = { __ename__ : ["haxe","io","Error"], __constructs__ : ["Blocked","Overflow","OutsideBounds","Custom"] };
 haxe.io.Error.Custom = function(e) { var $x = ["Custom",3,e]; $x.__enum__ = haxe.io.Error; $x.toString = $estr; return $x; };
@@ -3373,7 +3245,7 @@ haxe.io.Error.Overflow.__enum__ = haxe.io.Error;
 haxe.io.Error.Blocked = ["Blocked",0];
 haxe.io.Error.Blocked.toString = $estr;
 haxe.io.Error.Blocked.__enum__ = haxe.io.Error;
-js.Boot =  $hxClasses['js.Boot'] = function() { };
+js.Boot = $hxClasses['js.Boot'] = function() { };
 js.Boot.__name__ = ["js","Boot"];
 js.Boot.__unhtml = function(s) {
 	return s.split("&").join("&amp;").split("<").join("&lt;").split(">").join("&gt;");
@@ -3381,31 +3253,31 @@ js.Boot.__unhtml = function(s) {
 js.Boot.__trace = function(v,i) {
 	var msg = i != null?i.fileName + ":" + i.lineNumber + ": ":"";
 	msg += js.Boot.__string_rec(v,"");
-	js.Node.console.log(msg);
+	var d;
+	if(typeof(document) != "undefined" && (d = document.getElementById("haxe:trace")) != null) d.innerHTML += js.Boot.__unhtml(msg) + "<br/>"; else if(typeof(console) != "undefined" && console.log != null) console.log(msg);
 };
 js.Boot.__clear_trace = function() {
 	var d = document.getElementById("haxe:trace");
 	if(d != null) d.innerHTML = "";
 };
-js.Boot.__closure = function(o,f) {
-	var m = o[f];
-	if(m == null) return null;
-	var f1 = function() {
-		return m.apply(o,arguments);
-	};
-	f1.scope = o;
-	f1.method = m;
-	return f1;
+js.Boot.isClass = function(o) {
+	return o.__name__;
+};
+js.Boot.isEnum = function(e) {
+	return e.__ename__;
+};
+js.Boot.getClass = function(o) {
+	return o.__class__;
 };
 js.Boot.__string_rec = function(o,s) {
 	if(o == null) return "null";
 	if(s.length >= 5) return "<...>";
 	var t = typeof(o);
-	if(t == "function" && (o.__name__ != null || o.__ename__ != null)) t = "object";
+	if(t == "function" && (o.__name__ || o.__ename__)) t = "object";
 	switch(t) {
 	case "object":
 		if(o instanceof Array) {
-			if(o.__enum__ != null) {
+			if(o.__enum__) {
 				if(o.length == 2) return o[0];
 				var str = o[0] + "(";
 				s += "\t";
@@ -3446,14 +3318,14 @@ js.Boot.__string_rec = function(o,s) {
 		if(hasp && !o.hasOwnProperty(k)) {
 			continue;
 		}
-		if(k == "prototype" || k == "__class__" || k == "__super__" || k == "__interfaces__") {
+		if(k == "prototype" || k == "__class__" || k == "__super__" || k == "__interfaces__" || k == "__properties__") {
 			continue;
 		}
 		if(str.length != 2) str += ", \n";
-		str += Std.string(s) + k + " : " + js.Boot.__string_rec(o[k],s);
+		str += s + k + " : " + js.Boot.__string_rec(o[k],s);
 		}
 		s = s.substring(1);
-		str += "\n" + Std.string(s) + "}";
+		str += "\n" + s + "}";
 		return str;
 	case "function":
 		return "<function>";
@@ -3500,71 +3372,18 @@ js.Boot.__instanceof = function(o,cl) {
 		return true;
 	default:
 		if(o == null) return false;
-		return o.__enum__ == cl || cl == Class && o.__name__ != null || cl == Enum && o.__ename__ != null;
+		if(cl == Class && o.__name__ != null) return true; else null;
+		if(cl == Enum && o.__ename__ != null) return true; else null;
+		return o.__enum__ == cl;
 	}
 };
-js.Boot.__init = function() {
-	Array.prototype.copy = Array.prototype.slice;
-	Array.prototype.insert = function(i,x) {
-		this.splice(i,0,x);
-	};
-	Array.prototype.remove = Array.prototype.indexOf?function(obj) {
-		var idx = this.indexOf(obj);
-		if(idx == -1) return false;
-		this.splice(idx,1);
-		return true;
-	}:function(obj) {
-		var i = 0;
-		var l = this.length;
-		while(i < l) {
-			if(this[i] == obj) {
-				this.splice(i,1);
-				return true;
-			}
-			i++;
-		}
-		return false;
-	};
-	Array.prototype.iterator = function() {
-		return { cur : 0, arr : this, hasNext : function() {
-			return this.cur < this.arr.length;
-		}, next : function() {
-			return this.arr[this.cur++];
-		}};
-	};
-	if(String.prototype.cca == null) String.prototype.cca = String.prototype.charCodeAt;
-	String.prototype.charCodeAt = function(i) {
-		var x = this.cca(i);
-		if(x != x) return null;
-		return x;
-	};
-	var oldsub = String.prototype.substr;
-	String.prototype.substr = function(pos,len) {
-		if(pos != null && pos != 0 && len != null && len < 0) return "";
-		if(len == null) len = this.length;
-		if(pos < 0) {
-			pos = this.length + pos;
-			if(pos < 0) pos = 0;
-		} else if(len < 0) len = this.length + len - pos;
-		return oldsub.apply(this,[pos,len]);
-	};
-	Function.prototype.$bind = function(o) {
-		var f = function() {
-			return f.method.apply(f.scope,arguments);
-		};
-		f.scope = o;
-		f.method = this;
-		return f;
-	};
-	$closure = js.Boot.__closure;
+js.Boot.__cast = function(o,t) {
+	if(js.Boot.__instanceof(o,t)) return o; else throw "Cannot cast " + Std.string(o) + " to " + Std.string(t);
 };
 js.Boot.prototype.__class__ = js.Boot;
-js.NodeC =  $hxClasses['js.NodeC'] = function() { };
+js.NodeC = $hxClasses['js.NodeC'] = function() { };
 js.NodeC.__name__ = ["js","NodeC"];
 js.NodeC.prototype.__class__ = js.NodeC;
-$_ = {};
-js.Boot.__res = {};
-js.Boot.__init();
 Array.prototype.indexOf?HxOverrides.remove = function(a,o) {
 	var i = a.indexOf(o);
 	if(i == -1) return false;
@@ -3585,6 +3404,12 @@ Array.prototype.indexOf?HxOverrides.remove = function(a,o) {
 	};
 };
 {
+	String.prototype.__class__ = $hxClasses.String = String;
+	String.__name__ = ["String"];
+	Array.prototype.__class__ = $hxClasses.Array = Array;
+	Array.__name__ = ["Array"];
+	Date.prototype.__class__ = $hxClasses.Date = Date;
+	Date.__name__ = ["Date"];
 	var Int = $hxClasses.Int = { __name__ : ["Int"]};
 	var Dynamic = $hxClasses.Dynamic = { __name__ : ["Dynamic"]};
 	var Float = $hxClasses.Float = Number;
@@ -3631,6 +3456,8 @@ Array.prototype.indexOf?HxOverrides.remove = function(a,o) {
 };
 flux.http.HttpImpl._formidable = js.Node.require("formidable");
 if(typeof(JSON) != "undefined") haxe.Json = JSON;
+flux.Core.VER = "0.5";
+;
 flux.Core.CSROOT = "/__cs/";
 ;
 flux.core.ObservableImpl.CLEANUP = 1;
@@ -3644,10 +3471,6 @@ flux.Sys._os = js.Node.os;
 flux.Sys._child = js.Node.childProcess;
 ;
 flux.core.LogImpl.logFileFD = -1;
-;
-flux.core.PartBaseImpl.runningParts = [];
-;
-flux.core.PartBaseImpl._nextID = 0;
 ;
 flux.http.HttpImpl.readStreamOpt = { flags : "r", mode : 666};
 ;

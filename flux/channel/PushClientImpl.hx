@@ -21,13 +21,13 @@ implements Conduit {
     _ob = Core.observable();
   }
 
-  public function start_(cs:Dynamic,oc:Outcome<String,Conduit>) {
+  public function start_(cs:ConduitClientStart,oc:Outcome<String,Conduit>) {
     _url = cs.endPoint;
     _sessID = cs.sessID;
     _parted = false;
     
     remoteInit(function(ignore) {
-        oc.resolve(Right(cast(this,Conduit)));
+        oc.resolve(Right(this));
         poll();
       });
     return oc;
@@ -110,7 +110,7 @@ implements Conduit {
   handlePoll(pkts:Array<Pkt<Dynamic>>) {
     for (pkt in pkts) {
         var id = pkt.chanID();
-        _sink.message(_sink.chan(id),pkt);
+        _sink.incoming(_sink.chan(id),pkt);
     }
    
     poll();

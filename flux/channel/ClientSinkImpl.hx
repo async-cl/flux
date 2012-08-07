@@ -11,11 +11,11 @@ class ClientSinkImpl extends SinkImpl {
 
   public function new() {
     super();
-    _myfill = myfill;
+    _outgoing = outgoing;
   }
 
   function
-  myfill(pkt:Pkt<Dynamic>,chan:String,?meta:Dynamic) {
+  outgoing(pkt:Pkt<Dynamic>,chan:String,?meta:Dynamic) {
     // dummy is a placeholder for the sessID which is known within the conduit client implementation
     _conduit.pump("dummy",pkt,chan,meta);
   }
@@ -23,13 +23,10 @@ class ClientSinkImpl extends SinkImpl {
   override function
   removeChan<T>(pipe:Chan<T>) {
     super.removeChan(pipe);
-    unsubscribe("dummy",pipe,function(cb) {
+    _conduit.leave(pipe.pid()).deliver(function(cb) {
         Core.info("ok unsubbed:"+pipe.pid());
       });
+    
   }
 
-  override function
-  unsubscribe(sessId,pipe:Chan<Dynamic>,cb:Either<String,String>->Void) {
-    _conduit.leave(pipe.pid()).deliver(cb);
-  }
 }

@@ -12,7 +12,7 @@ class ServerSinkImpl extends SinkImpl {
 
   public function new() {
     super();
-    _myfill = myfill;
+    _outgoing = outgoing;
   }
     
   override function
@@ -23,7 +23,6 @@ class ServerSinkImpl extends SinkImpl {
           case Right(_):
             var unsub = chan.sub(function(payload:Dynamic) {
                   _conduit.pump(sessID,payload,pID,null);
-                  //notify(Outgoing(sessID,payload,pID,null));
               });
 
             trace("added sub "+pID+" for "+sessID);
@@ -59,8 +58,8 @@ class ServerSinkImpl extends SinkImpl {
      then by using defaultFill is passed to all the other subscribers from off
      world */
 
-  function myfill(payload,chanID,meta) {
-    _chans.get(chanID)._defaultFill(Channel.createPkt(payload,"server",chanID,meta),chanID,null);
+  function outgoing(payload,chanID,meta) {
+    _chans.get(chanID)._defaultOutgoing(Channel.createPkt(payload,"server",chanID,meta),chanID,null);
   }
 
 }

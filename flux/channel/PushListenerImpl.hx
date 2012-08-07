@@ -2,18 +2,14 @@
 package flux.channel;
 
 using flux.Core;
-import flux.Session;
-import flux.Channel;
+using flux.Channel;
 
+import flux.Session;
 import flux.Http;
 import flux.http.HttpImpl;
 import flux.channel.Flow;
 
-using flux.Channel;
-
 import js.Node;
-
-using StringTools;
 
 typedef Subscription<T> = T->Dynamic->Void;
 private typedef Callback<T> = {fn:Array<Dynamic>->Void};
@@ -143,18 +139,18 @@ implements Conduit {
             default:
               var
                 pID = pkt.chanID(),
-                pip = _sink.chan(pID),
+                chan = _sink.chan(pID),
                 cb = function(sr:Either<String,String>) {
                     write(res,OK,sr);
                  };
               
               switch(op) {
               case "s": 
-                _sink.subscribe(sessID,pip,cb);
+                _sink.subscribe(sessID,chan,cb);
               case "u": 
-                _sink.unsubscribe(sessID,pip,cb);
+                _sink.unsubscribe(sessID,chan,cb);
               case "m": 
-                _sink.message(pip,pkt);
+                _sink.incoming(chan,pkt);
                 cb(Right(""));
               }
             }

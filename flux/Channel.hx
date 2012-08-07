@@ -23,8 +23,8 @@ typedef Pkt<T> = {
 
 interface Chan<T> { 
     // internal use only
-  var _fill:Dynamic->String->Dynamic->Void; 
-  function _defaultFill<T>(o:Dynamic,chanID:String,meta:Dynamic):Void;
+  var _outgoing:Dynamic->String->Dynamic->Void; 
+  function _defaultOutgoing<T>(o:Dynamic,chanID:String,meta:Dynamic):Void;
 
   // public
   function pub(o:T,?meta:Dynamic):Void;

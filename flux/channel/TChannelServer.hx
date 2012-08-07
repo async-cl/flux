@@ -41,7 +41,6 @@ implements ChannelServer {
                   else
                     _channelAuth(sessID,chan,reply);
                 case ConnectionClose(sessID):
-                case Outgoing(_,_,_,_):
                 }
               });
           }
