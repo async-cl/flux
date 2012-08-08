@@ -14,21 +14,8 @@ class ChatServer {
   static var _nicks = new Hash<String>();
   static var _room:Chan<MsgTypes>;
   
-  public static function main() {
-    new ChatServer();
-  }
-  
-  public function new() {
-    Core.init();
-    
-    Core.life.observe(function(info) {
-        switch(info) {
-        case Started(i):
-          trace("I'm atarted :"+i.id);
-        case Stopped(i):
-        }
-      });
-    
+  static function main() {
+    Core.init();    
     Http.server()
       .root("www")
       .credentials("privatekey.pem","certificate.pem")
@@ -44,7 +31,7 @@ class ChatServer {
         });
   }
   
-  function sessAuth(event:ESessionOp) {
+  static function sessAuth(event:ESessionOp) {
     switch(event) {
     case Login(pkt,reply):
       trace("logging in with "+pkt);
@@ -75,8 +62,7 @@ class ChatServer {
     }
   }
 
-  public function
-  startRooms(cs:ChannelServer) {
+  static function startRooms(cs:ChannelServer) {
     cs.channel("/chat/room").outcome(function(room) {
         _room = room;
         room.filter(function(o) {
@@ -99,8 +85,7 @@ class ChatServer {
       });
   }
 
-
-  function channelAuth(sessID:String,chan:Chan<Dynamic>,cb:Either<String,String>->Void) {
+  static function channelAuth(sessID:String,chan:Chan<Dynamic>,cb:Either<String,String>->Void) {
     if (chan.pid() != "/secret") {
       cb(Right("")); // setup up new connection so it can get next msg too
 
