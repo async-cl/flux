@@ -19,16 +19,15 @@ using flux.Core;
 import flux.Http;
 import flux.Remote;
 
-import SiteRemotes;
-
+//import SiteRemotes;
 class Server {
 
   public static function
   main() {
 
     var
-      http = Http.server(),
-      rem = Remote.provider("SiteRems",new SiteRemotes());
+      http = Http.server();
+      //    rem = Remote.provider("SiteRems",new SiteRemotes());
 
     http
       .handler(~/^\/upload/,function(re,req,resp) {
@@ -48,14 +47,14 @@ class Server {
       &lt;input type="submit" value="Upload"&gt;
       &lt;/form&gt;');
         })
-      .handler(~/^\/remotes/,rem.httpHandler)
+      //.handler(~/^\/remotes/,rem.httpHandler)
       .handler(~/^\/nekoapi/,NekoApi.test)
       .handler(~/^\//,function(re,req,resp) {
 
           // handler for everything else
           
           if (req.url == "/") req.url = "/index.html";
-          http.serve("www/"+req.url,req,resp);
+          http.serve("www"+req.url,req,resp);
         })
       .notFound(function(req,resp) {
 

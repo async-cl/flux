@@ -53,7 +53,7 @@ var br = AsyncFile.read(path,bufSize);
 br.read(1,function(input) {
 
 });
-</pre></p><p></p><p></p><p> If  you're    </p><p></p><p></p><h1>Buffer Mapping</h1><p></p><p> This  provides  an  idea  of  a  node.js->haxe  buffer  mapping.    </p><p><pre> /*
+</pre></p><p></p><p></p><p> If  you're    </p><p></p><p></p><h1>Buffer Mapping</h1><p></p><p> This  provides  an  idea  of  a  node.js->haxe  buffer  mapping.    </p><p><pre>/*
  * Copyright (c) 2005-2008, The haXe Project Contributors
  * All rights reserved.
  * Redistribution and use in source and binary forms, with or without
@@ -79,16 +79,12 @@ br.read(1,function(input) {
  */
 package haxe.io;
 
-#if (!macro &amp;&amp; nodejs)
-import js.Node;
-#end
-
 class Bytes {
 
 	public var length(default,null) : Int;
 	var b : BytesData;
 
-	public function new(length,b) {
+	function new(length,b) {
 		this.length = length;
 		this.b = b;
 	}
@@ -115,7 +111,6 @@ class Bytes {
 		#elseif php
 		b[pos] = untyped __call__("chr", v);
 		#elseif cpp
-
 		untyped b[pos] = v;
 		#else
 		b[pos] = v &amp; 0xFF;
@@ -133,9 +128,7 @@ class Bytes {
 		b = untyped __php__("substr($this-&gt;b, 0, $pos) . substr($src-&gt;b, $srcpos, $len) . substr($this-&gt;b, $pos+$len)"); //__call__("substr", b, 0, pos)+__call__("substr", src.b, srcpos, len)+__call__("substr", b, pos+len);
 		#elseif flash9
 		b.position = pos;
-		b.writeBytes(src.b,srcpos,len);
-    #elseif nodejs
-    src.getData().copy(b,pos,srcpos,srcpos+len);
+		if( len &gt; 0 ) b.writeBytes(src.b,srcpos,len);
 		#else
 		var b1 = b;
 		var b2 = src.b;
@@ -166,8 +159,6 @@ class Bytes {
 		#elseif php
 		// TODO: test me
 		return new Bytes(len, untyped __call__("substr", b, pos, len));
-    #elseif nodejs
-    return new Bytes(len,b.slice(pos,pos+len));
 		#else
 		return new Bytes(len,b.slice(pos,pos+len));
 		#end
@@ -250,8 +241,6 @@ class Bytes {
 			}
 		}
 		return s;
-    #elseif nodejs
-    return b.toString(NodeC.UTF8,pos,pos+len);
 		#end
 	}
 
@@ -308,10 +297,6 @@ class Bytes {
 		var a = new BytesData();
 		if (length&gt;0) a[length-1] = untyped 0;
 		return new Bytes(length,a);
-    #elseif nodejs
-    var newB = new BytesData(length);
-    newB.fill(0,0);
-    return new Bytes(length,newB);
 		#else
 		var a = new Array();
 		for( i in 0...length )
@@ -334,8 +319,6 @@ class Bytes {
 		var a = new BytesData();
 		untyped __global__.__hxcpp_bytes_of_string(a,s);
 		return new Bytes(a.length,a);
-    #elseif nodejs
-    return new Bytes(s.length,new NodeBuffer(s,NodeC.UTF8));
 		#else
 		var a = new Array();
 		// utf8-decode
