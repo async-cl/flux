@@ -3,6 +3,8 @@
 
 
   Formerly cloudshift, name changed due to clash with an existing cloud product.
+  
+  See documentation here [[http://flux.async.cl]]
 
   Flux is written and maintained by Ritchie Turner (ritchie@async.cl)
   and is currently under heavy development; the apis are subject to change.
