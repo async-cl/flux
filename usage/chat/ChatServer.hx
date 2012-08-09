@@ -1,7 +1,3 @@
-/**
-   hxc: -D nodejs
-*/
-
 using flux.Core;
 import flux.Http;
 import flux.Session;
