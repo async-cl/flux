@@ -11,7 +11,7 @@
 
     <body>
       <div id="ifc">
-<p></p><h1>Core</h1><p></p><p> The  Core  module  provides  some  basic  utilies  for  the  rest  of  the  system.  In     particular  it  supplies  these  types  ...    </p><p></p><table><thead><tr><th> Artifact      </th><th> Description                                                                               </th></tr></thead><tbody><tr><td> Future&lt;T&gt;     </td><td> resolve() a value and pick it up with deliver(). Create with Core.future()                </td></tr><tr><td> Outcome&lt;L,R&gt;  </td><td> A Future&lt;Either&lt;L,R&gt;&gt; with a little sugar. Create with Core.outcome().                    </td></tr><tr><td> Observable&lt;E&gt; </td><td> notify() and observe() elements of type E. Create with do Core.event()                    </td></tr><tr><td> Part&lt;S,L,R,E&gt; </td><td> An observable aysnchronous component with method start(p:S):Outcome&lt;L,R&gt; and observable E </td></tr><tr><td> Logging       </td><td> Core.logInit(fileName) , Core.info(), Core.warn(), Core.error()                           </td></tr></tbody></table><p></p><h1>Mixin</h1><p></p><p> Futures  and  most  of  the  Mixin  code  I  have  snarfed  from  Stax,  particularly     Prelude  extensions  .    </p><p> My  use  of  mixin  is  particularly  for  array  functions.  Rather  than  using  haXe's     Lambda  library  which  converts  everything  to  a  list,  the  mixin  array  functions     keep  everying  an  array,  which  is  better  for  performance.  So  for  example  by    </p><p><pre>using flux.Mixin;</pre>   </p><p> For  example,  arrays  get  the  following  methods    </p><p><pre>
+<p></p><h1>Core</h1><p></p><p> The  Core  module  provides  some  basic  utilies  for  the  rest  of  the  system.  In     particular  it  supplies  these  types  ...    </p><p></p><table><thead><tr><th> Artifact         </th><th> Description                                                                             </th></tr></thead><tbody><tr><td> Future&lt;T&gt;        </td><td> resolve() a value and pick it up with deliver(). Create with Core.future()              </td></tr><tr><td> Outcome&lt;L,R&gt;     </td><td> A Future&lt;Either&lt;L,R&gt;&gt; with a little sugar. Create with Core.outcome().                  </td></tr><tr><td> Observable&lt;E&gt;    </td><td> notify() and observe() elements of type E. Create with do Core.observable()             </td></tr><tr><td> Logging          </td><td> Core.logInit(fileName) , Core.info(), Core.warn(), Core.error()                         </td></tr><tr><td> Startable&lt;P,A,B&gt; </td><td> Has a start() method taking P param and returns and Outcome&lt;A,B&gt;, an asynchronous new() </td></tr><tr><td> Stoppable&lt;P,A,B&gt; </td><td> Has a stop() method taking P param and returns and Outcome&lt;A,B&gt;                         </td></tr></tbody></table><p></p><h1>Mixins</h1><p></p><p> Futures  and  most  of  the  Mixin  code  I  have  snarfed  from  Stax,  particularly     Prelude  extensions  .    </p><p> My  use  of  mixin  is  particularly  for  array  functions.  Rather  than  using  haXe's     Lambda  library  which  converts  everything  to  a  list,  the  mixin  array  functions     keep  everying  an  array,  which  is  better  for  performance.  So  for  example  by    </p><p> By  using  flux.Core  you  get  all  the  mixins,  e.g.    </p><p><pre>using flux.Core</pre>   </p><p> give  you  the  following  methods  on  array.    </p><p><pre>
 
 
   filter&lt;T&gt;(a: Array&lt;T&gt;, f: T -&gt; Bool): Array&lt;T&gt;
@@ -35,12 +35,12 @@
   drop&lt;T&gt;(a: Array&lt;T&gt;, n: Int): Array&lt;T&gt;
   dropWhile&lt;T&gt;(a: Array&lt;T&gt;, p: T -&gt; Bool): Array&lt;T&gt;
 
-</pre></p><p></p><p> You  also  get  Mixins  for  bool,  int,  date,  Parts  and  Outcomes    </p><p> Great  stuff,  thanks  Stax.    </p><p></p><h1>Outcome<L,R></h1><p></p><p> An  Outcome  combines  two  concepts,  Futures  and  Either,  and  is  the  primary  type  in     Flux  for  dealing  with  async  programming.  It's  defined  as    </p><p><pre>typedef Outcome&lt;L,R&gt; = Future&lt;Either&lt;L,R&gt;&gt;;</pre>   </p><p> A  Future  delivers  a  value  sometime  in  the  future  to  any  listeners  (it's  like  an     event).  An  Either  is  composed  of  two  values  a  Left  (bad)  and  a  Right  (good).    </p><p> As  a  typedef  an  Outcome  is  just  a  Future,  and  normal  Future  methods  can  be     called  on  it.  However  by    </p><p><pre>using flux.Mixin;</pre>   </p><p> extra  methods  are  provided  on  an  Outcome  that  ameliorate  the  unpacking  of  the     Either.  Specifically,  rather  than  receiving  an  Either  you  receive  the  result,     and  by  default,  errors  are  logged  using  the  Core.error()  method.  Error  handling     methods  may  be  added  per  call  to  customise  the  error  handling  when  required.    </p><p> For  example    </p><p><pre>
+</pre></p><p></p><p> You  also  get  Mixins  for  bool,  int,  date  and  Outcomes    </p><p> Great  stuff,  thanks  Stax.    </p><p></p><h1>Outcome<L,R></h1><p></p><p> An  Outcome  combines  two  concepts,  Futures  and  Either,  and  is  the  primary  type  in     Flux  for  dealing  with  async  programming.  It's  defined  as    </p><p><pre>typedef Outcome&lt;L,R&gt; = Future&lt;Either&lt;L,R&gt;&gt;;</pre>   </p><p> A  Future  delivers  a  value  sometime  in  the  future  to  any  listeners  (it's  like  an     event).  An  Either  is  composed  of  two  values  a  Left  (bad)  and  a  Right  (good).    </p><p> As  a  typedef  an  Outcome  is  just  a  Future,  and  normal  Future  methods  can  be     called  on  it.  However  by    </p><p><pre>using flux.Core;</pre>   </p><p> extra  methods  are  provided  on  an  Outcome  that  ameliorate  the  unpacking  of  the     Either.  Specifically,  rather  than  receiving  an  Either  you  receive  the  result,     and  by  default,  errors  are  logged  using  the  Core.error()  method.  Error  handling     methods  may  be  added  per  call  to  customise  the  error  handling  when  required.    </p><p> For  example    </p><p><pre>
 
     Sys.readFile("myfile.txt").outcome(function(contents) {
            trace(contents);
        });
-</pre></p><p></p><p> by  using  the  outcome()  method  you  get  the  Right  value  of  the  either  without     unpacking  it  yourself.  If  you  want  to  unpack  it  you  can  do  this  (remember  it's     still  a  Future).    </p><p><pre>
+</pre></p><p></p><p> by  using  the  outcome()  method  you  get  the  Right  value  of  the  either  without     unpacking  it  yourself.  If  you  want  to  unpack  it  you  can  do  this  (remember  it's     just  a  Future).    </p><p><pre>
 
     Sys.readFile("myfile.txt").deliver(function(either) {
            switch(either) {
@@ -75,42 +75,10 @@
           trace("final text:"+transformed);
         });
 
-</pre></p><p></p><p> Again,  each  of  the  methods,  oflatMap(),  omap()  and  outcome()  take  an  error     function  as  the  second  parameter.    </p><p> Nota  bene:  I  used  the  name  outcome()  for  the  result  rather  than,  e.g.  result(),     to  better  make  the  distiction  between  Outcome  and  it's  Future  -  because  they  are     one  in  the  same  it's  easy  to  get  confused  what  you're  dealing  with.    </p><p></p><h1>Using Parts</h1><p></p><p> Parts  are  Flux  components.    </p><p> The  aim  is  to  provide  common  plumbing  for  Flux  services  but  the  minimum     possible  disruption  to  user  classes  that  wish  to  participate.    </p><p> A  Part  is  an  object  that  can  fire  events  and  may  be  started  and  stopped.  A  Part     does  not  interfere  with  your  class  hierarchy,  so  you  may  create  parts  from     existing  classes.    </p><p></p><h2>Start/Stop</h2><p></p><p> Starting  and  stopping  a  Part  are  asynchronous  operations  and  so  are  defined  to     return  Outcomes.  This  is  really  what  set's  Parts  apart  from  normal  object     instantiation.  If  you  new  MyObj()  it's  inherently  synchronous,  start()/stop()     provide  the  inherently  asynchronous  solution.    </p><p> A  Part  may  be  started  with  a  typed  object  parameter,  e.g.    </p><p><pre> myPart.start({port:8080,host:"localhost"})</pre>   </p><p> and  may  notify  enum  based  events,  e.g.  a  part  may  define  an  enum  that  it  uses     for  events  like  this    </p><p></p><h2>Part Events</h2><p></p><p> A  Part  will  typically  supply  it's  own  events.  I  typically  use  enums  for  events     but  you  could  use  anything,  e.g.    </p><p><pre>
+</pre></p><p></p><p> Again,  each  of  the  methods,  oflatMap(),  omap()  and  outcome()  take  an  error     function  as  the  second  parameter.    </p><p> Nota  bene:  I  used  the  name  outcome()  for  the  result  rather  than,  e.g.  result(),     to  better  make  the  distiction  between  Outcome  and  it's  Future  -  because  they  are     one  in  the  same  it's  easy  to  get  confused  what  you're  dealing  with.    </p><p></p><h1>Startables/Stoppables</h1><p></p><p> #+BEING_SRC     interface  Startable<P,A,B>  {     function  start_(p:P,oc:Outcome<A,B>):Outcome<A,B>;     }    </p><p> interface  Stoppable<P,A,B>  {     function  stop_(p:P,oc:Outcome<A,B>):Outcome<A,B>;     }    </p><p> #+END_SRC    </p><p> In  an  asynchronous  world  objects  require  a  equivalent  to  new().  A  class  which     implements  Startable  provides  this  functionality.  The  Startable  interface     requires  a  function  start_()  to  be  implemented.  Starting  and  stopping  an  object     are  asynchronous  operations  and  so  are  defined  to  return  Outcomes.    </p><p> flux.Core  provides  mixins  which  allow  the  calling  of  start_()  on  the  underlying     startable  by  calling  start().  Similarly  for  Stoppables.    </p><p> The  reason  there  is  a  separate  start()  mixin  and  not  just  a  direct  call  to  a     start()  on  the  object  itself  is  that  code  is  inserted  between  the  calls  to     conveniently  create  the  return  Outcome  automatically  and  second  to  allow  "aspect"     code  be  inserted  to  determine  generically  what  objects  are  started  and     stopped.  Core.startableAspect  may  be  plugged  to  provide  an  aspect  function  -     see  Core.simpleStartableAspect()  for  an  example  which  logs  startable  objects  try  ...    </p><p><pre>
 
-enum PartEvents {
-   Show;
-   Hide;
-}
-</pre></p><p></p><p> and  you  could  hook  into  the  events  like  this    </p><p><pre>
-
-myPart.observe(function(e) { 
-      switch(e) {
-      case Hide:
-      case Show:
-      }
-});
-</pre></p><p></p><p></p><h2>Generic Events</h2><p></p><p> In  addition  to  per  Part  defined  events  Parts  can  also  signal  the  following  events    </p><p><pre>
-
-enum EPartState&lt;E&gt; {
-  Started;
-  Stopped;
-  Event(event:E);
-  Error(msg:String);
-  Except(e:Dynamic);
-}
-</pre></p><p></p><p> The  constructor  Event()  is  how  the  user  defined  events  are  handled  in  the  Part  infrastructure.    </p><p> You  may  watch  Part  events,  by  calling  the  observe()  or  observeState()  method  of     the  part  with  a  callback  function.    </p><p><pre>http.observeState(function(s) {
-
-switch(s) {
-  case Started;
-  case Stopped;
-  case Event(event:T);
-  case Error(msg:String);
-  case Except(e:Dynamic);
-}
-
-}
-
-</pre></p><p></p><p> observeState()  returns  the  full  information  from  the  part,  while  observe()  only     returns  the  event:T,  so  it's  a  little  syntax  sugar  to  alleviate  the  switch  for     part  specific  events.    </p><p> If  a  part  wishes  it  can  signal  Error  messages  and  Exceptions,  this  is  good  for     global  logging,  or  state  machines  like  an  Assembly  that  require  to  know  the     internal  state  of  a  part  to  affect  the  state  of  other  parts  in  the  Assembly.    </p><p></p><h2>The Http Part</h2><p></p><p> Using  a  Part  is  easy.  Most  of  the  Flux  infrastructure  is  provided  as  a     part.  For  example  Http.    </p><p><pre>import flux.Http;
+Core.startableAspect = Core.simpleStartableAspect;
+</pre></p><p></p><p> By  default  Core.startableAspect  is  null.    </p><p> A  Startable  may  be  started  with  a  typed  object  parameter,  e.g.    </p><p><pre> myserver.start({port:8080,host:"localhost"})</pre>   </p><p> Even  if  you're  Startable  doesn't  need  parameters  you're  required  to  provide  an     empty  object  {}  as  a  placeholder  to  guarantee  type  checking.    </p><p> Core.stoppableAspect  exists  too.    </p><p></p><h2>The Http Part</h2><p></p><p> Using  a  Part  is  easy.  Most  of  the  Flux  infrastructure  is  provided  as  a     part.  For  example  Http.    </p><p><pre>import flux.Http;
 using flux.Mixin;
 
 Http.server().start({port:8080,host:"localhost"}).outcome(function(http) { });
