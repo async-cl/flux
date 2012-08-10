@@ -11,7 +11,7 @@
 
     <body>
       <div id="ifc">
-<p></p><h1>Data</h1><p></p><p> The  Data  module  stores  haXe  objects  to  Sqlite  (or  Redis  coming  soon).  The  primary     idea  is  to  consider  a  Node.js/Sqlite  instance  a  database  server.  The  Node.js     instance  uses  an  embedded  async <a target="_blank" href="https://github.com/developmentseed/node-sqlite3">sqlite driver</a> ,  so  is  very  fast.    </p><p> By  default  the  data  is  stored  in  JSON  format  in  the  sqlite  database.  However,     you  can  supply  complementary  serializer/deserializers  to  store  you  data  in  any     way  you  want  per  Bucket.  For  example,  you  may  use  the  haXe  serialiser  to  store     class  instances  or  enums.    </p><p> The  Data  module  is  optional,  it  doesn't  prejudice  any  other  Node.js  data     solution.    </p><p> The  main  API  looks  like  this    </p><p><pre>
+<p></p><h1>Data</h1><p></p><p> The  Data  module  stores  haXe  objects  to  Sqlite.  The  primary  idea  is  to  consider     a  Node.js/Sqlite  instance  a  database  server.  The  Node.js  instance  uses  an     embedded  async <a target="_blank" href="https://github.com/developmentseed/node-sqlite3">sqlite driver</a> ,  so  is  very  fast.    </p><p> By  default  the  data  is  stored  in  JSON  format  in  the  sqlite  database.  However,     you  can  supply  complementary  serializer/deserializers  to  store  you  data  in  any     way  you  want  per  Bucket.  For  example,  you  may  use  the  haXe  serialiser  to  store     class  instances  or  enums.    </p><p> The  Data  module  is  optional,  it  doesn't  prejudice  any  other  Node.js  data     solution.    </p><p> The  main  API  looks  like  this    </p><p><pre>
 
 interface Bucket&lt;T&gt; {
   function insert(obj:T):Outcome&lt;String,T&gt;;
@@ -61,7 +61,65 @@ typedef Serializer = {
   var serialize:Dynamic-&gt;String;
   var deSerialize:String-&gt;Dynamic;
 }
-</pre></p><p></p><p> Thus  you  may  easily  add  and  create  your  own  serializers.  For  example,  I  like  to  use  haXe     enums  a  lot  in  data  objects  but  not  classes,  thus  I  can  create  serializers  for     specific  objects  to  save  and  load  the  enums  as  typed  objects.    </p><p></p><h1>In-Process or Remote Drivers</h1><p></p><p> Generally  for  simple  apps  and  testing  you'd  use  the  in-process  driver  where  a     Node.js  instance  is  it's  own  db  server  too.  However,  for  distributed  apps,     having  multiple  model  instances  talk  to  a  single,  or  more,  database  server  may     be  more  appropriate.  For  this  kind  of  app,  a  remote  driver  is  provided.  All     the  remote  driver  does  is  marshall  the  object  over  the  wire  and  receives  the     Outcome.  In  fact  the  both  remote  and  in-process  APIs  are  implementations  of     Bucket  above.    </p><p> So  because  we've  made  an  upfront  choice  of  Async  everywhere  going  from     in-process  to  distributed  is  a  no  brainer.    </p><p> Here's  how  you  publish  a  bucket  for  remoting  ...    </p><p><pre>/home/blackdog/Projects/flux/usage/data/RemoteSource.hx not found!</pre></p><p> and  here's  the  client  ...    </p><p><pre>/home/blackdog/Projects/flux/usage/data/RemoteClient.hx not found!</pre></p><p></p><h2>Redis</h2><p></p><p> As  a  further  option,  I  will  implement  a  Redis  remote  driver  as  time  permits.    </p><p></p><h1>Example </h1><p></p><p> The  example  below  demonstrates  update  of  a  user  object,  and  the  linking  of  a     transaction  to  it.    </p><p><pre>
+</pre></p><p></p><p> Thus  you  may  easily  add  and  create  your  own  serializers.  For  example,  I  like  to  use  haXe     enums  a  lot  in  data  objects  but  not  classes,  thus  I  can  create  serializers  for     specific  objects  to  save  and  load  the  enums  as  typed  objects.    </p><p></p><h1>In-Process or Remote Drivers</h1><p></p><p> Generally  for  simple  apps  and  testing  you'd  use  the  in-process  driver  where  a     Node.js  instance  is  it's  own  db  server  too.  However,  for  distributed  apps,     having  multiple  model  instances  talk  to  a  single,  or  more,  database  server  may     be  more  appropriate.  For  this  kind  of  app,  a  remote  driver  is  provided.  All     the  remote  driver  does  is  marshall  the  object  over  the  wire  and  receives  the     Outcome.  In  fact  the  both  remote  and  in-process  APIs  are  implementations  of     Bucket  above.    </p><p> So  because  we've  made  an  upfront  choice  of  Async  everywhere  going  from     in-process  to  distributed  is  a  no  brainer.    </p><p> Here's  how  you  publish  a  bucket  for  remoting  ...    </p><p><pre>
+import flux.Http;
+using flux.Core;
+import flux.Data;
+
+
+class RemoteSource {
+
+  public static function main(){ 
+    Http.server().root("www").start({host:"localhost",port:8082}).outcome(function(http) {
+        Data.store(SQLITE("test.db")).outcome(function(store) {
+                store.bucket("woot").outcome(function(woot) {
+                    woot.indexer("name",function(o:Dynamic) {
+                        return o.name;
+                      }).outcome(function(el) {
+                          Data.serveBucket(http,woot,"/data/woot");
+                        });
+                  });
+                store.hash("peeps").outcome(function(peeps) {
+                    Data.serveHash(http,peeps,"/data/peeps");
+                  });
+            });
+      });
+  }
+
+}</pre></p><p> and  here's  the  client  ...    </p><p><pre>
+using flux.Core;
+import flux.Data;
+import flux.Http;
+
+
+class RemoteClient {
+
+  public static function main(){
+     Data.store(REMOTESQLITE("http://localhost:8082/data")).outcome(function(store) {
+        store.bucket("woot").outcome(function(woot) {
+           
+            woot.where('name="lore"').outcome(function(recs) {
+                trace(recs.stringify());
+              });
+            
+            woot.insert({email:"lorena@ritchie.com",name:"lore",passwd:"and why not"})
+              .outcome(function(u) {
+                  trace("lore's id = "+Data.oid(u));
+              });
+          });
+
+        store.hash("peeps").outcome(function(peeps) {
+            peeps.set("me",{email:"lorena@ritchie.com",name:"lore",passwd:"and why not"})
+              .outcome(function(p) {
+                  peeps.get("me").outcome(function(me) {
+                      if (me.name == "lore")
+                        trace("yep got it");
+                    });
+                });
+          });
+       });
+  }
+}</pre></p><p></p><h2>Redis</h2><p></p><p> As  a  further  option,  I  will  implement  a  Redis  remote  driver  as  time  permits.    </p><p></p><h1>Example </h1><p></p><p> The  example  below  demonstrates  update  of  a  user  object,  and  the  linking  of  a     transaction  to  it.    </p><p><pre>
 
   typedef User = {
     var email:String;
