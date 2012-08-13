@@ -94,12 +94,11 @@ class Core {
 
   public static var VER = "0.5";
   public static var CSROOT = "/__cs/";
-
-  public static var life:Observable<Life>;
+  public static var startableAspect:Dynamic->Either<Dynamic,Dynamic>->Void;
+  public static var stoppableAspect:Dynamic->Either<Dynamic,Dynamic>->Void;
   
   public static function
   init() {
-    life = Core.observable();
     logInit();
     #if nodejs
     Sys.events().observe(function(e) {
@@ -225,33 +224,58 @@ class Core {
       #end
     }
   }
-  
+
+  public static function simpleStartableAspect(receiver:Startable<Dynamic,Dynamic,Dynamic>,e:Either<Dynamic,Dynamic>):Void {
+    var tn = Type.getClassName(Type.getClass(receiver));      
+    switch(e) {
+    case Right(_):
+        Core.info("Started: "+tn);
+    case Left(msg):
+      Core.error("Failed to start: "+tn+", because "+msg);
+    }
+  }
+
 }
 
 /* Extensions ... */
 
 class StartableX {
-  public static function start<P,A,B>(s:Startable<P,A,B>,p:P,?foc:Outcome<A,B>):Outcome<A,B> {
-    if (foc == null) foc = Core.outcome();
-    var oc = Core.outcome();
-    oc.deliver(function(o) {
-        o.right().foreach(function(e:Dynamic) {
-            if (Std.is(e,Infoable)) {
-              var i:Infoable = e;
-              Core.life.notify(Started(i.info_()));
-            }
-          });
-        foc.resolve(o);
-      });
-    s.start_(p,oc);
-    return foc;
+  public static function start<P,A,B>(s:Startable<P,A,B>,p:P,?oc:Outcome<A,B>):Outcome<A,B> {
+    if (oc == null) oc = Core.outcome();
+    if (Core.startableAspect != null) {
+      var foc = Core.outcome();
+
+      foc.deliver(function(o:Either<A,B>) {
+          Core.startableAspect(s,o);
+          oc.resolve(o);
+        });
+      
+      s.start_(p,foc);
+      return oc;
+    } else {
+      s.start_(p,oc);
+      return oc;
+    }
   }
 }
 
 class StoppableX {
   public static function stop<P,A,B>(s:Stoppable<P,A,B>,p:P,?oc:Outcome<A,B>):Outcome<A,B> {
     if (oc == null) oc = Core.outcome();
-    return s.stop_(p,oc);
+    if (Core.stoppableAspect != null) {
+      var foc = Core.outcome();
+      
+      foc.deliver(function(o) {
+          Core.stoppableAspect(s,o);
+          oc.resolve(o);
+        });
+     
+      s.stop_(p,foc);
+      return oc;
+    } else {
+      s.stop_(p,oc);
+      return oc;
+    }
   }
 }
 
