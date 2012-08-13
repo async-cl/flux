@@ -21,11 +21,7 @@
   - *Asynchronous haXe remoting* for inter tier and sub-process communication
   - *Outcome<A,B>* (a Future<Either<A,B>>) as the means for dealing with
     async callback hell and error handling with helper functions provided as Mixins.
-  - *Parts* are components which have an asynchronous new() in the start()
-    method - start() and an optional asynchronous stop(). Parts are also
-    Observable.
-  - *Mixins*, mostly the Stax prelude extensions with extensions for Parts and
-    Outcomes.
+  - *Mixins*, mostly the Stax prelude extensions.
   - *Observables* - Typical observer functionality.
    
 ** Http Module
@@ -50,14 +46,14 @@
 ** Channel Module
 
    Publish/subscribe with session management, channel security. Currently a Push
-   implementation (web socket conduit will be added).
+   implementation.
 
 #+BEGIN_SRC haxe
     Http.server().root("www").start({host:"localhost",port:8082})
       .outcome(function(http) {
           Session.manager().start(http)
             .outcome(function(sess:SessionMgr) {
-                sess.authorize(sessAuth);
+                sess.authorizer(sessAuth);
                 Channel.server()
                   .addChannelAuth(channelAuth)
                   .start(sess).outcome(startRooms);
