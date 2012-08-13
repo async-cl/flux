@@ -25,7 +25,7 @@ enum ESessionOp {
 interface SessionMgr
 implements Startable<HttpServer,String,SessionMgr>,
 implements ObservableDelegate<ESessionOp> {
-  function authorize(cb:ESessionOp->Void):Void->Void;
+  function authorizer(cb:ESessionOp->Void):Void->Void;
   function exists(sessID:String,cb:Bool->Void):Void;
   function logout(sessID:String,cb:ESession->Void):Void;
   function http():HttpServer;

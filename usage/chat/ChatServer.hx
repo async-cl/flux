@@ -19,7 +19,7 @@ class ChatServer {
       .outcome(function(http) {
           Session.manager().start(http)
             .outcome(function(sess:SessionMgr) {
-                sess.authorize(sessAuth);
+                sess.authorizer(sessAuth);
                 Channel.server()
                   .addChannelAuth(channelAuth)
                   .start(sess).outcome(startRooms);

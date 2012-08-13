@@ -72,7 +72,7 @@ implements SessionMgr {
 
   // public interface ...
 
-  public function authorize(cb:ESessionOp->Void):Void->Void {
+  public function authorizer(cb:ESessionOp->Void):Void->Void {
     return observe(cb);
   }
   
