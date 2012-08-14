@@ -11,20 +11,25 @@
 
     <body>
       <div id="ifc">
-<p></p><h1>Channel</h1><p></p><p><strong>Documentation unfinished</strong>   </p><p> Channel  is  the  Flux  message  service.  Currently  it  supports  push  messaging     over  http,  but  as  you  will  see,  it  has  the  ability  to  support  multiple     transports.  Messages  received  on  either  end  are  fully  typed  and  can  include     classes  and  enums  due  to  haXe  serialization.    </p><p></p><h1>Server Setup</h1><p></p><p> The  Channel  module  uses  the  Http  and  Session  modules.  The  Http  module  provides  the     transportation  of  packets  and  Session  allows  for  the  abilty  to  authorize  or  deny     clients  on  specific  channels.  This  means  that  a  client  must  authenticate  with  the     server  before  being  able  to  use  Channel.    </p><p> Here  is  an  out  of  context  example  of  a  setup  to  provide  a  flavor.    </p><p><pre>
+<p></p><h1>Channel</h1><p></p><p> Channel  is  the  Flux  message  service.  Currently  it  supports  push  messaging     over  Http.  Messages  received  on  either  end  are  fully  typed  and  can  include     classes  and  enums  due  to  haXe  serialization.    </p><p></p><h1>Server Setup</h1><p></p><p> The  Channel  module  uses  the  Http  and  Session  modules.  The  Http  module  provides  the     transportation  of  packets  and  Session  allows  for  the  abilty  to  authorize  or  deny     clients  on  specific  channels.  This  means  that  a  client  must  authenticate  with  the     server  before  being  able  to  use  Channel.    </p><p> Here  is  an  out  of  context  example  of  a  setup  to  provide  a  flavor.    </p><p><pre>
 
     Http.server()
       .root("www")
+      .credentials("privatekey.pem","certificate.pem")
       .start({host:"localhost",port:8082})
       .outcome(function(http) {
-          Channel.server()
-            .addHttpServer(http)
-            .addSessionAuth(sessAuth)
-            .start({}).outcome(startRooms);
-        });    
-</pre></p><p></p><p> The  default  implementation  of  Channel  is  a  push  server  thus  an  http  server  is     required.  If  an  Http  server  is  not  supplied  it's  created  for  you.    </p><p> To  use  the  channel  server  and  enable  access  to  channels  based  on  agent     attributes,  a  session  manager  is  required.  flux.Session  is  used  for  this     purpose.  If  a  session  manager  is  not  supplied  one  is  created  for  you.  In  any     event,  you  are  required  to  call  addSessionAuth  with  a  function  that  processes     login,  logout  and  registration  events  from  the  session  manager,  e.g.    </p><p><pre>
+          Session.manager().start(http)
+            .outcome(function(sess:SessionMgr) {
+                sess.authorizer(sessAuth);
+                Channel.server()
+                  .authorizer(channelAuth)
+                  .start(sess).outcome(startRooms);
+              });
+        });
+    
+</pre></p><p></p><p> The  default  implementation  of  Channel  is  a  push  server  thus  an  http  server  is     required.    </p><p> To  use  the  channel  server  and  enable  access  to  channels  based  on  session     attributes,  a  session  manager  is  required.  flux.Session  is  used  for  this     purpose.  You  are  required  to  add  a  session  authorizer,  a  function  that  processes     login,  logout  and  registration  events  for  the  session  manager,  e.g.    </p><p><pre>
 
-  function sessAuth(event:ESessionOp) {
+function sessAuth(event:ESessionOp) {
     switch(event) {
     case Login(pkt,reply):
       trace("logging in with "+pkt);
@@ -85,27 +90,27 @@
       });
   }
 
-</pre></p><p></p><p> Channels  are  created  using  a  channel  ID,  I  use  the  typical  method  of  a     hierarchical  /  notation  but  it's  arbitary.    </p><p> The  idea  is  that  the  channel  "/chat/room"  is  available  on  both  client  and  server     and  can  publish,  subscribe  and  filter  on  both  sides.    </p><p></p><h1>Client Setup</h1><p></p><p> On  the  client,  one  needs  to  get  a  valid  session  from  the  session  manager.  The     clients  pass  some  credentials  to  the  server  using  the  login  method  of  session  -  the     login  packet  is  arbitrary  and  up  to  the  application  to  define,  in  this  case  just     a  nick.  If  all  is  good  a  sessionID  (again  arbitrary)  is  returned  and  this     sessionID  is  then  used  to  create  the  channel  client.    </p><p><pre>
+</pre></p><p></p><p> Channels  are  created  using  a  channel  ID,  I  use  the  typical  method  of  a     hierarchical  /  notation  but  it's  arbitary.    </p><p> The  idea  is  that  the  channel  "/chat/room"  is  available  on  both  client  and  server     and  can  publish,  subscribe  and  filter  on  both  sides.    </p><p></p><h1>Client Setup</h1><p></p><p> On  the  client,  one  needs  to  get  a  valid  session  from  the  session  manager.  The     clients  pass  some  credentials  to  the  server  using  the  login  method  of  session  -  the     login  packet  is  arbitrary  and  up  to  the  application  to  define,  in  this  example  just     a  nick.  If  all  is  good  a  sessionID  (again  arbitrary)  is  returned  and  this     sessionID  is  then  used  to  create  the  channel  client.    </p><p><pre>
 
-      Session.client().start({}).outcome(function(sess) {
-        sess.login(nick).deliver(function(es) {
-            switch(es) {
-            case UserOk(sessID):
-              trace("got sessID:"+sessID);
+    Session.client()
+      .start({endPoint:"https://"+js.Lib.window.location.host})
+      .outcome(function(sess) {
+          Core.info("got session client");
+          _session = sess;
+          sess.login({nick:nick}).outcome(function(sessID) {
+              Core.info("logged in ok");
               Channel.client()
-                .start(sessID)
+                .start(_session)
                 .outcome(function(client) {
                     _chanClient = client;
-                    trace("starting room");
                     startRoom(nick,client);
                   },function(reason) {
                     trace(reason);
                   });
-            default:
-            }
-          });
-      });
-
+            },function(err) {
+              trace("Can't login:"+err);
+            });
+        });
 </pre></p><p></p><p> Once  the  channel  client  is  initialised,  a  more  or  less  symmetric  channel  setup     is  available  ...    </p><p><pre>
 
   public function
@@ -134,11 +139,8 @@
 </pre></p><p></p><p></p><h1>Channel Authorization </h1><p></p><p> Not  all  channels  on  a  server  should  be  available  to  all  connecting  clients,  we  need     a  method  of  restricting  access  to  specific  channels.    </p><p> A  channel  authorization  function  may  be  added  to  the  channel  server  before     starting  it  using  the  addChannelAuth  method  ...    </p><p><pre>
 
    Channel.server()
-     .addHttpServer(http)
-     .addSessionAuth(sessAuth)
-     .addChannelAuth(channelAuth)
-     .start({}).outcome(startRooms);
-
+       .authorizer(channelAuth)
+       .start(sess).outcome(startRooms);
 </pre></p><p></p><p> You're  provided  with  the  sessID  of  the  requester,  and  the  channel  they  wish  to     connect  to,  by  providing  the  callback  with  the  either  you  may  approve/deny  the  request.    </p><p><pre>
 
 

@@ -817,21 +817,18 @@ flux.Core.waitFut = function(toJoin) {
 flux.Core.assert = function(cond,pos) {
 	if(!cond) flux.core.LogImpl.error("Assert failed in " + pos.className + "::" + pos.methodName,"",pos);
 }
-flux.Core.prototype = {
-	simpleStartableAspect: function(receiver,either) {
-		var tn = Type.getClassName(Type.getClass(receiver));
-		var $e = (either);
-		switch( $e[1] ) {
-		case 1:
-			flux.core.LogImpl.info("Started: " + tn,"",{ fileName : "Core.hx", lineNumber : 120, className : "flux.Core", methodName : "simpleStartableAspect"});
-			break;
-		case 0:
-			var msg = $e[2];
-			flux.core.LogImpl.error("Failed to start: " + tn + ", because " + Std.string(msg),"",{ fileName : "Core.hx", lineNumber : 122, className : "flux.Core", methodName : "simpleStartableAspect"});
-			break;
-		}
+flux.Core.simpleStartableAspect = function(receiver,e) {
+	var tn = Type.getClassName(Type.getClass(receiver));
+	var $e = (e);
+	switch( $e[1] ) {
+	case 1:
+		flux.core.LogImpl.info("Started: " + tn,"",{ fileName : "Core.hx", lineNumber : 232, className : "flux.Core", methodName : "simpleStartableAspect"});
+		break;
+	case 0:
+		var msg = $e[2];
+		flux.core.LogImpl.error("Failed to start: " + tn + ", because " + Std.string(msg),"",{ fileName : "Core.hx", lineNumber : 234, className : "flux.Core", methodName : "simpleStartableAspect"});
+		break;
 	}
-	,__class__: flux.Core
 }
 flux.StartableX = function() { }
 $hxClasses["flux.StartableX"] = flux.StartableX;
@@ -1694,7 +1691,7 @@ $hxClasses["flux.OutcomeX"] = flux.OutcomeX;
 flux.OutcomeX.__name__ = ["flux","OutcomeX"];
 flux.OutcomeX.outcome = function(oc,cb,err) {
 	oc.deliver(function(either) {
-		if(flux.EitherX.isRight(either)) cb(flux.OptionX.get(flux.EitherX.right(either))); else if(err != null) err(flux.OptionX.get(flux.EitherX.left(either))); else flux.core.LogImpl.error(Std.string(flux.OptionX.get(flux.EitherX.left(either))),"",{ fileName : "Core.hx", lineNumber : 905, className : "flux.OutcomeX", methodName : "outcome"});
+		if(flux.EitherX.isRight(either)) cb(flux.OptionX.get(flux.EitherX.right(either))); else if(err != null) err(flux.OptionX.get(flux.EitherX.left(either))); else flux.core.LogImpl.error(Std.string(flux.OptionX.get(flux.EitherX.left(either))),"",{ fileName : "Core.hx", lineNumber : 909, className : "flux.OutcomeX", methodName : "outcome"});
 	});
 }
 flux.OutcomeX.oflatMap = function(oc,cb,err) {
@@ -1702,14 +1699,14 @@ flux.OutcomeX.oflatMap = function(oc,cb,err) {
 	oc.deliver(function(either) {
 		if(flux.EitherX.isRight(either)) flux.OutcomeX.outcome(cb(flux.OptionX.get(flux.EitherX.right(either))),function(val) {
 			roc.resolve(flux.Either.Right(val));
-		},err); else flux.core.LogImpl.error(Std.string(flux.OptionX.get(flux.EitherX.left(either))),"",{ fileName : "Core.hx", lineNumber : 924, className : "flux.OutcomeX", methodName : "oflatMap"});
+		},err); else flux.core.LogImpl.error(Std.string(flux.OptionX.get(flux.EitherX.left(either))),"",{ fileName : "Core.hx", lineNumber : 928, className : "flux.OutcomeX", methodName : "oflatMap"});
 	});
 	return roc;
 }
 flux.OutcomeX.omap = function(oc,cb,err) {
 	var roc = new flux.core.FutureImpl();
 	oc.deliver(function(either) {
-		if(flux.EitherX.isRight(either)) roc.resolve(flux.Either.Right(cb(flux.OptionX.get(flux.EitherX.right(either))))); else if(err != null) err(flux.OptionX.get(flux.EitherX.left(either))); else flux.core.LogImpl.error(Std.string(flux.OptionX.get(flux.EitherX.left(either))),"",{ fileName : "Core.hx", lineNumber : 943, className : "flux.OutcomeX", methodName : "omap"});
+		if(flux.EitherX.isRight(either)) roc.resolve(flux.Either.Right(cb(flux.OptionX.get(flux.EitherX.right(either))))); else if(err != null) err(flux.OptionX.get(flux.EitherX.left(either))); else flux.core.LogImpl.error(Std.string(flux.OptionX.get(flux.EitherX.left(either))),"",{ fileName : "Core.hx", lineNumber : 947, className : "flux.OutcomeX", methodName : "omap"});
 	});
 	return roc;
 }
