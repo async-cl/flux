@@ -21,7 +21,7 @@ class ChatServer {
             .outcome(function(sess:SessionMgr) {
                 sess.authorizer(sessAuth);
                 Channel.server()
-                  .addChannelAuth(channelAuth)
+                  .authorizer(channelAuth)
                   .start(sess).outcome(startRooms);
               });
         });

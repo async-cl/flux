@@ -23,7 +23,8 @@
 -js www/client.js
 -debug
 # just add some test
---macro flux.core.JSGenerator.use()
+#--macro flux.core.JSGenerator.use()
 -main ChatClient
+-cmd tweakasync www/client.js
 -cmd echo "chat client built"
 

@@ -1,4 +1,10 @@
 
+
+/*
+  Flow is the internal implementation of Channels, the Channels top level module
+  provides a higher level interface to these facilities
+*/
+
 package flux.channel;
 
 using flux.Core;
@@ -37,7 +43,9 @@ enum ConduitEvent {
   ConduitNoConnection(sessID:String);
 }
 
-
+/*
+  A Conduit is the network transport for packets, and manages all current connections.
+*/
 interface Conduit
 #if nodejs
 implements Startable<Dynamic,String,Conduit>,
@@ -49,15 +57,16 @@ implements ObservableDelegate<ConduitEvent> {
   // a sink to whom incoming packets are sent
   function addSink(s:Sink):Void;
 
-  // send a packet out over the conduit
+  // send a packet out over the conduit to a given session
   function outgoing(sessID:String,pkt:Dynamic,chanID:String,meta:Dynamic):Void;
-
+  
   function authorize(pipeID:String):Future<Either<String,String>>;
   function leave(pipeID:String):Future<Either<String,String>>;
-  #if nodejs
+
+#if nodejs
   function subscriptions(sessID:String):Hash<Void->Void>;
   function session():SessionMgr;
-  #end
+#end
   
 }
 
@@ -66,24 +75,29 @@ enum SinkEvent {
   ConnectionClose(sessID:String);
 }
 
+/*
+  Channels are created from sinks, and Sinks hold collections of channels.
+*/
 interface Sink
 implements Startable<Conduit,String,Sink>,
 implements Stoppable<Dynamic,Dynamic,Dynamic>,
 implements ObservableDelegate<SinkEvent> {
 
+  /* create a public channel */
   function chan<T>(chanID:String):Chan<T>;
+  /* create a private channel */
   function direct<T>(sessID:String):Chan<T>;
-  function chanFromId(chanID:String):Option<Chan<Dynamic>>;
+  /* subscription and authorisation */
   function authorize<T>(chan:Chan<T>):Outcome<String,Chan<T>>;
   function removeChan<T>(p:Chan<T>):Void;
-
+  function chanFromId(chanID:String):Option<Chan<Dynamic>>;
   /* incoming message from conduit */
   function incoming(chan:Chan<Dynamic>,pkt:Pkt<Dynamic>):Void;  
 
 #if nodejs
   function subscribe(sessID:String,chan:Chan<Dynamic>,cb:Either<String,String>->Void):Void;
   function unsubscribe(sessID:String,chan:Chan<Dynamic>,cb:Either<String,String>->Void):Void;
-  #end
+#end
 }
 
 class Flow {

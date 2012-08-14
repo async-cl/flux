@@ -58,7 +58,7 @@ interface ChannelServer
            implements Startable<SessionMgr,String,ChannelServer>,
            implements ObservableDelegate<ChannelEvent> {
   
-  function addChannelAuth(cb:String->Chan<Dynamic>->(Either<String,String>->Void)->Void):ChannelServer;
+  function authorizer(cb:String->Chan<Dynamic>->(Either<String,String>->Void)->Void):ChannelServer;
   function channel<T>(chanID:String):Outcome<String,Chan<T>>;
   function direct<T>(sessID:String):Outcome<String,Chan<T>>;
 }

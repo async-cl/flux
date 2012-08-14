@@ -67,7 +67,7 @@ implements ChannelServer {
   }
   
   public function
-  addChannelAuth(cb:String->Chan<Dynamic>->(Either<String,String>->Void)->Void):ChannelServer {
+  authorizer(cb:String->Chan<Dynamic>->(Either<String,String>->Void)->Void):ChannelServer {
     _channelAuth = cb;
     return this;
   }
