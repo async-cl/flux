@@ -11,14 +11,18 @@ class RewriteAsync {
       content = Std.string(js.Node.fs.readFileSync(file));
 
     js.Node.fs.writeFileSync(file,replace(content));
+
+    js.Node.console.log("tweaking async in "+file);
 #elseif neko
     var
       file = Sys.args()[0],
       content = replace(sys.io.File.getContent(file));
 
     sys.io.File.saveContent(file,content);
-#end
+
     Sys.println("tweaking async in "+file);
+#end
+    
   }
 
   static function replace(content) {
