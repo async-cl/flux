@@ -1,6 +1,7 @@
 
 package flux.core;
 
+
 #if (!macro && nodejs)
 import js.Node;
 #end
@@ -73,6 +74,8 @@ class LogImpl {
       default:
         untyped __js__("console.log(msg)");
       }
+   #else
+    Sys.println(msg);
    #end
   }
 
