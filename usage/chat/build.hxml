@@ -1,12 +1,25 @@
 
 --connect 6000
 --times
+
+#--js-modern
+#-cp ../../../hx-node
+#-cp ../../../flux
+#-D nodejs
+#-main RewriteAsync
+#-js RewriteAsync.js
+
+-cp ../../../flux/
+-main RewriteAsync
+-neko RewriteAsync.n
+ 
+--next
+ 
 --js-modern
 #--dead-code-elimination
 -js chatServer.js
 -cp .
 -cp ../../../hx-node
---connect 6000
 -D nodejs
 -debug
 -cp ../../
@@ -14,8 +27,7 @@
 -cmd echo "chat server built"
  
 --next
-
-
+  
 #--dead-code-elimination
 --js-modern
 -cp .
@@ -25,6 +37,7 @@
 # just add some test
 #--macro flux.core.JSGenerator.use()
 -main ChatClient
--cmd tweakasync www/client.js
+#-cmd node tweakAsync www/client.js
+-cmd neko tweakAsync.n www/client.js
 -cmd echo "chat client built"
 
